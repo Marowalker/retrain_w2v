@@ -1,0 +1,1310 @@
+
+==== Front
+ACS OmegaACS OmegaaoacsodfACS Omega2470-1343American Chemical Society 10.1021/acsomega.9b03383ArticleCorrecting Rate Constants from Anharmonic Molecular
+Dynamics for Quantum Effects Schmalz Felix *Kopp Wassja A. Kröger Leif C. Leonhard Kai *Chair of Technical Thermodynamics, RWTH Aachen University, Aachen 52062, Germany* E-mail: felix.schmalz@ltt.rwth-aachen.de (F.S.).* E-mail: kai.leonhard@ltt.rwth-aachen.de (K.L.).31 01 2020 11 02 2020 5 5 2242 2253 11 10 2019 30 12 2019 Copyright © 2020 American Chemical Society2020American Chemical SocietyThis is an open access article published under an ACS AuthorChoice License, which permits copying and redistribution of the article or any adaptations for non-commercial purposes.
+
+Anharmonicity can
+greatly affect rate constants. One or even several
+orders of magnitude of deviation are found for obtaining rate constants
+using the standard rigid-rotor harmonic-oscillator model. In turn,
+reactive molecular dynamics (MD) simulations are a powerful way to
+explore chemical reaction networks and calculate rate constants from
+the fully anharmonic potential energy surface. However, the classical
+nature of the dynamics and the required numerical efficiency of the
+force field limit the accuracy of the resulting kinetics. We combine
+the best of both worlds by presenting an approximation that pairs
+anharmonic information intrinsic to classical MD with high-accuracy
+energies and frequencies from quantum-mechanical electronic structure
+calculations. The proposed scheme is applied to hydrogen abstractions
+in the methane system, which allows for the benchmarking of rate constants
+corrected by our approach against experimental rate constants. This
+comparison reveals a standard deviation of factor 2.6. Two archetypes
+of possible failure are identified in the course of a detailed investigation
+of the CH3• + H• → CH22• + H2 reaction. From this
+follows the application range of the method, within which the method
+shows a standard deviation of factor 2.1. The computational efficiency
+and beneficial scaling of the method allow for application to larger
+systems, as shown for hydrogen abstraction from 2-butanone by HO2•.
+
+document-id-old-9ao9b03383document-id-new-14ao9b03383ccc-price
+==== Body
+1 Introduction
+Rate constants play an essential role in the quantitative modeling
+of chemical reaction networks. Technical combustion simulations and
+chemical reactors rely on reaction kinetics to model the complex interaction
+of fluid- and thermodynamics. Such models can predict ignition delay
+times and pollutant and soot formation.1
+
+Many of the reaction rate constants are predicted by suitable
+theories,
+such as transition state theory (TST)2,3 in combination
+with accurate quantum-mechanical (QM) methods. Due to its simplicity
+and long history of study, TST is a powerful tool that provides a
+solid estimate even for rates that are too elusive to be studied in
+experiments. TST relies on a free-energy model for reactants and transition
+states (TSs) of the reaction, of which one of the simplest is the
+rigid-rotor harmonic-oscillator (RRHO) model. It assumesa that all degrees of freedom (DoFs) of a molecule are uncoupled
+and that vibrations follow a parabolic (quadratic) potential energy
+curve.
+
+Nowadays, the treatment of anharmonicity has become a
+bottleneck
+in accurate descriptions of many reaction equilibria and rate constant
+calculations, for example, in biofuel combustion.4 This is because of developments of very accurate electronic
+structure calculation methods (for example, compound methods) that
+compute electronic energies within a few kJ/mol of uncertainty.5 By contrast, the standard model for the motion
+of nuclei, the RRHO model, often fails to reproduce Gibbs free energies
+within 10 kJ/mol of uncertainty.6−8 Torsions like coupled hindered
+rotation, among other large amplitude motions, are especially insufficiently
+described by quadratic potentials, and such a description would introduce
+serious errors.9,10 It is therefore a necessity for
+accurate calculations to go beyond the RRHO model.
+
+While a full
+treatment of coupled anharmonic motions is possible
+and provides an excellent description of a few DoFs, it is computationally
+demanding and therefore only viable for the study of small systems
+with high accuracy. Thus, several approximations have been described
+to improve on the RRHO model. Hindered rotations can be described
+by a set of 1D cosine potentials11 instead
+of quadratic potentials. Also, the coupling of HRs can be accounted
+for.12,13 The quartic force field (QFF) approach14,15 and the second-order perturbation method (VPT2)16,17 include higher derivatives of the potential well for a more accurate
+description of the nonquadratic part of the well. They extend the
+(HO) description in one dimension and also allow for a limited amount
+of coupling between DoFs. For small species with only one conformation,
+the vibrational perturbation theory (VPT2) approximation proves to
+yield good results. Nevertheless, for larger species with many minima,
+the method (in addition to becoming computationally very demanding)
+fails because a larger number of minima cannot be represented in the
+Taylor expansion of the potential energy surface (PES) up to only
+fourth order.18−20 Monte Carlo Phase Space Sampling (MCPSI)21 uses sampling techniques on the molecular phase
+space to explore the potential energy environment and derive correction
+factors for the RRHO model. While these methods substantially increase
+the accuracy of partition functions, they require additional calculations
+apart from the ones required for RRHO. In total, computational methods
+have become very accurate but so computationally demanding that their
+application, besides requiring attention to details of the specific
+reaction, is still limited to systems containing at most a few heavy
+atoms.22
+
+Due to that steep scaling
+of computational demands with an increasing
+number of DoFs or increasing number of reactions in a network, less
+accurate but more efficient models become more feasible. When studying
+a complex reaction network of an unknown mechanism, hundreds of reactions
+come up that have never been studied before. To identify the important
+pathways of the mechanism, it is preferable to maximize the completeness
+of the mechanism rather than the accuracy of the rate constants. Computationally
+intensive methods would then only be used to refine the rate constant
+predictions on those important paths of the network.
+
+Molecular
+dynamics (MD) simulations are a good way to explore reaction
+networks on a large scale.23,24 MD simulations follow
+the time evolution of chemical systems, while effectively, but classically,
+sampling the available phase space of each reactant and TS. This avoids
+the need for any RRHO-based or uncoupled approximations to account
+for anharmonic effects but neglects QM effects. With a software tool,
+for example, the Chemical Trajectory analYzer (CTY) used in this study
+that analyzes changes in chemical composition in an MD trajectory,
+these simulations can be used to compute rate constants based on the
+number of reaction events that change the chemical composition and
+current concentration of respective reactants.23,24
+
+Other techniques to sample the free-energy surface and derive
+rate
+constants from MD include Meta Dynamics (MTD),25 Transition Interface Sampling (TIS),26 Forward Flux Sampling (FFS),27 and Stochastic Process Rare Event Sampling (S-PRES).28 They work with a biased potential or an algorithm
+to stop and restart the MD simulation at specified conditions. This
+way, the sampling is focused on certain events of interest that are
+too rare to be covered with unbiased MD in reasonably accessible time
+scales. We chose not to bias our simulations, with the downside of
+missing those rare events, but with the advantages of getting a broad
+variety of reactions of the mechanism of interest and not needing
+any prior information on reaction coordinates.
+
+Building on that,
+we derive an efficient correction scheme for
+rate constants of large mechanisms using MD simulations. We estimate
+the influence of anharmonicity on rate constants using knowledge from
+these simulations. Consequently, we also need to estimate the effect
+of using classical instead of quantum mechanics using the Pitzer–Gwinn
+(PG) approximation.29 Efficiency is ensured
+by the use of a fast reactive force field for the MD simulation.
+
+We apply the scheme to hydrogen abstraction reactions that occur
+in a CH4/O2 mixture under high pressures as
+well as at high temperatures and obtain a first rate constant estimate
+by measuring rates based on respective events during the simulation.
+We further isolate reactants and TSs of these reactions to obtain
+classical partition functions and QM RRHO partition functions for
+the ideal gas and use them to calculate RRHO-TST rate constants. This
+way, we obtain different expressions for the same rate constant accounting
+for anharmonic effects, QM effects, recrossing, and tunneling. After
+combining them, we derive a new rate constant expression that incorporates
+all of these effects.
+
+2 Theory
+2.1 Transition
+State Theory
+Rate constants
+can be modeled by TST and extensions as30 1  While TST
+is essentially a semiclassical theory,
+meaning that the reaction coordinate is also described semiclassically,30 we use QM (and anharmonic) partition functions Q of the TS (‡) and the reactants (R). ΔE0 is the zero-point-corrected potential energy
+difference between reactants and TS, β is the inverse product
+of Boltzmann’s constant kB and
+the temperature T, and h is Planck’s
+constant. Tunneling and nonclassical reflection are handled by the
+correction factor κ, and g accounts for nonequilibrium
+(also called “nonthermalized”) reactants. Nonthermalized
+reactants may occur preferably at low pressures, when such reactants
+are energetically excited from a previous reaction.31,32 The effect of nonthermalized reactants is intrinsically contained
+when running MD simulations; in our study, we choose high pressure
+to ensure thermalization of species and therefore g ≈ 1.
+
+Γ is a prefactor accounting for recrossing.
+The TS is ideally the dividing surface between the reactant and product
+basins through which the recrossing of trajectories is minimal.33 As most trajectories will follow the path of
+minimum energy between the reactant and product basins, the dividing
+surface can be set at the point of highest energy on this path so
+that it is perpendicular to the path. Such a point is a saddle point
+on the PES with vanishing gradients, and it can be associated with
+one specific geometry. A saddle point is robustly found by geometry
+optimization methods, which is why it is commonly used as the TS,
+instead of the many-geometry dividing surface. We will use this as
+a practical definition for the TS throughout our work. The discrepancy
+to the ideal TS is addressed in variational TST.34,35
+
+In the MD analysis, there is no need to explicitly define
+a TS.
+However, a dividing surface that minimizes recrossing is needed. For
+simplicity, potential reaction events are identified when a bond order
+crosses a half-integer value (0.5, 1.5, or 2.5). Since these bond
+orders do not correspond to the maximum in free energy between reactants
+and products, they are only poor estimates for the dividing surface.
+Therefore, when such a crossing event is detected, the trajectory
+is further observed for a recrossing time interval of 2 ps to check
+if a recrossing event occurs. Only if no recrossing occurs, the event
+is considered as a reaction. If the results were independent of the
+recrossing time interval and statistics were good, this would yield
+the same rate constants as if using an optimal dividing surface that
+may even by curved in a complicated manner. Practically, it turned
+out that the results depend only very weakly on the recrossing time
+interval in the range of 2 ps,23 and the
+results are therefore a good approximation to those obtained from
+a perfect dividing surface.
+
+2.2 Combination Scheme
+As outlined in Section 1, a rate constant
+that features anharmonic and QM partition functions requires expensive
+calculations. We present an efficient approximation scheme that makes
+use of the anharmonic information that is contained in reactive trajectories
+of MD simulations. Once extracted, this information is applied in
+the form of a correction factor to a RRHO rate constant calculated
+from a high-level QM PES. This way, we obtain a rate constant from
+feasible calculations that has the potential to agree quantitatively
+with experimental results.
+
+Nevertheless, our correction method
+comes with potential inaccuracies. To cover the large time scales
+required in MD for reactions to happen, we have to make the calculation
+of a single time step fast enough. We are therefore employing an empirical
+force field (FF). FFs are less accurate with respect to, for example,
+energies and gradients than standard ab initio methods. A further
+approximation intrinsic to MD is the use of classical mechanics. To
+use anharmonic information from MD simulations to obtain accurate,
+quantum-mechanical rate constants, we have to follow two approximations
+in the derivation of our scheme. The first (eq 2) is known as the Pitzer–Gwinn approximation,29 relating classical to quantum-mechanical partition
+functions via the ratio of their HO partition functions. A second
+(eq 3), similar approximation
+must be done regarding the transferability of the anharmonic information
+from a low-level (for example, FF) to a high-level (for example, QM)
+PES.
+
+The result of our scheme will be a TST rate constant that
+features
+anharmonic and QM partition functions but is constructed from efficient
+calculations. The formulation in eq 1 also allows for the incorporation of a recrossing
+correction from the FF and a tunneling correction from the QM potential
+energy surface along the way.
+
+The first component of our scheme
+is the aforementioned PG approximation,
+which relates classical and quantum-mechanical partition functions.
+It states that the ratio of the (anharmonic) partition function to
+its RRHO approximation stays nearly the same when evaluating it classically
+instead of quantum mechanically 2  Here, subscripts “c” and “q”
+denote the classical and QM partition functions, respectively. The
+superscript “HO” denotes the RRHO approximation of the
+otherwise anharmonic partition function (“anh”).
+
+This formula already contains the anharmonic QM partition function Qqanh that we would like to approximate. PG expresses it in terms of either
+classical or harmonic partition functions, which we will take advantage
+of. Calculating the harmonic part does not pose a difficulty, as it
+can be done by known formulas. The remaining part Qcanh is indirectly
+contained in rate constants from MD, since they employ anharmonic
+and classical kinetics. However, we must keep in mind that the MD
+kinetics and thus any partition functions coming from it originate
+from an approximate model FF. This makes the introduction of our second
+relation necessary, addressing different levels of theory.
+
+Similar
+to the PG relation, the second relation states that the
+ratio of the partition function to its RRHO approximation stays the
+same when calculating it at different levels of theory. Partition
+functions of internal modes are strongly influenced by vibrational
+frequencies. One often finds that frequencies computed by lower-level
+methods (that give large deviation in single-point energies) match
+frequencies computed at a higher level quite well.36,37 We therefore assume that in first order, anharmonic partition functions
+change with the quality of the PES in direct proportion to the harmonic-oscillator
+partition functions, which means frequencies (in the classical case).
+This leads to the following relation where we employ a low-level,
+empirical FF and a high-level, ab initio PES (QM), which are denoted
+by superscripts. 3  This assumption might be bold, as
+levels of
+theory can differ greatly. While the first (PG) assumption works well
+in the cases we need, the assumption described by eq 3 actually has weaknesses in some
+of these cases, which we will discuss later.
+
+To make use of
+the two relations, we start by defining our desired,
+final, corrected rate constant kcorr in
+the sense of the TST formalism of eq 1. It should have anharmonic QM partition functions,
+a tunneling correction κ, a recrossing correction Γ, and
+an accurate barrier ΔEQM. As discussed
+earlier, we use thermalized structures and therefore set g ≈ 1. 4  Using the
+two relations on partition functions,
+we can expand eq 4 by
+the classical and harmonic description via eq 2 and then by the high- to low-level PES transfer
+via eq 3. We are left
+with partition functions that are either low-level or harmonic 5  To compare the partition functions of different
+qualities in eq 5, we
+define three different TST rate constants, each of them again either
+low level or harmonic. The index reflects the origin of calculation.
+In particular, these origins are as follows: MD simulations on a low-level
+FF PES (kMD), RRHO-TST on the same PES
+(kFF), and RRHO-TST on a high-level QM
+PES (kQM) 6   7   8  Note that kMD is
+recrossing-corrected and kQM is tunneling-corrected,
+whereas kFF has no correction factors.
+This way, the tunneling correction benefits from the high-level (QM)
+description, and the recrossing correction is derived from actual
+(MD) kinetics.
+
+To isolate the low-level PES partition functions,
+we take the ratio
+of the two TST rate constants kMD and kFF. It is important that the trajectories, which kMD consists of, cross the same TS that was chosen
+for kFF. Then, as both rate constants
+originate from the same PES, their potential barrier ΔEFF is the same and their exponential terms cancel
+out 9  This ratio contains the
+recrossing correction
+and the anharmonic correction for a particular reaction. However,
+its partition functions represent classical mechanics on a low-level
+model potential, which makes the two transferability assumptions necessary
+(eqs 2 and 3).
+
+The product of eqs 8 and 9 then equals the expansion
+of kcorr done in eq 5, so we can express our desired TST rate constant
+as
+a combination of the other three rate constants 10  The three rate
+constants on the right-hand
+side have to be determined in different ways, which is detailed in Section 5. The resulting kcorr not only incorporates anharmonic and QM
+effects but is also both recrossing- and tunneling-corrected.
+
+2.3 Requirements for the Scheme
+In line
+with eqs 2 and 3 in the derivation of eq 10, there are two basic assumptions in our
+scheme for quantum anharmonic corrections:(a) The PG approximation is valid (eq 2).
+
+(b) The ratio of an anharmonic partition
+function to its RRHO approximation is approximately invariant to the
+level of theory (for example, FF versus ab initio), cf. eq 3.
+
+Assumption
+(a) is well-justified; it has been checked for cosine-type
+anharmonicity by its inventors,29 for Morse
+and quadratic-quartic anharmonicity by Isaacson and Truhlar,38 and for anharmonicity of H2O2 by Ellingson et al.39 We also
+added a smaller-meshed test varying curvature and temperature in our
+Supporting Information; see Table S1. The
+other assumption (b) of transferability of anharmonicity requires
+some explanation.
+
+Anharmonicity is transferable using eq 3 in cases that resemble
+the one depicted in Figure 1, where one sees a (vibrational) normal mode coordinate of
+a TS or a reactant. Here, an anharmonic PES (black, solid line) approximately
+doubles the number of energy levels that a harmonic treatment (black,
+dashed line) would yield. Now, from a single QM calculation, one would
+only be able to derive the RRHO result, not the anharmonic one. Nevertheless,
+our scheme can use anharmonic information from a low-level FF calculation
+to correct for anharmonicity. The anharmonic FF PES may differ though
+from the anharmonic QM PES in a number of ways: the FF PES (dark-blue,
+dashed line) in Figure 1 is shifted (corresponding to a different barrier height) and scaled
+(corresponding to different vibrational frequencies). Still, it also
+approximately doubles the number of energy levels that a harmonic
+treatment (blue, dot-dashed line) would yield. Taking the ratio of
+the anharmonic partition function on the FF PES to its RRHO counterpart
+as a correction factor to the RRHO approximation on the QM PES will
+therefore be a good approximation.
+
+Figure 1 Example where anharmonicity can be transferred.
+The relation of
+energy levels of the high-level PES (black, solid line) to the energy
+levels of its HO representation (black, dashed line) is the same as
+the relation of the low-level PES (dark-blue, dashed line) with its
+HO representation (blue, dot-dashed line).
+
+Anharmonicity can be less transferable by our scheme in other cases
+that resemble, for example, those depicted in Figures 2 and 3. In the case
+of Figure 2, anharmonic
+parts of the real PES or its QM representation relate to the TS substantially
+differently than at the FF level. Here, the anharmonic contribution
+obtained on the FF level will not be meaningful. In the case of Figure 3, the general behavior
+of the TS seems well-captured. Both the FF PES (red, dashed line)
+and the QM PES (black, solid line) comprise a minimum of similar width,
+so at many temperatures, entropies for both cases will be similar.
+Nevertheless, the RRHO approximation (red, dashed line) at the minimum
+of the FF PES is considerably flatter than the RRHO approximation
+(black, dashed line) to the QM PES. While the HO model ranges per
+definition from −∞ to +∞, models in internal
+coordinates often have physical limits. A distance shall not become
+negative, a bending angle is limited to (0–180°), and
+a dihedral angle is limited to (0–360°). A very flat potential
+model as the RRHO approximation (red, dashed line) at the minimum
+of the FF PES in Figure 3 thus may generate a significant probability of finding the system
+in unphysical regions. Distributing the probability density over such
+a too-large space leads to too densely spaced energy levels and thereby
+leads to overcounting the accessible states of the mode. The lower
+the HO frequency, the more substantial this becomes. As a result, kFF gets overestimated. Such kinds of deviation
+cannot be corrected for in our scheme.
+
+Figure 2 Example where transfer
+of anharmonicity introduces errors: The
+low-level PES (red, dotted line) is qualitatively different from the
+high-level PES (black, solid line).
+
+Figure 3 Another
+example where transfer of anharmonicity introduces errors:
+the low-level PES (red, dashed line) seems to match the high-level
+PES (black, dashed line) qualitatively, which means it has approximately
+the same width. Still, the HO approximation to the low-level PES (red,
+dashed line) may reach into unphysical regions, for example, negative
+values of a bending angle, already at comparatively small energies
+(dependent on kBT) in
+contrast to the HO approximation to the high-level PES (black, dashed
+line).
+
+To check the applicability of
+the proposed method, we therefore
+suggest analyzing the low-frequency modes of the reactants and transition
+states. If their frequencies are low and differ between the low-level
+and the high-level method, the results should be treated with care.
+
+Assumption (b) is used in eq 5 to justify the application of the anharmonic contribution
+from the low-level PES to the high-level RRHO-TST rate constant (kQM). Since we use it for the partition functions
+of the TS and its reactants at the same time, we can weaken the assumption;
+for our needs, it is sufficient that the following ratio of quotients
+is invariant to the choice of level of theory 11  Here, the partition function from the original
+assumption is replaced by the quotient of partition functions of the
+TS and its reactants. It is a weaker assumption simply because it
+follows from the original assumption, eq 3, but not the other way around.
+
+The proposed
+method can be seen as an extension of RRHO-TST to
+model anharmonic effects and non-TST effects better. The most important
+criterion for whether the method will work is if the low-level force
+field resembles the “true” anharmonicity reasonably
+well. This is corroborated by the rate constant corrections presented
+in the next section.
+
+3 Results
+For the
+validation of our method, we chose a set of hydrogen abstraction
+reactions from the methane combustion mechanism. This important reaction
+class frequently occurs during the chain propagation phase and was
+also seen frequently during our MD simulations, so they provide a
+solid statistical basis for the rate determination from MD. We chose
+reactions of the type R–H + H• ⇌ R• + H2, where R–H is the molecule
+undergoing hydrogen abstraction in the forward reaction. Subject to
+our study are those reactions where R is one of the radicals CH3•, CH22•, OH•, O2•, or HCO•,
+as listed in Table 1. For each forward (f) and backward (b) path, we determined the rate
+constants kMD, kFF, and kQM and calculated kcorr.
+
+Table 1 Reactions in This
+Work
+no.	R	reaction	
+1	CH3	CH4 + H• ⇌ CH3• + H2	
+2	CH2	CH3• + H• ⇌ CH22• + H2	
+3	OH	H2O + H• ⇌ OH• + H2	
+4	O	OH• + H• ⇌O2• + H2	
+5	HCO	H2CO + H• ⇌ HCO• + H2	
+The Arrhenius plots in Figures 4a–4f and 5a–5d show the determined rate
+constants of the five reactions of Table 1 and their backward counterparts. A confidence
+interval of 95% is shown for each MD rate constant, dependent on the
+observed number of reaction events.61 Experimental
+results of other authors are given as references. For comparison,
+we partially extrapolated Arrhenius expressions to higher temperatures
+to match our simulation conditions. At these conditions, the experimental
+data show a standard deviation of a factor of 1.5 (cf. Table S3). One can see that the method yields
+an improved rate constant estimate for most reactions but not in general.
+On average, the corrected rate constants computed from our scheme
+deviate by a factor of 2.6 from the average of the experimental rate
+constants; cf. Table S3. We will take a
+detailed look at the cases where the method seems to fail. For the
+other reactions, kcorr is in good agreement
+with reference results.
+
+Figure 4 Reaction rate constants kFF (blue,
+dashed line), kQM (green, dashed line), kMD (orange, solid circle), and kcorr (yellow, solid circle) as a function of temperature
+for reactions 1f, 1b, 2f, 2b, 3f, and 3b. Experimental references
+are given in gray (see refs. (40−53)).
+
+Figure 5 Reaction rate constants kFF (blue,
+dashed line), kQM (green, dashed line), kMD (orange, solid circle), and kcorr (yellow, solid circle) as a function of temperature
+for reactions 4f, 4b, 5f, and 5b. Experimental references are given
+in gray (see refs. (43,54−60).
+
+3.1 Effect of Flat Potentials
+All studied
+TSs feature a terminal subgroup of the form R···H···H,
+where R is the radical product in the forward reaction (see Table 1) and the two H-atoms
+form H2. These two H-atoms and the heavy atom (carbon or
+oxygen) of R are loosely bound to each other in a (nearly) linear
+complex. This floppy structure has a large range of motion, and the
+PES is very shallow along the corresponding vibrational modes of the
+∠R–H–H angle. This is reflected in the HO frequencies,
+which can be exceptionally low. On the other hand, the energy can
+rise steeply near the limits of the bending angle near 0 and 180°,
+which yields an anharmonicity of the type discussed in Figure 3. Furthermore, being transitional
+modes,62,63 the (anharmonic) effect of these frequencies
+cannot be expected to cancel in rate or equilibrium constant computations.
+
+Table 2 shows the
+two lowest, real-valued, vibrational frequencies of all studied TSs
+obtained with the ReaxFF/Agrawalla force field and with B2PLYP-D3BJ/6-311++G(d,p)
+density functional theory (DFT). All of them correspond to the bending
+of the ∠R–H–H angle and are degenerate if the
+angle is straight in the TS structure. The full table with all frequencies
+can be found in the Supporting Information (Table S6). Three of the five TSs have low harmonic frequencies on
+the Agrawalla PES of about 100/cm and lower. Their corresponding DFT
+frequencies have higher values, greater than 300/cm. DFT frequencies
+are certainly the more reliable estimate here, which indicates that
+the Agrawalla PES has some deficiencies in reproducing those frequencies.
+
+Table 2 Lowest, Real-Valued Frequencies of
+Investigated TSs as Calculated by ReaxFF/Agrawalla (FF) Compared to
+B2PLYP-D3BJ (DFT)a
+reaction	FF	DFT	difference	
+1	70.5	537.2	–466.7	
+ 	70.5	537.2	–466.7	
+2	31.5	408.3	–376.8	
+ 	41.3	428.4	–387.1	
+3	477.3	516.1	–38.8	
+ 	588.9	595.5	–6.6	
+4	764.3	526.1	+238.2	
+ 	773.6	839.7	–66.1	
+5	77.2	340.1	–262.9	
+ 	106.4	432.9	–326.5	
+a All values in cm–1.
+
+The value
+of the RRHO-TST rate constant kFF is mainly
+determined by frequencies and the barrier height
+calculated on the ReaxFF/Agrawalla PES. The aforementioned low frequencies
+belong to a bending mode, which is limited in its extent to at most
+one full turn (0–180°). As explained in the Methods section
+along with Figure 3, the HO model, which ranges per definition from −∞
+to +∞, may lead to too densely spaced energy levels and overestimate kFF. Thus, the estimation of the anharmonic correction
+can be very inaccurate in cases of flat potential bending modes, as
+we observed here.
+
+The TS structures of reactions 1 and 2 suffer
+from this overestimation
+especially, as the low frequencies in Table 2 show. Figure 6 shows the lowest frequency bending mode (that is doubly
+degenerate) of the TS for reaction 1. This is a type of failure of
+our correction scheme that we discussed along with Figure 3. The PESs at both levels of
+theory show a minimum at an angle of 180°. Near 90 and 270°,
+the ReaxFF/Agrawalla PES shows minima, which result from the abstracting
+hydrogen being attracted to the CH3• radical (while the bending angle is
+kept frozen) to become CH4 + H• again.
+Beyond, both PESs rise steeper than harmonic. The most severe difference
+is in the ReaxFF/Agrawalla PES being extremely flat at the minimum.
+According to the HO approximation, an energy of about 13.3 kJ/mol
+is required to reach the physical limits of the bending motion. Thus,
+most energy levels will contain an unphysical effect that makes them
+significantly more densely spaced, thereby raising the entropy of
+the TS in the HO approximation at the FF level. The anharmonicity
+on the FF level is therefore substantially different than the one
+on the QM level and thereby violates requirement (b). As a consequence,
+the increased entropy reduces the free-energy barrier height and raises
+the FF RRHO-TST rate constant. This artificially raised kFF lowers the corrected reaction rate kcorr according to eq 10 so that it falls below the experimental values.
+
+Figure 6 Energy profiles
+along the ∠C–H–H angle in
+TS of reaction 1 (CH4 + H• ⇌ CH3• + H2), obtained at the ReaxFF/Agrawalla level (blue, solid line
+with circles) and the B2PLYPD3 level (green, dashed line with circles),
+zeroed at 180°, and their harmonic approximations [with a frequency
+of 70/cm at the ReaxFF level (blue, dashed line) and a frequency of
+537/cm at the B2PLYPD3 level (green, dotted line)] used in the respective
+RRHO-TST rate constants. The harmonic expansion of the ReaxFF/Agrawalla
+PES intersects 0° at 13.3 kJ/mol, below the value for RT (24.9 kJ/mol at 3000 K). Although the bending angle is
+limited to 180°, we continue the potentials up to 360° by
+turning the dihedral angle, to make them comparable to the HO parabolas.
+
+In contrast to those for the other reactions, the
+lowest frequencies
+for the TS of reactions 3 and 4 are in good agreement with the DFT
+reference. The same is true for the HO frequencies of the reactants
+(H2, H2O, and OH). These reactions were considered
+essential by Agrawalla and van Duin for the H2/O2 combustion mechanism, so they included the barrier height and reaction
+enthalpy of the backward paths in the training process of their ReaxFF
+parameterization.64 In consequence, the
+PES around the reactants and the TS is well described by the force
+field, and the transferability requirement of our method can be considered
+valid. In these cases, the ratio kMD/kFF reasonably reflects the anharmonic effects
+in the combined rate constant kcorr (see eq 10).
+
+3.2 Effect of Nonrepresentative TSs
+Reaction
+2f (Figure 4c) even
+possesses two very low frequencies in its TS (cf. Table 2). Nevertheless, the corrected
+rate constant matches well with experimental46 and computational47 rate constants from
+the literature due to fortuitous error cancellation. A closer look
+at the PES on FF and QM levels reveals that reaction 2f violates assumption
+(b) in both the manners depicted in Figures 2 and 3, which partly
+cancel each other out here.
+
+The computed corrected rate constants
+for reaction 2 can only partly be compared to literature results due
+to the following difference: the product CH22• of reaction 2f exists in singlet
+and triplet spin states, a concept that cannot be reflected in the
+ReaxFF formalism. Instead, only the lowest-energy spin state configurations
+are taken as training input for a parameterization.65 In consequence, the simulated molecules can pass through
+energy levels that would in reality belong to different spin states
+and require collisions for that transition. From the PES in Figure 9, one can see that,
+while the reaction CH3• + H• ⇌ CH22• + H2 is completely
+possible on the DFT triplet surface (Figure 8), it is energetically more favorable to
+react through smaller, more methane-like C–H–H angle
+configurations on the DFT singlet surface (Figure 7), thereby circumventing the barrier at (ϕC–H–H, rH–H) = (180°, 0.9 Å). The possibility of this process will
+strongly depend on collisions that allow travel between both surfaces
+and, on the other hand, can stabilize the CH4 complex in
+the methane configuration at (ϕC–H–H, rH–H) = (35°, 1.7 Å)
+(Figures 8 and 9).
+
+Figure 7 Singlet PES of CH3• + H• → CH22• + H2 (reaction
+2). All other coordinates were optimized at the B2PYLPD3/6-311++g(d,p)
+level, which yields the reported energies.
+
+Figure 8 Triplet
+PES of CH3• + H• → CH22• + H2 (reaction
+2). All other coordinates were optimized at the B2PYLPD3/6-311++g(d,p)
+level, which yields the reported energies.
+
+Figure 9 Combination
+of CH4 singlet and triplet potential energies.
+At each point, the lowest energy of both spin states is taken. Above
+the black line, triplet energies are lower than singlet energies;
+below, vice versa. Dark atoms are carbon; light atoms are hydrogen.
+The C–H–H angle was scanned in 10° steps and the
+H–H bond distance in 0.1 Å steps. All other coordinates
+were optimized at the B2PYLPD3/6-311++g(d,p) level, which yields the
+reported energies.
+
+Rate constants for collisional
+conversion of 1CH21• + M → 3CH22• + M are
+on the order of 6 × 1011 cm/(mol3 s) and
+are only slightly temperature-dependent.66,67 This reaction is therefore considerably faster than some other unimolecular
+processes, for example, dissociation of C•H3. In such cases, it is a good approximation to use the minimum-energy-PES
+including both spin states of the CH2 species.
+
+The
+CTY analysis counts both spin states as the product of the
+reaction. In turn, Baulch et al.46 (and
+the experiments where their recommendation is based on refs (43, 68, 69)) explicitly consider the singlet
+state. However, Ge et al.47 list reaction
+2f as a reaction that possesses a TS; while they do not specify the
+spin state used, a well-defined TS is present only on the triplet
+surface. Therefore, their rate constant should refer only to triplet
+CH2. This makes the overall rate constant for CH3• + H• → CH22• + H2 (that we obtain from
+MD) larger than state-selective rate constants from the literature.
+
+Figure 10 shows
+the empirical PES of the same reaction calculated with ReaxFF and
+Agrawalla’s parameterization. In general, energies are lower
+than predicted by the ab initio method (therefore, the picture is
+bluer; we use the same color scale for all four PES plots). The TS
+of the predicted path is visible at (ϕC–H–H, rH–H) ≈ (180°, 1.1
+Å) and corresponds to the DFT TS in the triplet state. However,
+clearly, there are additional, potentially barrierless pathways via
+the much more attractive CH4 basin that accelerate the
+reaction in the simulations. Four representative trajectories extracted
+from our simulations are depicted. While two are passing the TS at
+(180°, 1.1 Å), the other two run through the low-energy
+singlet basin. Movies of these trajectories are attached in the SI. Our correction scheme under assumption (b)
+would lower the barrier heights for the TS on the triplet PES part
+and the actual bottleneck on the singlet PES part differently: the
+actual barrier through which most trajectories pass can be seen in Figure 10. The bottleneck
+on the FF PES occurs approximately at (ϕC–H–H, rH–H) = (80°, 0.9 Å).
+The energy difference of the triplet TS at (180°, 1.0 Å)
+to the actual bottleneck amounts at the FF level to ≈49 kJ/mol,
+while at the QM level (CCSD(T)/aug-cc-pvtz), it amounts to ≈227
+kJ/mol. Note that the energy at the QM level rises steeply near that
+bottleneck (cf. the dense isoenergy lines in Figure 7) because that exit channel is barrierless
+here. All in all, the correction obtained by our scheme can be very
+different from the energies actually present near the exit channel.
+This corresponds to the type of failure of our correction scheme discussed
+in Figure 2. Nevertheless,
+the Figure 3-type failure
+partly compensates for the Figure 2-type failure so that in total fortuitous error cancellation
+leads to good agreement with literature rate constants shown in Figure 4c. The anharmonic
+PES at the FF level reproduces the anharmonicity of the combined QM
+PES better than the triplet PES; therefore, in total, despite the
+ReaxFF results being faster than the experimental results, the correction
+scheme works.
+
+Figure 10 CH3• + H• → CH22• + H2 ReaxFF PES with the
+predicted TS at (ϕC–H–H, rH–H) = (180°, 1.1 Å). Approximate isosurfaces
+are depicted where the bond order is 0.5 for the nearer (black, solid
+line) and the farther hydrogen (black, dashed line). Representative
+trajectories are given as examples: two taking the path via the TS
+(red circle and red cross) and two taking the lower-energy channel
+via the CH4 singlet basin (red triangle and red plus).
+Illustrating videos are available in the Supporting Information. The trajectories do not follow minimum-energy
+path lines because of their kinetic energy; this can best be seen
+in the videos.
+
+We have thereby identified two
+weaknesses of FFs that can spoil
+anharmonicity corrections from MD: On the one hand, when frequencies
+are reproduced so badly that the harmonic approximation applies to
+unphysical regions, the harmonic model of the higher-quality PES cannot
+correct for the lower-quality PES; on the other hand, ab initio calculations
+are performed for a specific spin state. If the FF combines data from
+different spin states, a reaction on that PES may not have a corresponding
+TS on the ab initio PES, so this pathway cannot be included in the
+computation of the corrected rate constant. It is therefore desirable
+that future FFs are also trained to capture the main features of QM
+PESs, especially with respect to low frequencies and general anharmonic
+trends in spirit of Figure 1. When reactions 1 and 2 are excluded from the comparison,
+rate constants corrected by our scheme deviate from experimental rate
+constants on average a factor of 2.1 (cf. Table S3).
+
+3.3 Application to Larger Reactant
+Species
+From the methane system, we only discussed reactions
+with H• radicals (and with H2 in the
+reverse reactions). Atomic
+reaction partners lose three DoFs when becoming part of the TS. 2-atomic
+species and linear species lose five and all other species lose six
+DoFs. These DoFs appear in the TS as so-called “transitional
+modes” because they are not part of the internal DoFs of reactants
+but have been rotational and translational DoFs.62,63 One stretch and two bends arise as transitional modes in TSs with
+H• radicals. Larger reactant radicals like O•H or HO2• radicals also introduce one or two HRs.
+
+Anharmonicity
+in bending motions tends to make the potential steeper than a harmonic
+one; cf. Figure 6.
+Therefore, in all reactions from the methane system under study, the
+inclusion of anharmonicity reduces the rate constants obtained from
+a harmonic treatment. From reactions of larger species, it is known
+that the inclusion of anharmonicity usually increases rate constants
+from harmonic calculations. TSs of such reactions contain HRs where
+the potential often quickly becomes broader than harmonic. We performed
+a MD simulation for 2-butanone + HO2• to test that our correction in such
+cases increases the rate constant compared to the harmonic treatment.
+
+Reaction rate constants for 2-butanone + HO2• abstraction from the primary/α-site
+are shown in Figure 11. Here, one can see that, for this larger species, anharmonic corrections
+from the MD rate increase the rate constant inferred from TST corrections.
+Therefore, the MD rate constant is higher than the FF–TST rate
+constant. However, the overall correction obtained, including high-level
+barrier height and frequency corrections, lowers the MD constant because
+the QM-based TST rate constant is lower than the FF–TST rate
+constant. The correction is rather high, which one would expect for
+larger reacting systems.9,10
+
+Figure 11 Reaction rate constants kFF (blue,
+solid line), kQM (green, solid line), kMD (orange, solid circle), and kcorr (yellow, solid circle) as a function of temperature
+for H-abstraction of 2-butanone [CH3C(O)CH2CH3 + HO2• → CH2C(O•)CH2CH3 + H2O2].
+
+4 Conclusions
+We presented a new method to
+obtain fully anharmonic and quantum-mechanical
+rate constants by combining efficient computations. A MD rate constant
+was used to include anharmonic effects, and a DFT/Coupled-Cluster
+RRHO-TST rate constant was used to include quantum effects. The combination
+scheme required a third RRHO-TST rate constant calculated from the
+PES that was used for MD. For that, we implemented algorithms to compute
+the Hessian, to optimize TSs, and to perform IRC calculations. Two
+assumptions were used and tested: (a) The Pitzer–Gwinn approximation
+was used to correct the classical MD rate constants for quantum effects.
+This approximation was applicable at all conditions used in our study.
+(b) Anharmonicity was transferable along PESs of different qualities.
+We identified the following ratio to be crucial (cf. eq 11) 12  We also showed a case, the CH3• + H• → CH22• + H2 reaction, where deficiencies
+in fulfilling the second assumption partly canceled. That reaction
+may proceed along two potential energy surfaces (singlet and triplet),
+which allows trajectories to pass a lower-energy, barrierless channel.
+The ReaxFF force field by Agrawalla that we used was not parameterized
+for reproducing HO frequencies, which resulted in inaccuracies when
+using them for TST and deteriorated results for the CH4 + H• → CH3• + H2 reaction. Our test
+set of reactions included two examples whose reaction enthalpies and
+barrier heights were actually part of the training set for the MD
+force field parameterization. Only those yielded acceptable HO frequencies
+and RRHO-TST rate constants among the studied reactions, as the comparison
+to DFT/Coupled-Cluster showed. Nevertheless, our correction scheme
+led to improved rate constant predictions in most cases. In total,
+the rate constants corrected by our scheme shows a standard deviation
+of 2.6 from experimental benchmark values and of 2.1 if the reactions
+1 and 2, where TS show very low frequencies, are neglected. We expect
+the accuracy of our method to scale with the accuracy of the force
+field employed, especially when it is trained to reproduce harmonic
+frequencies. So far, we have not yet found any particular reaction
+class where the method generally works better or worse than for others.
+Calculations for the 2-butanone + HO2• system show the applicability to larger
+systems.
+
+5 Methodology
+In this section, we describe
+how the rate constants of eqs 6–8 can be determined. It is important
+to note that they arise
+from multiple PESs: a low-level PES that is suitable for rapid gradient
+and energy evaluations in a trajectory of a MD simulation, and a high-level
+PES that is suitable for accurate geometry optimization and single-point
+energy calculation. The low-level PES used for kFF needs to be the same one as used for the MD simulation (kMD) so that it reproduces the barrier height
+ΔEFF experienced by the reaction
+trajectory, which makes the exponential terms in eq 9 vanish. The high-level calculations are used
+to obtain an accurate RRHO-TST rate constant, kQM.
+
+5.1 MD Simulation Details
+For the validation
+of our method, we chose a stoichiometric CH4/O2 mixture as a representative chemical system for combustion. The
+mixture was simulated with the software package LAMMPS70 using the ReaxFF71 reactive FF and the parameterization of Agrawalla and van Duin.64 This parameter set was developed to describe
+H2/O2 combustion chemistry of small species
+and is based on an earlier parameterization for hydrocarbon combustion.65 Both parameter sets were trained against ZPE-corrected
+energies.71
+
+The MD simulations were
+carried out at three temperatures of 2600, 3000, and 3400 K in a fixed-size
+periodic box containing 90 atoms at an initial (ideal gas) density
+of 1000 mol/m3. A Nosé–Hoover thermostat72,73 with a damping constant of 10 fs controlled the temperature to provide
+a canonical ensemble (NVT). We chose hot and dense
+conditions to accelerate reactions and to capture most of the high-temperature
+kinetics at a short time scale. Going to even higher temperatures,
+however, would cause reactions to go off too fast after the simulation
+start, effectively violating the equilibrium assumption of TST (g ≠ 1 in eq 1). The initial (ideal gas) pressures were well beyond 200
+bar to make sure that high-pressure limit rate constants were obtained
+throughout the duration of the simulation. We started 20 replicas
+of each box to reduce statistical errors in the rate constant computation
+and ran them for 10 ns with an integration time step of 0.1 fs.
+
+For the 2-butanone and HO2 system described in Section 3.3, we set up
+a fixed-size periodic box containing 11 butanone molecules and one
+HO2 molecule (292 atoms) at an initial (ideal gas) density
+of 1000 mol/m3. We chose a temperature of 1600 K, as higher
+temperatures favor pyrolysis of the butanone instead of the anticipated
+H-abstraction. We ran four replicas for 2 ns. All other MD simulation
+parameters of the butanone system were identical to those used for
+the methane system.
+
+5.2 MD Rate Constants kMD
+Reactive events in the MD simulation
+were evaluated with
+the CTY software,23,24 which processes the MD trajectory
+in small time slices and tracks the change of chemical composition
+based on broken and formed bonds. This way, it can compute rate constants
+for each observed reaction based on the number of reaction events
+and the current concentration of reactants.
+
+Upper and lower
+boundaries of the MD rate constants presented in Figures 4a–f and 5a–d are obtained from a statistical analysis of the
+reaction events, assuming a Poisson distribution and using a confidence
+interval of 95% according to Kröger et al.61 These boundaries solely account for the statistical uncertainty
+due to a finite number of observed reaction events.
+
+5.3 RRHO-TST Rate Constants kFF
+To calculate kFF, we need frequencies
+and stationary point geometries on the FF PES.
+For that, we implemented a geometry optimizer to find stationary points
+on the low-level PES. The optimizer employs a simple eigenvector following
+algorithm74 to walk along the PES. We also
+implemented a numerical, mass-weighted Hessian calculation to retrieve
+vibrational frequencies at the stationary points (minima and TSs).
+The Hessian matrix was computed by a finite differences scheme where
+we found a displacement of 1 × 10–5 Å
+to yield the best trade-off between accuracy and numerical stability.
+
+Both implementations interface to the MD-software LAMMPS70 and its built-in ReaxFF implementation75 to retrieve gradients and energy for a given
+geometry, and both make use of the NumPy library76 and the openbabel library.77 Optimization results and normal modes were screened for plausibility
+with the visualization tool OVITO.78 The
+found TSs were validated by following the mass-weighted path on the
+PES along the intrinsic reaction coordinate (IRC) according to the
+algorithm described by Ishida et al.79
+
+The actual RRHO-TST rate constants for the necessary temperatures
+were calculated by the TAMkin software80 using the results of the optimization and frequency calculations.
+To match the classical PES of the MD simulation, the vibrational partition
+function was evaluated classically, and the zero-point correction
+was excluded from the barrier height (ΔEFF).
+
+5.4 RRHO-TST Rate Constants kQM
+All QM calculations were carried
+out with
+the software Gaussian.81 Optimized geometries
+and frequencies were computed with B2PLYP-D3BJ82,83 double-hybrid DFT and the 6-311++G(d,p) basis set using “verytight”
+convergence settings. It is common practice to use frequency scaling
+factors to account for systematic biases of electronic structure methods
+and the harmonic expansion. Different scaling factors are found for
+the reproduction of benchmark harmonic or fundamental frequencies,
+ZPEs,84 enthalpies, and entropies.36 The target of the method proposed in this study,
+that is, rate and equilibrium constants, is related to Gibbs free
+energy. Because scaling factors for enthalpies and entropies are often
+very close to unity (in contrast to those for harmonic frequencies
+or ZPEs), we use a frequency scaling factor of unity throughout our
+study. For single-point energies, we used the coupled-cluster method
+CCSD(T)85 together with the basis set aug-cc-pVTZ.
+This combination performs particularly well for hydrogen abstraction
+reactions (mean error <3 kJ/mol86),
+which is the reaction class that we study here. Just like kFF, the actual value for kQM was calculated by TAMkin, where we used the built-in implementation
+of the Eckart87 tunneling correction to
+retrieve κ in eq 8.
+
+Supporting Information Available
+The Supporting Information
+is available free of charge at https://pubs.acs.org/doi/10.1021/acsomega.9b03383.Videos and coordinates
+of MD trajectories for CH3• + H• → CH22• + H2 calculated with ReaxFF/Agrawalla
+(ZIP)
+
+Results
+of the Pitzer–Gwinn approximation test;
+deviation of the results of our method from references; calculated
+harmonic frequencies of all species; calculated harmonic frequencies
+and Cartesian coordinates of all structures used as transition states;
+and statistical basis for the MD rate constants (PDF)
+
+
+
+Supplementary Material
+ao9b03383_si_001.zip
+
+ ao9b03383_si_002.pdf
+
+ The authors declare no
+competing financial interest.
+
+Acknowledgments
+Financial
+support from the Deutsche Forschungsgemeinschaft
+(German Research Association) through Grant LE 2221/8 is gratefully
+acknowledged. F.S. acknowledges funding from the European Union’s
+Horizon 2020 research and innovation programme under grant agreement
+No. 814143 during the writing of the manuscript. We gratefully acknowledge
+CPU time Grant RWTH0087 of the RWTH Aachen University Compute Cluster.
+
+a besides the rigid-rotor approximation
+==== Refs
+References
+Manley D. K. ; McIlroy A. ; Taatjes C. A. 
+Research
+Needs for Future Internal
+Combustion Engines . Phys. Today 
+2008 , 61 , 47 –52 . 10.1063/1.3027991 .
+Eyring H. 
+The activated
+complex in chemical reactions . J. Chem. Phys. 
+1935 , 3 , 107 10.1063/1.1749604 .
+Evans M. G. ; Polanyi M. 
+Some Applications of the Transition State Method to
+the Calculation of Reaction Velocities, Especially in Solution . Trans. Faraday Soc. 
+1935 , 31 , 875 –894 . 10.1039/tf9353100875 .
+Xing L. ; Wang Z. ; Truhlar D. G. 
+Multistructural
+Anharmonicity Controls
+the Radical Generation Process in Biofuel Combustion . J. Am. Chem. Soc. 
+2019 , 141 , 18531 –18543 . 10.1021/jacs.9b09194 .31637914 
+Curtiss L. A. ; Redfern P. C. ; Raghavachari K. 
+Gaussian-4 theory . J. Chem. Phys. 
+2007 , 126 , 08410810.1063/1.2436888 .17343441 
+Vansteenkiste P. ; van Speybroeck V. ; Verniest G. ; De Kimpe N. ; Waroquier M. 
+Applicability
+of the Hindered Rotor Scheme to the Puckering Mode in Four-Membered
+Rings . J. Phys. Chem. A 
+2006 , 110 , 3838 –3844 . 10.1021/jp056211d .16526670 
+East A. L. L. ; Radom L. 
+Ab initio Statistical Thermodynamical Models for the
+Computation of Third-law Entropies . J. Chem.
+Phys. 
+1997 , 106 , 6655 –6674 . 10.1063/1.473958 .
+Sharma S. ; Raman S. ; Green W. H. 
+Intramolecular
+Hydrogen Migration
+in Alkylperoxy and Hydroperoxyalkylperoxy Radicals: Accurate Treatment
+of Hindered Rotors . J. Phys. Chem. A 
+2010 , 114 , 5689 –5701 . 10.1021/jp9098792 .20405886 
+Seal P. ; Papajak E. ; Truhlar D. G. 
+Kinetics of the Hydrogen Abstraction
+from Carbon-3 of 1-Butanol by Hydroperoxyl Radical: Multi-Structural
+Variational Transition-State Calculations of a Reaction with 262 Conformations
+of the Transition State . J. Phys. Chem. Lett. 
+2012 , 3 , 264 –271 . 10.1021/jz201546e .26698116 
+Alecu I. M. ; Zheng J. ; Papajak E. ; Yu T. ; Truhlar D. G. 
+Biofuel
+Combustion. Energetics and Kinetics of Hydrogen Abstraction from Carbon-1
+in n-Butanol by the Hydroperoxyl Radical Calculated by Coupled Cluster
+and Density Functional Theories and Multistructural Variational Transition-State
+Theory with Multidimensional Tunneling . J. Phys.
+Chem. A 
+2012 , 116 , 12206 –12213 . 10.1021/jp308460y .23151032 
+Van
+Speybroeck V. ; Neck D. V. ; Waroquier M. 
+Ab Initio
+Study of Radical Reactions: Role of Coupled Internal Rotations on
+the Reaction Kinetics (III) . J. Phys. Chem.
+A 
+2002 , 106 , 8945 –8950 . 10.1021/jp025836y .
+Zheng J. ; Mielke S. L. ; Clarkson K. L. ; Truhlar D. G. 
+MSTor: A program
+for calculating partition functions, free energies, enthalpies, entropies,
+and heat capacities of complex molecules including torsional anharmonicity . Comput. Phys. Commun. 
+2012 , 183 , 1803 –1812 . 10.1016/j.cpc.2012.03.007 .
+Simón-Carballido L. ; Bao J. L. ; Alves T. V. ; Meana-Pañeda R. ; Truhlar D. G. ; Fernández-Ramos A. 
+Anharmonicity of Coupled
+Torsions: The Extended Two-Dimensional Torsion Method and Its Use
+To Assess More Approximate Methods . J. Chem.
+Theory Comput. 
+2017 , 13 , 3478 –3492 . 10.1021/acs.jctc.7b00451 .28665605 
+Mills I. M.  Theoretical Chemistry:
+Volume 1 ; Dixon R. N.  , Ed.; The Royal Society of Chemistry , 1974 ; Vol. 1 , pp 110 –159 .
+Császár A. G. 
+Anharmonic
+Molecular Force Fields . WIREs Comput. Mol. Sci. 
+2012 , 2 , 273 –289 . 10.1002/wcms.75 .
+Nielsen H. H. 
+The Vibration-Rotation
+Energies of Molecules . Rev. Mod. Phys. 
+1951 , 23 , 90 10.1103/RevModPhys.23.90 .
+Barone V. 
+Anharmonic
+Vibrational Properties by a Fully Automated Second-Order Perturbative
+Approach . J. Chem. Phys. 
+2005 , 122 , 01410810.1063/1.1824881 .
+Bross D. H. ; Jasper A. W. ; Ruscic B. ; Wagner A. F. 
+Toward Accurate
+High Temperature Anharmonic Partition Functions . Proc. Combust. Inst. 
+2019 , 37 , 315 –322 . 10.1016/j.proci.2018.05.028 .
+Harding L. B. ; Georgievskii Y. ; Klippenstein S. J. 
+Accurate Anharmonic Zero-Point Energies
+for Some Combustion-Related Species from Diffusion Monte Carlo . J. Phys. Chem. A 
+2017 , 121 , 4334 –4340 . 10.1021/acs.jpca.7b03082 .28513159 
+Jasper A. W. ; Gruey Z. B. ; Harding L. B. ; Georgievskii Y. ; Klippenstein S. J. ; Wagner A. F. 
+Anharmonic Rovibrational Partition
+Functions for Fluxional Species at High Temperatures via Monte Carlo
+Phase Space Integrals . J. Phys. Chem. A 
+2018 , 122 , 1727 –1740 . 10.1021/acs.jpca.7b11722 .29356534 
+Doll J. 
+Anharmonic
+Corrections in Unimolecular Theory: A Monte Carlo Approach . Chem. Phys. Lett. 
+1980 , 72 , 139 –142 . 10.1016/0009-2614(80)80259-4 .
+Klippenstein S. J. 
+From theoretical
+reaction dynamics to chemical modeling of combustion . Proc. Combust. Inst. 
+2017 , 36 , 77 –111 . 10.1016/j.proci.2016.07.100 .
+Döntgen M. ; Przybylski-Freund M.-D. ; Kröger L. C. ; Kopp W. A. ; Ismail A. E. ; Leonhard K. 
+Automated
+discovery of reaction pathways, rate constants
+and transition states using reactive molecular dynamics simulations . J. Chem. Theory Comput. 
+2015 , 11 , 2517 –2524 . 10.1021/acs.jctc.5b00201 .26575551 
+Döntgen M. ; Schmalz F. ; Kopp W. A. ; Kröger L. C. ; Leonhard K. 
+Automated Chemical Kinetic Modeling via Hybrid Reactive
+Molecular Dynamics and Quantum Chemistry Simulations . J. Chem. Inf. Model. 
+2018 , 58 , 1343 –1355 . 10.1021/acs.jcim.8b00078 .29898359 
+Laio A. ; Gervasio F. L. 
+Metadynamics: a method to simulate rare events and
+reconstruct the free energy in biophysics, chemistry and material
+science . Rep. Prog. Phys. 
+2008 , 71 , 12660110.1088/0034-4885/71/12/126601 .
+van
+Erp T. S. ; Moroni D. ; Bolhuis P. G. 
+A novel path sampling
+method for the calculation of rate constants . J. Chem. Phys. 
+2003 , 118 , 7762 –7774 . 10.1063/1.1562614 .
+Allen R. J. ; Warren P. B. ; ten Wolde P. R. 
+Sampling
+Rare Switching Events in
+Biochemical Networks . Phys. Rev. Lett. 
+2005 , 94 , 01810410.1103/PhysRevLett.94.018104 .15698138 
+Berryman J. T. ; Schilling T. 
+Sampling Rare
+Events in Nonequilibrium and Nonstationary
+Systems . J. Chem. Phys. 
+2010 , 133 , 24410110.1063/1.3525099 .21197970 
+Pitzer K. S. ; Gwinn W. D. 
+Energy Levels and Thermodynamic Functions for Molecules
+with Internal Rotation. I: Rigid Frame with Attached Tops . J. Chem. Phys. 
+1942 , 10 , 428 –440 . 10.1063/1.1723744 .
+Fernández-Ramos A. ; Miller J. A. ; Klippenstein S. J. ; Truhlar D. G. 
+Modeling the Kinetics
+of Bimolecular Reactions . Chem. Rev. 
+2006 , 106 , 4518 –4584 . 10.1021/cr050205w .17091928 
+Döntgen M. ; Leonhard K. 
+Reactions of Chemically Activated Formic Acid Formed
+via HĊO + ȮH . J. Phys. Chem. A 
+2016 , 120 , 1819 –1824 . 10.1021/acs.jpca.6b00887 .26954251 
+Minwegen H. ; Döntgen M. ; Hemken C. ; Büttgen R. ; Leonhard K. ; Heufer K. A. 
+Experimental and theoretical investigations
+of methyl formate oxidation including hot β-scission . Proc. Combust. Inst. 
+2019 , 37 , 307 –314 . 10.1016/j.proci.2018.06.111 .
+Bao J. L. ; Truhlar D. G. 
+Variational Transition
+State Theory: Theoretical Framework
+and Recent Developments . Chem. Soc. Rev. 
+2017 , 46 , 7548 –7596 . 10.1039/C7CS00602K .29165460 
+Keck J. C. 
+Variational
+Theory of Chemical Reaction Rates Applied to Three-Body Recombinations . J. Chem. Phys. 
+1960 , 32 , 1035 –1050 . 10.1063/1.1730846 .
+Truhlar D.
+G. ; Garrett B. C. 
+Variational
+transition state theory . Annu. Rev. Phys. Chem. 
+1984 , 35 , 159 –189 . 10.1146/annurev.pc.35.100184.001111 .
+Merrick J. P. ; Moran D. ; Radom L. 
+An evaluation
+of harmonic vibrational
+frequency scale factors . J. Phys. Chem. A 
+2007 , 111 , 11683 –11700 . 10.1021/jp073974n .17948971 
+Biczysko M. ; Panek P. ; Scalmani G. ; Bloino J. ; Barone V. 
+Harmonic and
+Anharmonic Vibrational Frequency Calculations with the Double-Hybrid
+B2PLYP Method: Analytic Second Derivatives and Benchmark Studies . J. Chem. Theory Comput. 
+2010 , 6 , 2115 –2125 . 10.1021/ct100212p .26615939 
+Isaacson A.
+D. ; Truhlar D. G. 
+The accuracy
+of the Pitzer-Gwinn method for partition
+functions of anharmonic vibrational modes . J.
+Chem. Phys. 
+1981 , 75 , 4090 –4094 . 10.1063/1.442569 .
+Ellingson B. A. ; Lynch V. A. ; Mielke S. L. ; Truhlar D. G. 
+Statistical Thermodynamics
+of Bond Torsional Modes: Tests of Separable, Almost-Separable, and
+Improved Pitzer-Gwinn Approximations . J. Chem.
+Phys. 
+2006 , 125 , 08430510.1063/1.2219441 .16965010 
+Roth P. 
+ARAS-Messungen
+an eeinige Hochtemperatur-Kohlenwasserstoff-Reaktionen . Forsch. Ingenieurwes. A 
+1980 , 46 , 93 –102 . 10.1007/BF02561051 .
+Berry R. J. ; Ehlers C. J. ; Burgess D. R. ; Zachariah M. R. Jr.; Marshall P. 
+A computational study
+of the reactions
+of atomic hydrogen with fluoromethanes: kinetics and product channels . Chem. Phys. Lett. 
+1997 , 269 , 107 –116 . 10.1016/S0009-2614(97)00248-0 .
+Shaw R. 
+Semi-Empirical
+Extrapolation and Estimation of Rate Constants for Abstractino of
+H from Methane by H, O, HO, and O2 . J. Phys. Chem. Ref. Data 
+1978 , 7 , 1179 10.1063/1.555577 .
+Tsang W. ; Hampson R. F. 
+Chemical kinetic
+data base for combustion chemistry.
+Part I. Methane and related compounds . J. Phys.
+Chem. Ref. Data 
+1986 , 15 , 1087 10.1063/1.555759 .
+Möller W. ; Mozzhukhin E. ; Wagner H. G. 
+High Temperature Reactions of CH3. 1. The
+Reactions CH3 + H2 →
+CH4 + H . Ber. Bunsenges. Phys. Chem. 
+1986 , 90 , 854 –861 . 10.1002/bbpc.19860901006 .
+Baeck H. J. ; Shin K. S. ; Yang H. ; Lissianski V. ; Gardiner W. C. Jr.
+Reaction Between CH3 and
+H2 at Combustion Temperatures . Bull.
+Korean Chem. Soc. 
+1995 , 16 , 543 –546 .
+Baulch D. L. ; Cobos C. J. ; Cox R. A. ; Esser C. ; Frank P. ; Just T. ; Kerr J. A. ; Pilling M. J. ; Troe J. ; Walker R. W. ; Warnatz J. 
+Evaluated kinetic data for combustion
+modelling . J. Phys. Chem. Ref. Data 
+1992 , 21 , 411 –429 . 10.1063/1.555908 .
+Ge Y. ; Gordon M. S. ; Battaglia F. ; Fox R. O. 
+Theoretical Study
+of the Pyrolysis of Methyltrichlorosilane in the Gas Phase. 3. Reaction
+Rate Constant Calculations . J. Phys. Chem. A 
+2010 , 114 , 2384 –2392 . 10.1021/jp911673h .20104926 
+Lu K.-W. ; Matsui H. ; Huang C.-L. ; Raghunath P. ; Wang N.-S. ; Lin M. C. 
+Shock Tube Study on the Thermal Decomposition
+of CH3OH . J. Phys. Chem. A 
+2010 , 114 , 5493 –5502 . 10.1021/jp100535r .20384352 
+Felder W. ; Madronich S. 
+High Temperature Photochemistry (HTP): Kinetics and
+Mechanism Studies of Elementary Combustion . Combust. Sci. Technol. 
+1986 , 50 , 135 –150 . 10.1080/00102208608923929 .
+Davidson D. F. ; Chang A. Y. ; Hanson R. K. 
+Laser Photolysis
+Shock Tube for Combustion
+Kinetics Studies . Symp. (Int.) Combust. 
+1989 , 22 , 1877 –1885 . 10.1016/S0082-0784(89)80202-4 .
+Michael J. V. ; Sutherland J. W. 
+Rate Constant
+for the Reaction of H With H2O and OH With H2 by the Flash Photolysis-shock Tube Technique
+Over the Temperature Range 1246-2297 K . J. Phys.
+Chem. A 
+1988 , 92 , 3853 –3857 . 10.1021/j100324a035 .
+Gardiner W. C. Jr.; Mallard W. ; McFarland M. ; Morinaga K. ; Owen J. ; Rawlins W. ; Takeyama T. ; Walker B. 
+Elementary Reaction Rates From Post-Induction-Period
+Profiles in Shock-initiated Combustion . Symp.
+(Int.) Combust. 
+1973 , 14 , 61 –75 . 10.1016/S0082-0784(73)80009-8 .
+Roth P. ; Just T. 
+Kinetics of the High
+Temperature, Low Concentration CH4 Oxidation Verified by
+H and O Atom Measurements . Symp. (Int.) Combust. 
+1985 , 20 , 807 –818 . 10.1016/S0082-0784(85)80571-3 .
+Cohen N. ; Westberg K. R. 
+Chemical Kinetic
+Data Sheets for High-temperature Chemical
+Reactions . J. Phys. Chem. Ref. Data 
+1983 , 12 , 531 –590 . 10.1063/1.555692 .
+Kaufman F. ; Del Greco F. 
+Fast Reactions of OH Radicals . Symp. (Int.) Combust. 
+1963 , 9 , 659 –668 . 10.1016/S0082-0784(63)80074-0 .
+Javoy S. ; Naudet V. ; Abid S. ; Paillarda C. 
+Elementary
+Reaction Kinetics Studies of Interest in H2 Supersonic
+Combustion Chemistry . Exp. Therm. Fluid Sci. 
+2003 , 27 , 371 –377 . 10.1016/S0894-1777(02)00241-8 .
+Natarajan K. ; Roth P. 
+High Temperature Rate
+Coefficient for the Reaction of O(3P) With
+H2 Obtained by the Resonance Absorption of O and H Atoms . Combust. Flame 
+1987 , 70 , 267 –279 . 10.1016/0010-2180(87)90108-8 .
+Irdam E. ; Kiefer J. ; Harding L. ; Wagner A. 
+The Formaldehyde Decomposition
+Chain Mechanism . Int. J. Chem. Kinet. 
+1993 , 25 , 285 –303 . 10.1002/kin.550250408 .
+Friedrichs G. ; Davidson D. F. ; Hanson R. K. 
+Direct Measurements
+of the Reaction
+H + CH2O → H2 + HCO Behind Shock Waves
+by Means of Vis-UV Detection of Formaldehyde . Int. J. Chem. Kinet. 
+2002 , 34 , 374 –386 . 10.1002/kin.10059 .
+Dean A. ; Johnson R. ; Steiner D. 
+Shock-Tube
+Studies of Formaldehyde
+Oxidation . Combust. Flame 
+1980 , 37 , 41 –62 . 10.1016/0010-2180(80)90070-X .
+Kröger L. C. ; Kopp W. A. ; Döntgen M. ; Leonhard K. 
+Assessing Statistical
+Uncertainties of Rare Events in Molecular Dynamics Simulations . J. Chem. Theory Comput. 
+2017 , 13 , 3955 –3960 . 10.1021/acs.jctc.7b00524 .28753283 
+Wardlaw D. M. ; Marcus R. A. 
+RRKM reaction rate theory for transition states of
+any looseness . Chem. Phys. Lett. 
+1984 , 110 , 230 –234 . 10.1016/0009-2614(84)85219-7 .
+Georgievskii Y. ; Klippenstein S. J. 
+Variable
+reaction coordinate transition state theory:
+Analytic results and application to the C2H3 + H → C2H4 reaction . J. Chem. Phys. 
+2003 , 118 , 5442 –5455 . 10.1063/1.1539035 .
+Agrawalla S. ; van Duin A. C. T. 
+Development
+and Application of a ReaxFF Reactive Force
+Field for Hydrogen Combustion . J. Phys. Chem.
+A 
+2011 , 115 , 960 –972 . 10.1021/jp108325e .21261320 
+Chenoweth K. ; van Duin A. C. T. ; Goddard W. A. III
+ReaxFF Reactive
+Force Field for Molecular Dynamics Simulations of Hydrocarbon Oxidation . J. Phys. Chem. A 
+2008 , 112 , 1040 –1053 . 10.1021/jp709896w .18197648 
+Baulch D.
+L. ; Cobos C. J. ; Cox R. A. ; Frank P. ; Hayman G. ; Just T. ; Kerr J. A. ; Murrells T. ; Pilling M. J. ; Troe J. ; Walker R. W. ; Warnatz J. 
+Evaluated Kinetic Data
+for Combustion Modeling. Supplement I . J. Phys.
+Chem. Ref. Data 
+1994 , 23 , 847 –848 . 10.1063/1.555953 .
+Baulch D. L. ; Bowman C. T. ; Cobos C. J. ; Cox R. A. ; Just T. ; Kerr J. A. ; Pilling M. J. ; Stocker D. ; Troe J. ; Tsang W. ; Walker R. W. ; Warnatz J. 
+Evaluated Kinetic Data
+for Combustion Modeling: Supplement II . J. Phys.
+Chem. Ref. Data 
+2005 , 34 , 757 –1397 . 10.1063/1.1748524 .
+Ashfold M. ; Fullstone M. ; Hancock G. ; Ketley G. 
+Singlet methylene kinetics:
+Direct measurements of removal rates of ã1A1 and b̃1B1 CH2 and CD2 . Chem. Phys. 
+1981 , 55 , 245 –257 . 10.1016/0301-0104(81)85026-4 .
+Langford A. O. ; Petek H. ; Moore C. B. 
+Collisional
+removal of CH2(1A1):
+Absolute rate constants for atomic and molecular collisional partners
+at 295 K . J. Chem. Phys. 
+1983 , 78 , 6650 –6659 . 10.1063/1.444664 .
+Plimpton S. J. 
+Fast Parallel
+Algorithms for Short-Range Molecular Dynamics . J. Comput. Phys. 
+1995 , 117 , 1 –19 . 10.1006/jcph.1995.1039 .
+van
+Duin A. C. T. ; Dasgupta S. ; Lorant F. ; Goddard W. A. 
+ReaxFF:
+A Reactive Force Field for Hydrocarbons . J.
+Phys. Chem. A 
+2001 , 105 , 9396 –9409 . 10.1021/jp004368u .
+Nosé S. 
+A Unified
+Formulation for the Constant Temperature Molecular-Dynamics Methods . J. Chem. Phys. 
+1984 , 81 , 511 –519 . 10.1063/1.447334 .
+Hoover W. G. 
+Canonical
+dynamics: Equilibrium phase-space distributions . Phys. Rev. A 
+1985 , 31 , 1695 –1697 . 10.1103/PhysRevA.31.1695 .
+Cerjan C. J. ; Miller W. H. 
+On Finding Transition
+States . J. Chem. Phys. 
+1981 , 75 , 2800 –2806 . 10.1063/1.442352 .
+Aktulga H. ; Fogarty J. ; Pandit S. ; Grama A. 
+Parallel Reactive Molecular
+Dynamics: Numerical Methods and Algorithmic Techniques . Parallel Comput. 
+2012 , 38 , 245 –259 . 10.1016/j.parco.2011.08.005 .
+Oliphant T. E.  A Guide to NumPy ; Trelgol Publishing : USA , 2006 ; Vol. 1 .
+O’Bolye N. M. ; Banck M. ; James C. A. ; Morley C. ; Vandermeerch T. ; Hutchison G. R. 
+Open Babel:
+An open chemical tool box . J. Cheminf. 
+2011 , 3 , 33 10.1186/1758-2946-3-33 .
+Stukowski A. 
+Visualization
+and Analysis of Atomistic Simulation Data With OVITO - the Open Visualization
+Tool . Modell. Simul. Mater. Sci. Eng. 
+2010 , 18 , 01501210.1088/0965-0393/18/1/015012 .
+Ishida K. ; Morokuma K. ; Komornicki A. 
+The Intrinsic
+Reaction Coordinate.
+An Abinitio Calculation for HNC → HCN and H– + CH4 → CH4 + H– . J. Chem. Phys. 
+1977 , 66 , 2153 –2156 . 10.1063/1.434152 .
+Ghysels A. ; Verstraelen T. ; Hemelsoet K. ; Waroquier M. ; Van Speybroeck V. 
+TAMkin: AVersatile
+Package for Vibrational Analysis
+and Chemical Kinetics . J. Chem. Inf. Model. 
+2010 , 50 , 1736 –1750 . 10.1021/ci100099g .20738140 
+Frisch M. J.  Gaussian 09 , Revision D.01; Gaussian Inc : Wallingford CT , 2009 .
+Grimme S. 
+Semiempirical
+GGA-type density functional constructed with a long-range dispersion
+correction . J. Comput. Chem. 
+2006 , 27 , 1787 –1799 . 10.1002/jcc.20495 .16955487 
+Becke A. D. ; Johnson E. R. 
+Exchange-Hole Dipole Moment and the Dispersion Interaction . J. Chem. Phys. 
+2005 , 122 , 15410410.1063/1.1884601 .15945622 
+Alecu I. M. ; Zheng J. ; Zhao Y. ; Truhlar D. G. 
+Computational Thermochemistry:
+Scale Factor Databases and Scale Factors for Vibrational Frequencies
+Obtained From Electronic Model Chemistries . J. Chem. Theory Comput. 
+2010 , 6 , 2872 –2887 . 10.1021/ct100326h .26616087 
+Raghavachari K. ; Trucks G. W. ; Pople J. A. ; Head-Gordon M. 
+A fifth-order
+perturbation comparison of electron correlation theories . Chem. Phys. Lett. 
+1989 , 157 , 479 –483 . 10.1016/S0009-2614(89)87395-6 .
+Zheng J. ; Zhao Y. ; Truhlar D. G. 
+The DBH24/08
+Database and Its Use
+to Assess Electronic Structure Model Chemistries for Chemical Reaction
+Barrier Heights . J. Chem. Theory Comput. 
+2009 , 5 , 808 –821 . 10.1021/ct800568m .26609587 
+Eckart C. 
+The Penetration
+of a Potential Barrier by Electrons . Phys. Rev. 
+1930 , 35 , 1303 –1309 . 10.1103/PhysRev.35.1303 .
+

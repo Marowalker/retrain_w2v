@@ -1,0 +1,788 @@
+
+==== Front
+ACS OmegaACS OmegaaoacsodfACS Omega2470-1343American Chemical
+Society 10.1021/acsomega.9b02439ArticleEfficient Bayesian
+Function Optimization of Evolving
+Material Manufacturing Processes Rubín de Celis Leal David *†‡Nguyen Dang †Vellanki Pratibha †Li Cheng †Rana Santu *†Thompson Nathan ‡Gupta Sunil †Pringle Keiran ‡Subianto Surya ‡Venkatesh Svetha †Slezak Teo ‡Height Murray §Sutti Alessandra *‡†Applied
+Artificial Intelligence Institute (A2I2) and ‡Institute for
+Frontier Materials (IFM), Deakin University, Waurn
+Ponds, Victoria 3216, Australia§ HeiQ
+Australia, Pty Ltd, Geelong, Victoria 3216, Australia* E-mail: rubindcl@deakin.edu.au (D.R.d.C.L.).* E-mail: santu.rana@deakin.edu.au (S.R.).* E-mail: asutti@deakin.edu.au (A.S.).18 11 2019 10 12 2019 4 24 20571 20578 31 07 2019 04 11 2019 Copyright © 2019 American Chemical
+Society2019American Chemical
+SocietyThis is an open access article published under an ACS AuthorChoice License, which permits copying and redistribution of the article or any adaptations for non-commercial purposes.The scale-up of laboratory procedures to industrial production
+is the main challenge standing between ideation and the successful
+introduction of novel materials into commercial products. Retaining
+quality while ensuring high per-batch production yields is the main
+challenge. Batch processing and other dynamic strategies that preserve
+product quality can be applied, but they typically involve a variety
+of experimental parameters and functions that are difficult to optimize
+because of interdependencies that are often antagonistic. Adaptive
+Bayesian optimization is demonstrated here as a valuable support tool
+in increasing both the per-batch yield and quality of short polymer
+fibers, produced by wet spinning and shear dispersion methods. Through
+this approach, it is shown that short fiber dispersions with high
+yield and a specified, targeted fiber length distribution can be obtained
+with minimal cost of optimization, starting from sub-optimal processing
+conditions and minimal prior knowledge. The Bayesian function optimization
+demonstrated here for batch processing could be applied to other dynamic
+scale-up methods as well as to cases presenting higher dimensional
+challenges such as shape and structure optimization. This work shows
+the great potential of synergies between industrial processing, material
+engineering, and machine learning perspectives.
+
+document-id-old-9ao9b02439document-id-new-14ao9b02439ccc-price
+==== Body
+1 Introduction
+The superior material
+properties accessed through recent advances
+in nanotechnology result in an increasing range of commercial products
+and devices with performances strongly dependent on features in the
+sub-micron scale. A drive to strictly control morphology and features
+is, though, often challenged by the need to produce at scale and at
+market-sustainable costs and rates. The great advantages of the expanded
+scale of product manufacture go hand in hand with complex production
+challenges related to the scaling up of laboratory-scale methodologies
+and boundary condition-sensitive manufacturing.1−5 Typically, laboratory-scale manufacturing puts a
+higher priority on retaining “stable and pure” manufacturing
+conditions, than it does on maximizing materials production per production
+batch: the latter is not a major driver at the laboratory scale, while
+the former enables greater scientific understanding of processes.
+The industrial paradigm is instead typically biased toward the opposite
+situation, with higher importance given to high per-batch yield and
+low production costs (time and materials). Scaling-up of laboratory
+technologies therefore often requires a major shift in processing
+conditions, with a trade-off between purity and yield.3
+
+Innovation of industrial processes is also often
+hindered by the
+inherent inertia in industrial processes, as changes to an established
+process incur significant costs and investments, resulting in the
+lack of exploration of complex experimental spaces at scale. These
+main factors are recognized impediments to the translation of novel
+techniques to large-scale conditions and to the innovation of current
+industrial manufacturing of high-value materials. Overcoming these
+limitations will therefore greatly improve the adaptability and efficiency
+of various industrial batch processes.
+
+This work aims to demonstrate
+that the scaling up of techniques
+from the lab-scale to commercial-scale production can be most efficiently
+driven with the use of adequate machine learning algorithms.
+
+The industrial production of short polymer fibers (SPF) by wet
+spinning is an ideal system for deploying artificial intelligence
+because of the complexity of its experimental space and the cost benefit
+of increasing per-batch production yield. SPF are fibers of micron-size
+(or below-micron) diameter and finite length.6,7 Produced
+by a liquid-in-liquid coagulation process, they are stored and used
+as colloidal dispersions in a variety of fields. They have received
+strong interest for applications in filter production, cell growth,
+3D printing, and especially innovative textile treatments.
+
+Already
+commercialized at the 1000 L scale, the production of SPF
+involves inducing the coagulation of a polymer-containing liquid filament
+under shear. For this purpose, a polymer solution is introduced into
+a laminar flow device (Figure 1). A liquid filament is formed, which is then stretched and
+broken while coagulating under shear. The main forces acting in this
+process are the relative forces of fluid drag, fluid inertia, osmosis,
+and interfacial tension. The elongation and solidification rates of
+the filament can be controlled through the selection of polymer, solvent,
+and coagulant, while the design of the fluidic channel and the flow
+rates determine the shear forces that stretch the polymer jet before,
+during, and after gelation. Within a narrow window, the combination
+of parameters can be balanced such that filaments are formed and broken
+prior to complete solidification, resulting in the formation of SPF.
+In a single-pass run, these physical and chemical process conditions
+can be tuned to obtain fibers with controlled length, diameter, and
+overall quality.8 However, because of the
+large ratio of the coagulant to polymer solution in the shear system,
+these optimized conditions yield a low concentration suspension of
+fibers, which is not economical for industrial uptake because of the
+large consumption of the coagulant. In this type of system, batch
+processing is commonly used in industry, driven to maximize effective
+yield per processed batch, using methods such as recirculation and
+progressive enrichment of a coagulant.9
+
+Figure 1 Laminar
+flow SPF production system. The polymer solution jets out
+of the nozzle into the coagulant and is subjected to shear forces
+that stretch it during and after solidification. The design (h, d, and α) and flow (vC, vP) parameters determine
+the conditions of the solidification and can be tuned to produce fibers
+with target length and diameter. Bold underlined settings were used
+for the optimization of fiber production by recirculation.
+
+This work tackles this scale-up problem by utilizing
+an SPF-manufacturing
+setup, where the produced fiber dispersion is recirculated as the
+coagulant for the formation of new fibers (Materials
+and Methods). Recirculation is effective from a commercial
+SPF manufacturing perspective because the same volume of the coagulant
+will be progressively enriched with fibers as it is repeatedly circulated
+through a device. However, utilizing this approach in the SPF manufacturing
+paradigm presents two main challenges: (i) the purity of the coagulant
+varies during the recirculation cycle as more polymer solution is
+injected, affecting fiber formation and stability, and (ii) circulation
+through a pumping system can damage the fibers dispersed in the coagulant.
+The combined effect of coagulant contamination and repeated exposure
+to shear is particularly difficult to predict, making this technique
+difficult to scale without the aid of advanced optimization methods.
+The effects of recirculation on fiber formation and degradation are
+initially investigated here separately. The outcomes of these preliminary
+tests are then used to determine a suitable experimental space, which
+can then be optimized using artificial intelligence approaches to
+maximize yield while targeting a specific length distribution.
+
+The optimization of such complex experimental spaces is typically
+driven by the urge to find absolute maxima while spending a minimum
+amount of time and resources in the process. Bayesian optimization
+methodologies have been developed for the design of experiments that
+consider both the expected outcome of the experiments and also the
+information they provide about the experimental space.10−14 An adequate balance in this duality between the exploration of the
+unknown space and exploitation of the best known results ensures the
+highest value per experiment and therefore low experimental cost.12,14,15 This strategy has also been adapted
+for experiments where some variables are hard to change. In this approach,
+a group of suggestions where such variables are kept constant for
+time convenience is known as the optimization batch.16 Moreover, adaptive optimization can be performed using
+information obtained from the outcomes to update the limits or conditions
+of the experimental search space along the process.11 Advances in the evaluation of outcomes have also been published
+that combine objective measurements and subjective evaluations to
+provide efficient and reliable feedback for the optimization.
+
+Recently, a new technique has been developed, with the goal to
+find functions, instead of variable values, that provide optimal results
+in a dynamic process, providing dynamic control of the function’s
+shape and variability.17 These methodologies
+are utilized here for the optimization of high yield SPF production
+by recirculation, a suitable real-world challenge with strong commercial
+and research potential.
+
+2 Results and Discussion
+2.1 Characterization of the Recirculation Process
+In the SPF system, a fluid filament is injected in an outer flowing
+coagulant, forming fibers that are collected as a dispersion. If the
+fiber dispersion is collected directly in the coagulant volume and
+this is recirculated through a device to increase its solid content,
+two main effects are to be considered: breakage due to high mechanical
+shear and contamination of the coagulant that affects the formation
+of new fibers. These effects will be investigated and the system optimized
+for targeted fiber length and maximum yield using machine learning.
+
+Recirculation experiments with fixed settings were performed to
+characterize the fiber production system. These settings were selected
+to produce fibers of different morphologies based on previous single-pass
+experiments with identical settings.8
+
+In the first minutes of recirculation, all tested conditions produced
+fibers similar to those from prior single-pass experiments. This is
+to be expected because the coagulant is still relatively pure. However,
+the quality of the fibers drastically dropped at a time inversely
+proportional to the polymer flow rate, suggesting that water content,
+which increases as a function of the injected polymer solution, has
+a major effect on fiber formation, likely by affecting solvent/coagulant
+diffusion kinetics, and therefore affecting the solidification kinetics.
+This notion is consistent with the osmotic nature of the coagulation
+process, with solvent exhaustion driving the solidification of the
+polymer solution jet. As water from the polymer solution is dissolved
+in the coagulant, the osmotic pressure driving this flow is reduced
+and so is solvent exhaustion. Initially, this slows down the solidification
+of the polymer-rich jet, resulting in irregular-shaped fibers and
+debris. As the coagulant reaches saturation (∼8% V/Vtotal), solidification appears inhibited
+because of the inability of the coagulant to absorb more water and
+further injection of polymer solution appears to result in the re-dissolution
+of previously formed fibers. The evolution of fiber morphology in
+such cases can be observed in the images from three continuous-injection
+recirculation samples shown in Figure 2a. These experiments revealed effective boundaries
+for recirculation with static production parameters, indicating that
+a hard limit of the maximum volume ratio of aqueous polymer solution
+to coagulant exists, for the solvent and coagulant used. To test the
+effects of water content on fiber formation, a series of separate
+experiments was performed using the coagulant tainted with different
+percentages of de-ionized water in a single-pass setup. The results
+shown in Figure 2b
+show consistent fiber production up to 10% V/Vtotal water content and no fibers produced beyond
+that ratio. Figure 3 shows sample quality evolution in several recirculation experiments
+(as color lines) along with the controlled water content series (as
+red dots). Quality in this plot is based on the quick-scoring user
+guide (Appendix 1). A reduction in fiber
+quality can be observed in all experiments, related to increasing
+the water content of the coagulant. This appears as the main boundary
+condition to be set for successful recirculation and will be taken
+into account during the optimization of fiber production.
+
+Figure 2 Effect of coagulant
+contamination on fiber morphology. (a) Evolution
+of fiber morphology as a function of recirculation time at three different
+settings and equal recirculation volume VR = 400 mL. The first two settings produced shorter fibers compared
+to the third, and it was observed that the quality dropped for all
+samples as recirculation time increased. (b) Fiber samples produced
+separately in a single-pass (no recirculation) using the coagulant
+tainted with different amounts of de-ionized water. Water contamination
+in the coagulant reduces the solvent exhaustion from the polymer jet,
+slows down solidification, and is the main limitation for fiber yield
+in the recirculation system.
+
+Figure 3 Consistent reduction of fiber quality as water content
+in the coagulant
+increases. Eight samples produced by recirculation are shown (color
+lines), including three recirculation samples also shown in Figure 2 (marked with *).
+A series of samples produced adding different proportions of water
+to the coagulant is also shown as red dots (also in Figure 2). It can be seen that the
+quality of the fibers consistently drops for water contents above
+10% V/Vtotal. Saturation
+of the coagulant avoids further water (solvent) exhaustion from the
+polymer solution thus stopping fiber formation. Fiber quality score
+values shown in this plot are evaluated by an expert user based on
+the scoring guide (see Appendix 1).
+
+The second effect that can be observed in recirculation
+samples
+is the reduction of fiber length as recirculation time increases (see Figure 2a).
+
+The series
+of experiments performed with different starting water
+contents (Figure 2b)
+in a single-pass setup shows no significant effect of initial water
+content on fiber length. This suggests that tensile and bending stresses
+caused by the drag forces during recirculation are a more likely cause
+of fiber breakage than water content alone. This is a good example
+of new complexities that can arise in the scale-up of methodologies,
+and which are difficult to predict or control. It can be deduced that
+avoiding recirculation in production would be ideal from a product
+consistency perspective. While this is possible at the laboratory-scale,
+by using a pristine coagulant, it would be too costly for industrial-scale
+production.
+
+The degradation of fibers by mechanical stress was
+studied using
+two samples, with short and long fibers, produced by single-pass and
+then recirculated under different conditions. The length of the produced
+fibers was observed to be determined by the choice of production parameters,
+as described by a previous study.8 A set
+volume (200 mL) of each of these two fiber samples was passed only
+once through the recirculation setup with a high coagulant speed (vC = 92 cm/s) and without adding any further
+polymer solution. The device geometry selected for this experiment
+is chosen to produce the highest acceleration of the coagulant and
+therefore the highest fluid drag forces in the constriction (h = 9 mm, d = 0 mm, α = 25°).
+The fiber length distribution in the sample with short fibers showed
+a non-statistically significant change in the average length (+1.9%)
+after the cycle, which is comparable to the uncertainty of the measuring
+methods. However, the long fiber sample showed a reduction of 43%
+in the average fiber length (Figure 4) and a clear shift in the distribution. These results
+suggest that the breakage of the fibers is also a function of their
+initial length and can be explained by the proportionality of drag
+forces to fiber length and the likelihood to exceed the maximum tension
+withstood by the fibers, which is, instead, a function of fiber thickness.
+Longer fibers are therefore more prone to breakage than shorter ones
+for comparable diameters. The magnitude of this non-linear aspect
+of fiber breakage makes the prediction of the final fiber length distributions
+very difficult and is of utmost importance for the resulting fiber
+length distribution of the product.
+
+Figure 4 Effects of recirculation on the length
+of short and long fibers.
+Two samples of fiber dispersion were circulated through the SPF system
+containing short and long fibers, respectively.
+
+The effect of coagulant speed alone on fiber breakage
+was also
+studied using a single-pass setup. For this purpose, 200 mL of the
+dispersion containing long fibers was subjected to one cycle through
+the setup at a lower coagulant speed (vC = 43 cm/s) resulting in a much smaller reduction in length (−4.6%
+average, Figure 5)
+compared to what was obtained at a higher speed (92 cm/s). This confirms
+that the coagulant speed also affects the fiber breakage rates, as
+expected, likely due to its direct impact on drag forces in the recirculation
+loop. It is important to notice that coagulant speed affects the dimensions
+of the produced fibers and simultaneously the rate at which they are
+broken. Moreover these two effects might have completely different
+causes. The former is a result of drag forces in laminar flow especially
+designed for the purpose. The latter is an unplanned effect of this
+upscaling methodology and needs to be further examined.
+
+Figure 5 Effects of
+coagulant speed on the length of circulated fibers.
+Two samples of dispersion with long fibers were circulated only once
+through the SPF system at low (vC = 43
+m/s) and high (vC = 92 cm/s) coagulant
+speeds, respectively. The resulting samples show a very small reduction
+of length (4.6%) for the low shear compared to the almost ten times
+higher for the high shear. This effect is expected because shear forces
+causing breakage are determined by flow speeds. Fibers in the SPF
+system can pass through the system tens of times during a regular
+recirculation process.
+
+The mechanism of fiber breakage was studied by
+circulating 200
+mL of the dispersion with long fibers through the setup without the
+device at a high coagulant speed (vC =
+92 cm/s). This was done to clarify whether fiber breakage is caused
+by known shear fields in the laminar flow device or in the rest of
+the equipment, that is, the tubing and the lobe pump. The resulting
+fiber length distribution does not deviate from that obtained with
+the device as part of the loop (Figure 6). This suggests that most of the post-formation fiber
+breakage happens in the tubing and lobe pump as opposed to the laminar
+flow device. It is relevant to consider that laminar flow devices
+were designed to control the magnitude of shear forces, and that the
+length of the fibers, as produced through coagulation, is a direct
+consequence of these forces. Such forces are sufficient to induce
+breakage of the filaments of polymer-rich phase while in a “plasticized”
+or “semi-plasticized” state. It is not expected, therefore, that
+seconds after being produced, a more solidified, stronger, filament
+would break further by passing through a similar field of shear. On
+the other hand, the tubing and pump are expected to cause turbulent
+flow and high shear forces, the magnitude of which is likely greater
+than those in the device. In summary, the characterization of the
+recirculation system demonstrated two main effects on fiber morphology:
+(1) coagulant saturation induced worsening of fiber quality and (2)
+continuous breakage of fibers is strongly dependent on coagulant speed
+and particularly affects longer fibers. The first effect resulted
+in an imposed hard limit at 10% V/Vtotal polymer solution. The potential of the recirculation
+system to produce fiber dispersions with high yields can be more efficiently
+exploited with this information.
+
+Figure 6 Comparison of fiber breakage mechanisms.
+The presence or absence
+of the laminar flow device in the recirculation setup seems to have
+no significant effect on the distribution of fiber length. This suggests
+that turbulent flow and inhomogeneous shear forces in the tubing and
+lobe pump are the main causes of fiber breakage during recirculation.
+
+2.2 Optimization
+The main requirements
+for the scaling up of fiber production include achieving the maximum
+fiber yield and a controlled fiber length distribution. The recirculation
+setup was designed to achieve the highest yield and the characterization
+shows that this can be achieved by setting a final polymer solution
+content at 10% V/Vtotal. However, controlling the size of the fibers in a dynamic (evolving)
+recirculation system is not a trivial task, especially considering
+the complex evolution of the fiber length, as shown by the experiments
+described above.
+
+Fiber length will reduce as a function of the
+time spent in the recirculation system, resulting in broader fiber
+length distributions with increasing time. It has been shown that
+parameters such as coagulant speed affect the final length distribution
+simultaneously in several ways including the size of formed fibers
+and rates of breakage. Higher homogeneity of fiber lengths can, therefore,
+be expected if the length of fibers being formed were continuously
+matched to that of the fibers already within the system, with their
+continuous breakage being considered. Such a strategy requires continuous
+adjustment of production parameters within recirculation time.
+
+Coagulant speed can be tuned dynamically during production in the
+SPF system even at larger scale production facilities. It is also
+the most relevant parameter for controlling the formation of fibers
+in this system because it is directly related to shear forces that
+determine fiber formation and breakage. Coagulant speed has been therefore
+chosen as the main dynamic variable to consider and optimize as a
+function of recirculation time. The full range of the coagulant speed
+was made available for optimization (10 ≤ vC ≤ 110 cm/s). A monotonic in-batch increase of
+coagulant speed was chosen to secure the production of fibers with
+decreasing length, as is required to obtain the homogeneous distribution
+of length. Even when simple functions of time are used for this purpose,
+a multitude of profiles can be designed with monotonic increase.
+
+However, tailored length distributions necessary for the upscaled
+production of SPF dispersions require an efficient method to discriminate
+the corresponding coagulant speed profiles.
+
+The batch volume
+(VR) for the optimization
+experiments was fixed at 400 mL in order to reduce solvent usage while
+maintaining sample reproducibility. The speed at which the polymer
+is injected (vP) determines the water
+content in the coagulant at any given time of recirculation. Because
+of the limit of 10% V/Vtotal water content, this results in a total recirculation time (t) inversely roportional to polymer speed (vP). Therefore, a high polymer solution speed was selected
+(vP = 10.5 cm/s) that minimizes the recirculation
+time (t = 9 min). Design parameters in the SPF system
+can be changed only after a laborious procedure (involving reassembling
+the setup) and have even lower variability in the industrial size
+machinery. Therefore, these parameters were fixed for the optimization
+experiments as follows: h = 9 mm, d = 0 mm, and α = 25°.
+
+The optimization of SPF production
+by recirculation is therefore
+equivalent to finding the coagulant speed profiles that result in
+a desired fiber length distribution while keeping other settings fixed.
+Vellanki’s approach17 was used to
+design and optimize coagulant speed profiles aiming to achieve high
+yield fiber dispersions with a target length of 30 to 80 μm.
+The Bernstein polynomials used in this approach are a series of smooth
+functions with both domain and range from 0 to 1 that add up to produce
+a variable curve (cfr. Figure 7). Similarly to other polynomials, their order determines
+the amount of functions added together and thus the variability of
+the resulting curve. For a polynomial of order n,
+the amount of functions used corresponds to n + 1.
+Five functions (4th order) were used initially for the design of the
+coagulant speed profiles. The coefficients of each function (Bernstein
+coefficients) can be tuned to determine the shape of the curve. A
+monotonic increase of the curve can simply be established by a monotonic
+increase of such coefficients.
+
+Figure 7 Design of the coagulant speed profiles
+based on Bernstein polynomials
+as described by Vellanki et al. The curve produced by the polynomial
+function basis depends on a number of so-called Bernstein coefficients
+(seven in this example). This shape is then scaled to fit the experimental
+limits of coagulant speed (vC) as a function
+of recirculation time (t) to produce a unique coagulant
+speed profile. The setting of the coagulant pump and therefore the
+coagulant speed was adjusted every minute according to this function.
+
+By scaling the range (0–1) of these functions
+to the range
+of the coagulant speed and the domain to the 9 minutes of recirculation,
+coagulant speed settings at every minute of the recirculation process
+are determined.
+
+Bayesian optimization is then used to find the
+Bernstein coefficients
+and therefore the coagulant flow profile that produces the best fiber
+samples. Thompson sampling is used to generate six coagulant speed
+profile recommendations per optimization batch.
+
+This strategy
+selects the first recommendation as the one with
+the highest expected outcome and then speculates such an expected
+outcome in order to produce a second recommendation. In doing so for
+the six samples of each optimization batch, the algorithm ensures
+the necessary balance between exploration and exploitation.
+
+Bayesian optimization methods, as the one used in this investigation,
+require the value or quality of the experimental outcomes to be reflected
+by a numerical value known as the objective function. However, capturing
+every property by a single number is not a trivial task. Some aspects
+of the product can be directly measured by automated methodologies
+and therefore can be standardized. On the other hand, some quality
+requirements might be difficult or impractical to implement in an
+efficient optimization process. Our target is the highest number of
+fibers possible (compared with debris) and with measured lengths falling
+within a desired range. For this purpose, the objective function is
+related to fiber quality and is evaluated considering two factors 1  where L% is the
+proportion of fibers within the targeted length range (30–80
+μm) and P% is the perceived proportion
+of the polymer content that is forming fibers as opposed to debris
+and spheres (Figure 8). The former is calculated considering all fiber measurements per
+sample and the latter is evaluated by an expert user with base on
+the polymer yield factor guide (cfr. Appendix 2). In this manner, the quality of the samples is directly
+related to the proportion of the polymer solution that ends up as
+fibers of a desired length.
+
+Figure 8 Elements of the fiber quality factor (F%—eq 1). This
+factor is designed to capture overall sample quality based on the
+proportion of polymer that is formed in fibers (P%) and proportion of fibers within the target length range
+(L%): (a) proportion of polymer that is
+formed in fibers (P%) is estimated by
+an expert user based on a scoring guide (Appendix 2) with five possible outcomes (0.0, 0.4, 0.7, 0.9, and 1.0);
+(b) proportion of fibers within the target length range (L%) is calculated considering the measured fibers in the
+sample that fall within the region of interest (ROI: 30 to 80 μm).
+The fiber length distribution of sample B1–S1 is shown as an
+example.
+
+The settings for the first group of experiments
+were selected randomly
+in order to provide an unbiased initial dataset. The defining procedure
+for an adaptive optimization is to analyze the new recommendations
+of the optimizer in light of the previous results, in order to update
+any relevant findings in the optimization limits and methodology.
+
+The first sample of the second optimization batch (B2–S1)
+showed high amounts of debris and few fibers, much longer than the
+target range (Figure 9). The coagulant speed profile for this sample ran at the lowest
+coagulant flow for 8 min and increased slightly for the last minute,
+suggesting that no fibers could be produced at the lowest coagulant
+speed. This was confirmed in a single-pass experiment run at a coagulant
+speed vC = 10 m/s which resulted in no
+fibers, and therefore the lower limit of the optimization range for
+coagulant speed was doubled starting from optimization batch number
+3 onward. This was done by adjusting the equivalence of the lowest
+limit of the function basis (0) to the new lower limit of the coagulant
+speed (vC = 20 m/s).
+
+Figure 9 (a) Coagulant speed profiles,
+(b) fiber length distributions, and
+(c) microscopy images of significant optimization samples. Six samples
+are shown including three that achieved best-so-far (B1–S3,
+B2–S5 and B5–S5), two close calls (B3–S3 and
+B6–S5), and the worst sample (R2–S1, red), which provided
+information about the functional limits of the coagulant speed used
+to update the optimization limits. Good samples have more fibers in
+the targeted length range. It can be observed that profiles starting
+at low coagulant speed and finishing toward the middle levels deliver
+good results. Fiber length distributions shown in part (b) are calculated
+with a fixed bandwidth of 5 μm to ease comparison.
+
+It was also noticed that the coagulant profiles
+recommended by
+the optimizer for the six samples of the third batch had similar shapes.
+The order of the Bernstein polynomials was therefore increased to
+6 (7 coefficients) for the following batches, in order to increase
+the variability of the coagulant speed profiles. This was done following
+the procedures described by Vellanki et al. that maintain equivalence
+of the previous and new profile recommendations.17
+
+Seven optimization batches were carried out (Figure 10), with two adaptations
+applied
+before the third batch as explained above. Each optimization batch
+presented coagulant speed profiles similar to previous high-score
+samples and others that investigated innovative shapes, demonstrating
+a good balance between exploration and exploitation. After seven batches,
+a variety of profiles were investigated that spanned throughout the
+experimental space. High scoring samples had similar coagulant speed
+profiles starting at low coagulant speed settings, with a slow increase
+and finishing in the middle range (see Figure 9).
+
+Figure 10 Evolution of sample quality along the 7 batches
+of the optimization
+process. Each optimization batch consists of 6 samples. Total fiber
+score (F%) is shown on the top in yellow,
+followed by the two combining factors: polymer yield (P%) in red and length distribution (L%) in green. Samples that resulted best-so-far are marked with
+a blue triangle.
+
+The optimization process was stopped after the
+seventh batch of
+experiments due to the similarity of high-scoring profiles and the
+spread out sampling of the experimental space, signals of an accomplished
+optimization. Further trials are unlikely to improve outcomes or provide
+new information and could result in a lower gain per experiment.
+
+Undesired polymer clusters can be observed in the first batches
+that make up a considerable amount of the polymer and reduce sample
+quality (see Figure 9c). These clusters can be formed by sticking the previously formed
+fibers with newly injected polymer solution. They can also be formed
+because of the agglomeration of small particles caused by convection
+currents during the drying process in the surface of the microscope
+slide. However, the cause of cluster formation in these samples is
+not deemed relevant to this work. More importantly, it can be observed
+that those clusters were eliminated through the optimization process,
+leading to high quality samples with cleaner fibers. This achievement
+of the optimization is highly convenient for industrial applications
+and would be much more difficult to reach using traditional methodologies
+for the design of experiments.
+
+The knowledge obtained from the
+optimization is not limited to
+the best scoring profiles. It can be observed in Figure 10 that most of the fibers produced
+even in the high scoring samples fall below the region of interest.
+
+Considering that single-pass experiments have been shown to consistently
+produce fibers in this range,8 such low
+performance illustrates the magnitude of the up-scaling challenges.
+
+3 Conclusions
+The characterization and
+optimization of a recirculation system
+for the production of high yield fiber dispersions with targeted length
+distribution has been successfully carried out.
+
+It has been
+shown that fiber formation has a consistent plateau
+upon recirculation until it suddenly drops as the water content in
+the coagulant reaches ∼10% V/Vtotal. Analysis of fiber measurements shows that long
+fibers are more prone to be broken by turbulence in the pump and tubing.
+These findings suggest that higher homogeneity in samples can be achieved
+using a variable coagulant flow within a time limit. Adaptive Bayesian
+optimization was used to find the coagulant speed profiles that produced
+high quality fiber samples with the targeted length.
+
+The fine-tuning
+of dynamic processes using adaptive Bayesian optimization
+has been demonstrated here on batch-enriching production of SPFs.
+This strategy has strong potential for the optimization of the evolving
+manufacturing processes, such as those in batch reactions, fermentation,
+and other batch production systems which are inherently difficult
+to optimize because of their evolving state. Approaches of this nature,
+combining industrial processing, materials science, and machine learning
+perspectives, offer strong opportunities for accelerating discovery,
+research translation, and process improvement.
+
+4 Materials and Methods
+The SPF samples
+were produced with the strategy presented by Sutti
+et al.6 and implemented in the production
+system described in a previous article.8 This SPF system (Figure 1) consists of a nozzle that injects the polymer solution into
+a channel of variable width (h = 3, 6 or 9 mm) where
+the coagulant flows. The channel width remains constant for a variable
+distance (d = 0, 15, or 30 mm) after the injection
+nozzle allows fiber gelation and is then constricted to 1 mm at a
+variable angle (α = 10 or 25°) causing an increase in shear
+forces that affects fiber morphology. Shear forces are also dependent
+on the initial velocity of the polymer (vP) and especially on the coagulant speed (vC). In contrast to the original SPF system where only the pristine
+coagulant is used, the setup presented here delivers the fiber suspension
+back into the coagulant container (Figure 11) to be used for further fiber production.
+This setup involves two new experimental parameters: the coagulant
+volume used for recirculation (VR) and
+the running time of the experiments (t).
+
+Figure 11 Recirculation
+setup for the SPF system. The coagulant is circulated
+by a lobe pump into the laminar flow device where the polymer solution
+is injected forming the fibers. The resulting fiber dispersion is
+returned to the coagulant container and reused as the coagulant, increasing
+the fiber yield. This updated setup results in two new experimental
+variables: initial coagulant volume (VR) and the recirculation time (t).
+
+A 16.5% w/v polymer solution was prepared by adding
+poly(ethylene-co-acrylic acid) (Dow Primacor 5990I)
+into ammonia solution
+and stirring overnight at 110 °C. 1-Butanol (>99%, Chem Supply)
+stored at ∼4 °C was circulated as the coagulant using
+a lobe pump (UNIBLOC LABTOP 200). The channel was flushed with 400
+mL of the coagulant before starting the polymer and coagulant flows
+at adequate speeds. The polymer solution was injected in the device
+using 50 mL plastic syringes (Becton Dickinson) and a Legato 270 syringe
+pump. The fiber dispersion/coagulant vessel was stirred at low speed
+for recirculation experiments. The water content percentage in the
+samples was calculated by dividing the injected volume of the polymer
+solution by the total volume of the coagulant plus solution.
+
+Fiber dispersions were collected from the recirculation beaker
+using a 10 mL syringe and diluted with ethanol 1:100 V/Vtotal.
+
+The diluted dispersion
+was then spread on a microscope slide and
+left to dry in air. Optical microscopy images were taken using an
+Olympus BX51 microscope with a DP71 camera. An adequate magnification
+was selected, at which the fibers could be clearly seen and measured
+depending on their size. Brightness, contrast, and background were
+adjusted on the images and the length and diameter of the fibers was
+measured using the Fiber Separation app on Image Pro Premiere 9.2
+software. This measuring method automatically detects fiber-like objects
+in a calibrated image and measures both length and width based on
+search parameters that can be tuned for optimal results. This method
+avoids clusters and irregular-shaped objects, resulting in the efficient
+characterization of the fibers. An average of 340 and a minimum of
+53 individual fibers were measured per sample.
+
+The quality of
+the fiber samples used for the plot in Figure 5 was estimated using
+a quick-scoring guide (cfr. Appendix 1).
+This guide is an aid developed by the SPF research group to help users
+to visually evaluate fiber samples as a function of fiber homogeneity
+and in the absence of debris. Fiber length distributions are plotted
+for visualization purposes with a standard normal kernel using the
+Silverman’s rule of thumb bandwidth: h = 1.06σn(−1/5) where σ is the standard
+deviation and n is the amount of measurements per
+sample.
+
+It is to be noted that fiber diameter distributions
+are typically
+more uniform than those of length. This is a result of the dependence
+of fiber breakage (during and after formation) on fiber thickness
+and ensures that generally, if the length of the fibers is adequate,
+the width will also fall into a convenient range. For this reason,
+the width of the fibers has not been separately considered on this
+work.
+
+Supporting Information Available
+The Supporting Information
+is
+available free of charge on the ACS Publications website at DOI: 10.1021/acsomega.9b02439.Quality scoring guide produced and polymer yield scoring
+guide (PDF)
+
+
+
+Supplementary Material
+ao9b02439_si_001.pdf
+
+ Author Contributions
+D.R.d.C.L.,
+D.N., and P.V. are equivalent first authors of this manuscript. D.R.d.C.L.,
+N.T., and S.S. ran the fiber production experiments, analyzed the
+data, and prepared the manuscript. K.P. had the leading role in the
+design and manufacture of the SPF devices. S.R., S.G., and C.L. designed
+the optimizer, P.V. designed the function optimization algorithms,
+and D.N. ran the optimization trials. S.V. led the artificial intelligence
+aspects of this research and the development of the optimization algorithms
+at A2I2. T.S. assisted with experiments and
+design. M.H. co-designed the recirculation experiments and guided
+the experimental approach. A.S. co-designed the devices, led the SPF
+research and development of AEO processes at IFM and the present study.
+All authors contributed to the drafting and revising of this manuscript.
+
+The authors declare
+no
+competing financial interest.
+
+Acknowledgments
+This research was supported under the Australian
+Research Council’s Industrial Transformation and Linkage Programme
+funding schemes: projects number IH140100018 and LP140100287. Prof.
+Venkatesh is the recipient of an ARC Australian Laureate Fellowship
+(FL170100006). This work was performed in part at the Deakin node
+of the Australian National Fabrication Facility, a company established
+under the National Collaborative Research Infrastructure Strategy
+to provide nano and microfabrication facilities for Australia’s
+researchers. Deakin University’s Advanced Characterization
+Facility is acknowledged for the use of the Electron Microscopy facility.
+HeiQ Australia Pty Ltd is acknowledged for use of its equipment.
+==== Refs
+References
+Bell T. A. 
+Challenges
+in the scale-up of particulate processes—an industrial perspective . Powder Technol. 
+2005 , 150 , 60 –71 . 10.1016/j.powtec.2004.11.023 .
+Muthu M. S. ; Wilson B. 
+Challenges posed by
+the scale-up of nanomedicines . Nanomedicine 
+2012 , 7 , 307 –309 . 10.2217/nnm.12.3 .22385192 
+Zhong Y. L. ; Tian Z. ; Simon G. P. ; Li D. 
+Scalable production
+of graphene via wet chemistry: progress and challenges . Mater. Today 
+2015 , 18 , 73 –78 . 10.1016/j.mattod.2014.08.019 .
+Zurutuza A. ; Marinelli C. 
+Challenges
+and opportunities in graphene commercialization . Nat. Nanotechnol. 
+2014 , 9 , 730 10.1038/nnano.2014.225 .25286257 
+Crater J. S. ; Lievense J. C. 
+Scale-up of industrial
+microbial processes . FEMS Microbiol. Lett. 
+2018 , 365 , fny138 10.1093/femsle/fny138 .
+Sutti A. ; Lin T. ; Wang X. 
+Shear-Enhanced Solution Precipitation: A Simple Process
+to Produce Short Polymeric Nanofibers . J. Nanosci.
+Nanotechnol. 
+2011 , 11 , 8947 10.1166/jnn.2011.3489 .22400285 
+Sutti A. ; Lin T. ; Kirkland M. A.  Fibre-forming process and fibres
+produced by the process . WO2013056312A1 , 2013 .
+Li C. ; Rubín de Celis
+Leal D. ; Rana S. ; Gupta S. ; Sutti A. ; Greenhill S. ; Slezak T. ; Height M. ; Venkatesh S. 
+Rapid Bayesian
+optimisation for synthesis of short
+polymer fiber materials . Sci. Rep. 
+2017 , 7 , 5683 10.1038/s41598-017-05723-0 .28720869 
+Barrett P. ; Smith B. ; Worlitschek J. ; Bracken V. ; O’Sullivan B. ; O’Grady D. 
+A review of
+the use of process analytical technology
+for the understanding and optimization of production batch crystallization
+processes . Org. Process Res. Dev. 
+2005 , 9 , 348 –355 . 10.1021/op049783p .
+Gzara M. ; Essabri A. 
+Balanced Explore-Exploit Clustering based Distributed
+Evolutionary Algorithm for Multi-objective Optimisation . Stud. Inf. Control 
+2011 , 20 , 97 –106 . 10.24846/v20i2y201102 .
+Gopakumar A. M. ; Balachandran P. V. ; Xue D. ; Gubernatis J. E. ; Lookman T. 
+Multi-objective Optimization
+for Materials Discovery
+via Adaptive Design . Sci. Rep. 
+2018 , 8 , 3738 10.1038/s41598-018-21936-3 .29487307 
+Martinez-Cantin R. ; De Freitas N. ; Brochu E. ; Castellanos J. ; Doucet A. 
+A Bayesian exploration-exploitation approach for optimal
+online sensing and planning with a visually guided mobile robot . Aut. Robots 
+2009 , 27 , 93 –103 . 10.1007/s10514-009-9130-2 .
+Sa A. A. R. ; Andrade A. O. ; Soares A. B. ; Nasuto S. J.  Exploration
+vs exploitation in differential evolution . AISB 2008 ; AISB : Aberdeen, U.K. , 2008 .
+Zhang Y. ; Xu W. ; Callan J.  Exploration and Exploitation
+in Adaptive Filtering Based on Bayesian Active Learning . Proceedings, Twentieth International Conference on Machine
+Learning , 2003 ; pp 896 –903 .
+Berk J. ; Nguyen V. ; Gupta S. ; Rana S. ; Venkatesh S.  Exploration enhanced expected improvement
+for bayesian optimization . Lecture Notes in
+Computer Science (including subseries Lecture Notes in Artificial
+Intelligence and Lecture Notes in Bioinformatics) , 2019 ; Vol. 11052 LNAI , pp 621 –637 .
+Vellanki P. ; Rana S. ; Gupta S. ; Rubin de Celis Leal D. ; Sutti A. ; Dorin T. ; Height M. ; Sandars P. ; Venkatesh S.  Process-constrained batch Bayesian Optimisation, Conference
+on Neural Information Processing Systems : Long Beach, CA, USA, Long Beach, CA, USA , 2017 ; p 10 .
+Vellanki P. ; Rana S. ; Gupta S. ; de Celis Leal D. R. ; Sutti A. ; Height M. ; Venkatesh S.  Bayesian functional optimisation with
+shape prior . Proceedings of the AAAI Conference
+on Artificial Intelligence , 2019 ; pp 1617 –1624 .
+

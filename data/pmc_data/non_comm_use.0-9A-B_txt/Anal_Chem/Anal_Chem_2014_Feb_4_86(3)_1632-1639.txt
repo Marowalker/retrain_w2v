@@ -1,0 +1,716 @@
+
+==== Front
+Anal ChemAnal. ChemacanchamAnalytical Chemistry0003-27001520-6882American
+Chemical
+Society 10.1021/ac403384nArticleX13CMS: Global Tracking of Isotopic Labels
+in Untargeted Metabolomics Huang Xiaojing †‡Chen Ying-Jr §Cho Kevin §Nikolskiy Igor †‡Crawford Peter A. †‡Patti Gary J. *†‡§†Departments of Genetics, ‡Medicine, and §Chemistry, Washington
+University School of Medicine, St. Louis, MO 63110, United States* E-mail: gjpattij@wustl.edu.07 01 2015 07 01 2014 04 02 2014 86 3 1632 1639 17 10 2013 07 01 2014 Copyright © 2014 American Chemical Society2014American Chemical Society
+
+Studies
+of isotopically labeled compounds have been fundamental
+to understanding metabolic pathways and fluxes. They have traditionally,
+however, been used in conjunction with targeted analyses that identify
+and quantify a limited number of labeled downstream metabolites. Here
+we describe an alternative workflow that leverages recent advances
+in untargeted metabolomic technologies to track the fates of isotopically
+labeled metabolites in a global, unbiased manner. This untargeted
+approach can be applied to discover novel biochemical pathways and
+characterize changes in the fates of labeled metabolites as a function
+of altered biological conditions such as disease. To facilitate the
+data analysis, we introduce X13CMS, an extension of the
+widely used mass spectrometry-based metabolomic software package XCMS.
+X13CMS uses the XCMS platform to detect metabolite peaks
+and perform retention-time alignment in liquid chromatography/mass
+spectrometry (LC/MS) data. With the use of the XCMS output, the program
+then identifies isotopologue groups that correspond to isotopically
+labeled compounds. The retrieval of these groups is done without any
+a priori knowledge besides the following input parameters: (i) the
+mass difference between the unlabeled and labeled isotopes, (ii) the
+mass accuracy of the instrument used in the analysis, and (iii) the
+estimated retention-time reproducibility of the chromatographic method.
+Despite its name, X13CMS can be used to track any isotopic
+label. Additionally, it detects differential labeling patterns in
+biological samples collected from parallel control and experimental
+conditions. We validated the ability of X13CMS to accurately
+retrieve labeled metabolites from complex biological matrices both
+with targeted LC/MS/MS analysis
+of a subset of the hits identified by the program and with labeled
+standards spiked into cell extracts. We demonstrate the full functionality
+of X13CMS with an analysis of cultured rat astrocytes treated
+with uniformly labeled (U-)13C-glucose during lipopolysaccharide
+(LPS) challenge. Our results show that out of 223 isotopologue groups
+enriched from U-13C-glucose, 95 have statistically significant
+differential labeling patterns in astrocytes challenged with LPS compared
+to unchallenged control cells. Only two of these groups overlap with
+the 32 differentially regulated peaks identified by XCMS, indicating
+that X13CMS uncovers different and complementary information
+from untargeted metabolomic studies. Like XCMS, X13CMS
+is implemented in R. It is available from our laboratory website at http://pattilab.wustl.edu/x13cms.php.
+
+National Institutes of Health, United Statesdocument-id-old-9ac403384ndocument-id-new-14ac-2013-03384nccc-price
+==== Body
+The use of
+isotopically labeled
+compounds has yielded numerous important insights into the workings
+of cellular and organismal metabolism.1 These have generally been gained through analysis of the patterns
+and kinetics of label incorporation into specific metabolites after
+introducing isotopically enriched precursors to the biological system
+of interest.2 For instance, a common experimental
+design for metabolic pathway discovery is to monitor product compounds
+for the incorporation of isotopes derived from labeled potential precursors.
+A seminal example of this approach was the discovery of cholesterol
+biosynthesis from acetate.3,4 Analogous experiments
+examining the labeling patterns of downstream metabolites have revealed
+key details of the Entner–Doudoroff pathway,5 the tricarboxylic acid cycle,6,7 the citramalate
+pathway,8 the Calvin cycle,9 and the pentose phosphate pathway.10,11 It is worth emphasizing, however, that in all of these examples
+only one or two metabolites were monitored at a time for isotope incorporation.
+
+The historic focus on analyzing label enrichment in only a limited
+number of metabolites is in part due to the availability of well-established
+and robust methods to measure labeling in specific compounds.2 Although these experiments have proven invaluable
+to advancing our understanding of cellular metabolism, recent developments
+in untargeted metabolomic technologies have enabled comprehensive
+metabolite profiling at the systems level.12 Through the use of LC/MS, it is now possible to detect thousands
+of metabolite signals from the extracts of biological specimens in
+a single analytical run. Critical to the development of this platform
+have been advances in both MS instrumentation and informatic tools
+for processing the large amounts of data that untargeted LC/MS experiments
+generate. Software solutions for performing peak detection, retention-time
+alignment, data annotation, and statistics have greatly increased
+the feasibility of applying the untargeted metabolomic approach to
+biological problems.13−17
+
+We describe here an adaptation of the untargeted metabolomic
+approach
+to conduct isotopic labeling experiments in a more global, unbiased
+manner than has traditionally been available. The core of the analytical
+platform developed for this purpose is a software program called X13CMS, an extension of the widely used untargeted metabolomic
+data analysis package XCMS.13,18,19 Application of the X13CMS workflow (Figure 1) allows investigators to track the fates of isotopically
+labeled precursors without the need of prior knowledge about pathways.
+To accomplish this, two biologically equivalent samples are prepared
+and a labeled precursor is applied to one of them. The fraction of
+the total precursor pool that exists in labeled form, as well as the
+length of time over which the label is applied, is left to the investigator
+to control, but generally should be set to ensure sufficient flux
+of the label through the cells’ or tissues’ metabolic
+pathways. After completion of the labeling protocol, replicates of
+both unlabeled and labeled samples are processed with the user’s
+choice of metabolite extraction and untargeted LC/MS profiling methods.
+The raw LC/MS data are forwarded to XCMS for peak detection and retention-time
+alignment, and the resulting table representing all detected putative
+metabolites is forwarded to X13CMS. From this table, the
+program retrieves groups of metabolite isotopologues; that is, it
+identifies metabolites that have been enriched with isotopic labels
+derived from the labeled precursor and groups them together by the
+mass-to-charge ratio (m/z) of the
+completely unlabeled form of each metabolite. We define an “isotopologue”
+as the set of all isotopomers of a compound containing a defined number
+of labeled atoms. We call the distribution of ion intensity among
+the different isotopologues of the group the “labeling pattern”
+of the metabolite. The algorithmic details of the isotopologue retrieval
+process are given in the X13CMS Processing section below.
+
+Figure 1 X13CMS workflow. Samples representing control and perturbed
+conditions are divided into two groups, with one receiving an isotopically
+labeled substrate at a defined fraction of the total pool of that
+substrate and the other receiving the same substrate in a completely
+unlabeled or natural isotope abundance form. Metabolite extracts and
+LC/MS profiling data are collected on all samples and processed through
+XCMS to detect features and perform retention-time alignment. The
+features tables representing unlabeled and labeled samples are then
+paired off by biological condition and submitted to the getIsoLabelReport()
+routine of X13CMS to detect features that have been enriched
+for the isotope label. To compare labeling patterns between conditions,
+the isotope labeling reports are processed with getIsoDiffReport().
+
+In addition to tracking the fates
+of labeled precursors, X13CMS also performs differential
+labeling analysis to discover
+changes in these fates that arise from perturbations such as disease,
+genetic manipulation, or drug treatment. The analysis searches for
+isotopologue groups that are either uniquely represented or differently
+patterned in one biological condition versus another. This functionality
+of X13CMS is analogous to the diffreport() routine of XCMS,
+which identifies differentially regulated metabolites from untargeted,
+nonlabeled profiling data.13 To demonstrate
+the full capabilities of X13CMS, we studied control and
+LPS-stimulated astrocytes with U-13C-glucose. Our results
+reveal that integrating the untargeted metabolomic and isotopic labeling
+paradigms uncovers additional leads for further metabolic studies
+that are not available through either approach alone.
+
+Experimental
+Section
+Cell Culture and Metabolite Extraction
+All reagents
+and solvents were obtained from Sigma-Aldrich unless otherwise specified.
+Immortalized rat astrocytes (American Type Culture Collection CRL-2005)
+were grown to confluency at 37 °C and 5% CO2 in T25
+flasks, using high-glucose DMEM (Gibco) containing 10% FBS and 1%
+penicillin/streptomycin (Gibco). Isotopic labeling was achieved through
+30 min treatments with media containing 4.5 g/L U-13C-glucose
+(100% of the total glucose content; Cambridge Isotopes); parallel
+cultures were treated with 4.5 g/L natural-abundance glucose. Simultaneous
+to the introduction of the labeled substrate, subsets of both unlabeled
+and labeled cultures were treated with LPS (added to culture media
+to a final concentration of 1 μg/mL) for the duration of the
+labeling protocol. Cells were then washed with phosphate buffer solution
+and high-performance liquid chromatography (HPLC)-grade water, quenched
+with 1 mL cold HPLC-grade methanol, scraped from the plate, and pelleted.
+Pellets were dried on a SpeedVac and subsequently lyophilized. Dried
+samples were weighed out and extracted as previously described,20 with the solvent volumes adjusted to maintain
+a ratio of 1 mL of solvent per 1 mg of dried cellular material. The
+final volume of reconstitution solvent was adjusted to 100 μL
+per 1 mg of dried material. All cell-culture conditions (unlabeled
+versus labeled, control versus LPS-stimulated) were sampled in triplicate.
+
+LC/MS Analysis
+Five microliters of each extracted sample
+were injected onto a Luna Aminopropyl, 3 μm, 150 × 1.0
+mm i.d. column (Phenomenex) with an Agilent 1200 series HPLC system.
+The samples were kept at 4 °C in the autosampler and injected
+onto a column maintained at room temperature. The column was used
+in hydrophilic interaction liquid chromatography (HILIC) mode with
+the following buffers and linear gradients: A = 95%
+H2O, 5% ACN, 10 mM ammonium hydroxide, 10 mM ammonium acetate,
+pH 9.45; B = 100% ACN; 85% B from 0 to 7 min (min),
+85% to 60% B from 7 to 27 min, 60% to 40% B from 27 to 32 min, and
+40% to 20% B from 32 to 40 min. Mass spectrometry (MS) detection was
+carried out on an Agilent 6520 Q-TOF in negative ESI (electrospray
+ionization) mode with the following settings: gas temperature 325
+°C, drying gas 5 L/min, nebulizer 15 psi, fragmentor 120 V, skimmer
+65 V, capillary voltage −3500 V, and scan rate 1.06 spectra/s.
+Tandem MS (MS/MS) analyses were carried out with identical ESI parameters,
+and the following fragmentation and precursor ion selection settings:
+collision energy 10 V, precursor isolation window 1.3 amu, and scan
+rate 1.00 spectra/s.
+
+Spiking of Labeled Standards
+After
+all cell extracts
+had been analyzed, the remaining unlabeled LPS-stimulated samples
+were pooled, and then divided into two aliquots. One aliquot was spiked
+with U-13C-lactate to a final concentration of 50 μM
+and alpha-15N-glutamine to a final concentration of 10
+μM. The control and spiked aliquots were each analyzed twice
+with the LC/MS protocol described above.
+
+LC/MS Data Preprocessing
+with XCMS
+Agilent .d files
+were converted to the mzXML format with msconverter.exe.21 All samples (unlabeled and labeled, control,
+and LPS-stimulated) were analyzed together via a single call to xcmsSet(),
+which performs peak detection and sets up the data for further processing,
+including most importantly retention-time alignment. The designation
+of sample-class identities within XCMS should indicate which samples
+are unlabeled and which are labeled. The values for the parameters
+used in each step of the XCMS analysis in the present work are listed
+in Table 1.
+
+Table 1 XCMS and X13CMS Parameters
+tool	routine	parameter
+values	
+XCMS	xcmsSet()	method = “centWave”	
+ 	 	ppm = 20	
+ 	 	peakwidth = c(20,200)	
+ 	group()	bw = 5	
+ 	 	mzwid = 0.025	
+ 	retcor()	method = “obiwarp”	
+X13CMS	getIsoLabelReport()	RTwin = 10	
+ 	 	ppm = 20	
+ 	 	baselineNoise = 10000	
+ 	 	alpha = 0.05	
+ 	getIsoDiffReport()	none	
+ 	processIsoDiff()	alpha = 0.05	
+X13CMS Analysis
+The main functionality of
+X13CMS is implemented in two routines, getIsoLabelReport()
+and getIsoDiffReport(). The values for the parameters used in each
+routine to analyze the astrocyte data described herein are listed
+in Table 1.
+
+getIsoLabelReport()
+This routine identifies which peaks
+in the LC/MS data are enriched for the isotopic label. The inputs
+are (1) an xcmsSet object containing the grouped and retention time-aligned
+peaks detected in both unlabeled and labeled samples, (2) the difference
+in mass between the unlabeled and labeled isotopes (we define this
+as the mass difference of the isotopic label, e.g., 1.00335 Da for 13C), (3) the mass of the unlabeled isotope (e.g., 12.00000
+Da for 12C), and (4) three error tolerance parameters:
+(i) the acceptable parts per million (ppm) error of the m/z measurements, (ii) the ion intensity of baseline
+noise from the MS detector, and (iii) the retention-time window (RTwin)
+within which all detected peaks are considered as coeluting. With
+the use of the following procedure, the routine outputs a table listing
+isotopologue groups with statistically significant enrichment of the
+isotopic label: (1) the peak groups of the xcmsSet object are sorted
+by their aligned retention times into overlapping bins of width RTwin;
+the overlap is half of the bin width. (2) Within each bin, all possible
+pairwise comparisons of peaks are conducted to determine which are
+potential isotopologues of each other. The criteria for calling an
+isotopologue pair are as follows (note: in the ensuing text, “base
+peak” refers to the peak with the lower m/z value of the pair and “labeled peak” to
+the higher m/z value): (a) The m/z difference k between
+the base and labeled peaks must be a whole-number multiple of the
+isotopic label mass difference to within the ppm error of the MS instrument,  where k* is the nearest whole
+number to k, ε is the ppm error expressed as
+a decimal, mb is the m/z of the base peak, and d is the
+mass difference of the isotopic label. The derivation of these bounds
+on k is shown in Figure 1 of
+the Supporting Information. (b) Mean intensity of the labeled peak
+must be less than that of the base peak in samples treated with the
+unlabeled precursor. (3) The list of potential isotopologue pairs
+is sorted into groups that each contain a single unlabeled peak and
+all of that peak’s observed isotopologues. This is done by
+grouping together all isotopologue pairs sharing a common base peak.
+Pairs in which both the base and labeled peaks are labeled peaks for
+a different base peak are discarded because they represent duplicate
+information. (4) Each isotopologue group is tested for statistically
+significant enrichment of the isotopic label in those samples generated
+from treatment with the labeled precursor. The intensities of each
+isotopologue within a group are normalized to the total ion count
+of the group; these relative intensities are then compared between
+the unlabeled samples and the labeled samples with a Welch’s t-test. As long as at least one isotopologue within the
+group meets the user-defined p-value cutoff for significance,
+the whole group is called as being enriched with the label and is
+added to the output table. Additional quality-control measures include
+discarding groups in which the completely unlabeled isotopologue has
+a mean absolute ion intensity below baseline noise and those in which
+the relative intensities of the base isotopologue are higher in the
+labeled samples than in the unlabeled samples.
+
+The output of
+getIsoLabelReport() is described in further detail in Table 2.
+
+Table 2 Description of getIsoLabelReport()
+Output Table
+column heading	explanation	
+compound	m/z of the base
+(unlabeled) isotopologue;
+value to be used for searching metabolite databases for putative identities
+of the group	
+isotopologues	list of m/z of all isotopologues
+in the group, including base	
+groupIDs	ID number of isotopologues
+in the xcmsSet object’s “groups” slot; used for
+plotting EICs of individual isotopologues	
+RTs	retention time of each isotopologue	
+meanAbsIntU	mean absolute intensity
+of each isotopologue in the samples treated with unlabeled precursor	
+meanAbsIntL	mean absolute intensity
+of each isotopologue in the samples treated with labeled precursor	
+meanRelIntU	mean relative intensity
+(fraction of total absolute intensity of entire isotopologue group)
+of each isotopologue in the samples treated with unlabeled precursor	
+meanRelIntL	mean relative intensity
+of each isotopologue in the samples treated with labeled precursor	
+enrichmentLvsU	ratio meanRelIntL:meanRelIntU
+for each isotopologue	
+p_value	p-values
+from Welch’s t-tests comparing relative intensities
+of each isotopologue in unlabeled versus labeled samples	
+sampleData	absolute intensities of
+each isotopologue in every sample	
+getIsoDiffReport()
+This routine
+compares labeling patterns
+between two different biological conditions and assigns significance
+values to the observed differences. Its inputs are the tables of labeled
+isotopologue groups produced by getIsoLabelReport() from samples representing
+each condition. The groups are assigned into two categories: those
+that appear only in one sample class or the other and those that appear
+in both. Groups that appear only in one sample class are assigned
+a p-value of 0; these are potentially readouts of
+metabolic pathways that are uniquely activated in that biological
+condition. For all other groups that are enriched for the isotopic
+label in both conditions, getIsoDiffReport() uses an analysis analogous
+to that described in step (4) of getIsoLabelReport() to determine
+whether any isotopologues within the group are represented to a significantly
+different degree in samples obtained from one condition versus the
+other. The t-test is performed by using the relative
+intensities of the isotopologues in the labeled samples of each condition.
+The default output of getIsoDiffReport() is a table in which all labeled
+isotopologue groups are displayed with their categorization and associated p-values for differential labeling (see Table 3). Additional subroutines are available to extract groups
+of interest that meet user-defined p-value cutoffs
+for significance and are not uniquely represented in one sample class
+simply due to poor chromatographic resolution producing extra shoulder
+peaks in those samples.
+
+Table 3 Description of getIsoDiffReport()
+Output Table
+column heading	explanation	
+sample1	list of m/z of all isotopologues
+in the group in samples from condition 1; empty if group is found
+to be enriched for label only in condition 2	
+sample 2	list of m/z of all isotopologues
+in the group in samples from condition 2; empty if group is found
+to be enriched for label only in condition 1	
+RT1	retention time of each isotopologue
+in condition 1	
+RT2	retention
+time of each isotopologue
+in condition 2	
+enrichment1	ratio meanRelIntL:meanRelIntU
+for each isotopologue in condition 1	
+enrichment2	Ratio meanRelIntL:meanRelIntU
+for each isotopologue in condition 2	
+p_value	p-values
+from Welch’s t-tests comparing relative intensities
+of each isotopologue in labeled samples of condition 1 versus those
+of condition 2	
+sampleData	absolute
+intensities of
+each isotopologue in the labeled samples of both conditions	
+Results and Discussion
+Untargeted
+Retrieval of Isotopically Labeled Metabolites from
+Astrocytes
+Several approaches to the problem of detecting
+isotopically labeled peaks in complex LC/MS data have been described
+in the literature,22,23 but they conduct the isotopologue
+search prescriptively, which prevents them from being robust untargeted
+methods suitable for the discovery of new metabolites, uncharacteristic
+metabolic pathways, or metabolic byproducts of xenobiotics. In contrast,
+nontargeted tracer fate detection (NTFD) has been described for metabolomic
+workflows based on gas chromatography/mass spectrometry (GC/MS).24 NTFD detects isotopically labeled features based
+on differences in mass spectra collected from samples that have been
+treated with a labeled tracer versus those that have not. In the present
+work, we present a similarly unbiased approach to retrieving isotopically
+labeled metabolites from LC/MS data, which differs from GC/MS data
+in that metabolites are more frequently represented as intact molecular
+ions than as ion fragments. Moreover, the NTFD method relies on the
+extraction of pure compound spectra, which remains a challenge with
+LC/MS data.25−27 To accommodate these complexities, X13CMS uses the feature-grouping and retention-time alignment capabilities
+of XCMS to reduce the search space for isotopologue groups. The search
+is then conducted exhaustively, using a small number of conservative
+assumptions about the ion-intensity patterns expected for isotopologue
+groups to filter out false calls based on mass difference and retention-time
+alignment alone.
+
+To validate this untargeted approach to isotope-label
+detection, we examined the fates of U-13C-glucose in rat
+astrocytes grown under standard culture conditions. Using getIsoLabelReport()
+on LC/MS profiling data collected from parallel cultures of cells
+treated with natural-abundance or U-13C-glucose for 30
+min, we identified 193 isotopologue groups that were significantly
+enriched for 13C at a p-value cutoff of
+0.05. To confirm that these groups correspond to actual labeled metabolites,
+we performed targeted MS/MS analyses on selected base isotopologues,
+their most abundant labeled isotopologues, and unlabeled standards
+matching the base isotopologues. A set of these analyses for the group
+with a base m/z of 146.045 is shown
+in Figure 2. Querying this m/z in METLIN returned glutamate as a possible identity,28 which was supported with the observation of
+identical retention times of the standard and the group as well as
+the strong match between the 10 V MS/MS fragmentation patterns of
+the standard (Figure 2a) and the base isotopologue
+(Figure 2b). Furthermore, the predicted fragmentation
+pattern of the most abundant isotopologue, 148.050 m/z, was also observed (Figure 2c). This isotopologue corresponds to the presence of two 13C atoms in the molecule, both of which are retained in the fragment
+that arises from a water loss (128.035 m/z). The corresponding fragment of the 148.050 isotopologue
+is thus predicted to have an m/z of 130.042, and this was indeed observed. The other predominant
+peak in the fragmentation pattern, 102.056 m/z, corresponds to a CO2 loss containing either
+of the carboxylate carbons of glutamate. Depending on whether the
+lost carbon is labeled or not, this peak is expected to shift to 103.059
+or 104.063 m/z, both of which are
+observed in the fragmentation pattern of the 148.050 m/z isotopologue. Taken together, these data indicate
+that the 146.045 m/z group was correctly
+identified by getIsoLabelReport() as a labeled metabolite.
+
+Figure 2 Validating
+isotopologue retrieval by X13CMS. MS/MS spectra
+at a collision energy of 10 V for (a) glutamic acid standard, (b)
+base isotopologue of the 146 m/z group in unlabeled astrocytes, (c) base isotopologue of the 146 m/z group in U-13C-glucose-labeled
+astrocytes (top) and 148 isotopologue (bottom) in labeled astrocytes.
+Star indicates precursor ion. Intensities are expressed relative to
+the most intense fragment. Detection of (d) U-13C-lactate
+and (e) alpha-15N-glutamine spiked into unlabeled, LPS-stimulated
+astrocytes.
+
+To further validate the
+untargeted label retrieval process, we
+spiked cell extracts obtained from unlabeled, LPS-treated astrocytes
+with known amounts of U-13C-lactate and alpha-15N-glutamine and analyzed them along with unspiked controls by LC/MS.
+The data were processed with getIsoLabelReport() twice, once to search
+for 13C and once for 15N. In the former case,
+we recovered the isotopologue group with base m/z 89.024 and determined that in the spiked samples, approximately
+half of the total lactate pool was present in the fully labeled form
+(Figure 2d). The search for 15N
+recovered the isotopologue group with base m/z 145.061, which was enriched for the +1 15N
+peak (146.061 m/z) in the spiked
+samples approximately 2.5 times more than in the unspiked samples
+(Figure 2e). It should be noted that the resolution
+of the Q-TOF used in these analyses is insufficient to differentiate
+between the 0.99704 m/z difference
+between 14N and 15N and the 1.00335 m/z difference between 12C and 13C. Consequently, the intensity of the 146.061 m/z peak in the spiked samples is a mix of signal
+from both the natural abundance of singly 13C-labeled glutamine
+as well as alpha-15N-glutamine. This circumstance did not
+prevent getIsoLabelReport() from finding the +1 15N isotopologue,
+due to its use of the control samples containing natural-abundance
+distributions of isotopologues as a basis for comparison with the
+labeled or spiked samples.
+
+Differential Labeling Analysis of LPS-Challenged
+Astrocytes
+To illustrate the complete X13CMS workflow,
+we investigated
+the use of glucose in astrocytes challenged with the inflammatory
+stimulus LPS. Astrocytes, the most abundant cell type in the central
+nervous system, are metabolically linked to neurons through the delivery
+of energy substrates, reuptake of neurotransmitters, and defense against
+oxidative stress.29 In particular, inflammation-induced
+astrocyte dysfunction has been associated with neurological pathologies
+such as stroke, Alzheimer’s, and Parkinson’s disease.30 The exact nature of the astrocyte response to
+inflammatory stimuli remains incompletely understood, but it is known
+that their glucose utilization is increased.29 Our aim in the current work was to use an untargeted isotopic labeling
+approach to generate leads into the downstream metabolic consequences
+of this increased glucose utilization.
+
+In parallel, we cultured
+immortalized rat astrocytes in media containing either U-13C-glucose or natural-abundance glucose. Subsets of both unlabeled
+and labeled cultures were treated with LPS for the duration of the
+labeling period (Figure 3a). Analysis of the
+LC/MS profiling data of these samples with getIsoLabelReport() yielded
+193 and 160 13C-enriched isotopologue groups in control
+and LPS-challenged astrocytes, respectively. Of these, 130 were found
+in samples from both conditions (Figure 3b).
+Differential labeling analysis using getIsoDiffReport() and the additional
+filtering subroutines described in the Experimental
+Section revealed that 95 groups had statistically significant
+different labeling patterns (p < 0.05) in control
+versus LPS-challenged cells. These were divided into 56 groups uniquely
+found in control cells and not in LPS-treated cells, 27 groups uniquely
+found in LPS-treated cells and not in control cells, and 12 found
+in both cell cultures (Figure 3c). The structural
+characterization of each of these leads is beyond the scope of the
+current work, but for illustrative purposes we show the extracted
+ion chromatograms for the group with a base isotopologue of 133.013 m/z, which is one of the 12 shared but
+differentially labeled groups (Figure 3d).
+The enrichment of the highest mass isotopologue of the group, 136.023 m/z, occurs to a greater extent in the
+LPS-treated astrocytes than in the controls (Figure 3e). Although MS/MS analysis suggested that this isotopologue
+group corresponds to the tricarboxylic acid (TCA) cycle intermediate
+malate, we note also that the majority of the differentially labeled
+isotopologue groups (62 out of 95) contain a base peak of over 250 m/z. These groups are unlikely to correspond
+to the intermediates of central carbon metabolism (glycolysis and
+the TCA cycle), and their predominance suggests that the increased
+glucose utilization of LPS-challenged astrocytes is not being directed
+exclusively toward energy-producing pathways. As is typical for untargeted
+metabolomic workflows, these outputs of X13CMS are not
+definitive phenotypic readouts but rather leads that require further
+investigation to determine their chemical identities and validate
+their biological significance.
+
+Figure 3 Differential labeling analysis of control
+and LPS-challenged rat
+astrocytes. (a) Experimental design. (b) All label-enriched isotopologue
+groups identified in control and LPS-stimulated cells. (c) Isotopologue
+groups identified as being differentially labeled in control versus
+LPS-stimulated cells. (d) Extracted ion chromatograms for the isotopologue
+group with base m/z of 133.013.
+(e) Enrichment of each isotopologue of the 133.013 m/z group in labeled cells compared to unlabeled
+cells of each culture condition (control vs LPS-stimulated).
+
+Integrating Untargeted
+Isotopic Labeling Analysis with Label-Free
+Metabolomics
+To interrogate the degree of complementarity
+between the isotopic labeling platform described here to the standard
+untargeted metabolomic approach applied to nonlabeled samples, we
+compared a set of results from each type of analysis performed on
+the astrocyte profiling data. Comparing unlabeled control to unlabeled
+LPS-challenged cultures with the XCMS routine diffreport(), we identified
+32 differentially regulated features (defined by p-value < 0.05 for difference in absolute intensity values between
+sample classes; fold change > 1.5 between sample classes; and mean
+absolute intensity > 10000 in at least one sample class). Comparing
+these 32 features with the 95 identified as being differentially labeled
+by X13CMS, we discovered that only two were recovered by
+both analyses (Figure 4). Taken together, these
+results suggest that two broad classes of metabolic shifts occur in
+LPS-challenged astrocytes. In the first type, identified by the traditional
+label-free approach, the LPS challenge alters the regulation of pathways
+that do not use carbon from glucose, which leads to different-sized
+pools of unlabeled metabolites. In the second type of shift, identified
+by tracing the fates of labeled glucose, treatment with LPS alters
+the regulation of a number of pathways that are ultimately linked
+to glucose, but the total pools of the metabolites involved in these
+pathways do not change presumably because of compensatory flux through
+other pathways that do not involve glucose.
+
+Figure 4 Comparison of outputs
+from untargeted isotope labeling analysis
+and label-free untargeted metabolomics.
+
+The lack of a large overlap in the outputs of the standard
+label-free
+workflow and our untargeted isotopic labeling analysis highlights
+the complementarity of the two approaches. The former platform generates
+leads by discovering metabolites whose levels change significantly
+as a function of biological perturbation.31,32 While a powerful approach, the consideration of only altered metabolite
+levels overlooks the potentially important roles played by metabolites
+whose levels do not change. A cell or organism may activate numerous
+compensatory pathways to maintain steady, homeostatic levels of critical
+metabolites when challenged with disruptive conditions. For example,
+acetyl-coenzyme A (CoA) is a central metabolite found at the convergence
+of several catabolic and anabolic pathways.33 Disruption of any one of these pathways (e.g., glycolysis) may be
+insufficient to alter acetyl-CoA levels due to compensatory changes
+in the other pathways that connect to this metabolite (e.g., upregulation
+of fatty acid oxidation34). In theory,
+a comprehensive measurement of all metabolite levels would reveal
+changes in the levels of metabolites that act in compensatory pathways,
+thereby implicating them as part of the biochemical response to the
+perturbation. However, the current state of global-profiling technology
+remains inadequate to realize this type of analysis. Not all metabolites
+can be detected by LC/MS, and of those that can, only a small subset
+is typically assigned definitive chemical identities. Furthermore,
+the dynamics of cellular metabolism can be highly nonlinear,35 which precludes drawing mechanistic conclusions
+from simple correlative models between metabolite levels. To overcome
+these limitations, isotopic labeling analysis can be applied to track
+the altered metabolic fluxes that arise from activation of compensatory
+pathways. In the example of acetyl-CoA, use of a labeled upstream
+substrate may reveal movement of the label to acetyl-CoA in one condition
+but not another, despite total acetyl-CoA levels remaining the same
+in both conditions.
+
+Conclusions
+Standard untargeted
+metabolomic approaches typically report the
+static levels of a broad range of metabolites from unlabeled samples.
+In contrast, isotopic labeling analysis provides information about
+pathway fluxes but most commonly only for a limited number of metabolites
+that are measured with targeted methodologies. Here, we present an
+approach that conceptually integrates characteristics from each of
+these experimental designs to provide insights into isotopic labeling
+at the systems level. Our approach leverages recent advances in untargeted
+metabolomics to track the metabolism of isotopically labeled substrates
+in an unbiased manner and to determine if this metabolism changes
+as a function of biological perturbation. These analyses are facilitated
+by the software program presented here, X13CMS. We have
+shown that X13CMS can identify features that are enriched
+for the precursor-derived isotopic label, as well as analyze differences
+in their labeling patterns between samples arising from different
+biological contexts. This latter application of X13CMS
+can reveal metabolic insights that are not gained by standard untargeted
+metabolomic approaches that only use unlabeled samples. Thus, X13CMS provides valuable insights into metabolic mechanisms
+that are highly complementary to those available through existing
+metabolomic technologies.
+
+Supporting Information Available
+Additional information as noted in text.
+This material is available free of charge via the Internet at http://pubs.acs.org.
+
+Supplementary Material
+ac403384n_si_001.pdf
+
+ The authors declare no
+competing financial interest.
+
+Acknowledgments
+This work
+was supported by the National Institutes of Health
+Grants R01 DK091538 (P.A.C.), R01 ES022181 (G.J.P.), and L30 AG0 038036
+(G.J.P.) and by the Children’s Discovery Institute of the St.
+Louis Children’s Hospital Foundation (P.A.C.)
+==== Refs
+References
+Schoenheimer R. ; Rittenberg D. 
+Science 
+1938 , 87 , 221 –226 .17770403 
+Wolfe R. R. ; Chinkes D. L.  Isotope Tracers in
+Metabolic Research: Principles and Practice of Kinetic Analysis , 2 nd ed.; Wiley-Liss : Hoboken, NJ , 2005 .
+Bloch K. ; Rittenberg D. 
+J. Biol. Chem. 
+1942 , 145 , 625 .
+Bloch K. ; Rittenberg D. 
+J. Biol. Chem. 
+1945 , 159 , 45 .
+Entner N. ; Doudoroff M. 
+J. Biol. Chem. 
+1952 , 196 , 853 –862 .12981024 
+Malloy C. R. ; Sherry A. D. ; Jeffrey F. M. 
+FEBS Lett. 
+1987 , 212 , 58 –62 .2879743 
+Chance E. M. ; Seeholzer S. H. ; Kobayashi K. ; Williamson J. R. 
+J. Biol. Chem. 
+1983 , 258 , 13785 –13794 .6643454 
+Ivanovsky R. N. ; Krasilnikova E. N. ; Berg I. A. 
+FEMS Microbiol. Lett. 
+2006 , 153 , 399 –404 .
+Calvin M. ; Benson A. A. 
+Science 
+1948 , 107 , 476 –480 .17760010 
+Katz J. 
+Wood . J. Biol.
+Chem. 
+1960 , 235 , 2165 –2177 .14404802 
+Katz J. ; Wood H. G. 
+J. Biol. Chem. 
+1963 , 238 , 517 –523 .13958489 
+Patti G. J. ; Yanes O. ; Siuzdak G. 
+Nat. Rev. Mol. Cell
+Biol. 
+2012 , 13 , 263 –269 .22436749 
+Smith C. A. ; Want E. J. ; O’Maille G. ; Abagyan R. ; Siuzdak G. 
+Anal. Chem. 
+2006 , 78 , 779 –787 .16448051 
+Melamud E. ; Vastag L. ; Rabinowitz J. D. 
+Anal. Chem. 
+2010 , 82 , 9818 –9826 .21049934 
+Pluskal T. ; Castillo S. ; Villar-Briones A. ; Oresic M. 
+BMC Bioinf. 
+2010 , 11 , 395 .
+Scheltema R. a ; Jankevics A. ; Jansen R. C. ; Swertz M. a ; Breitling R. 
+Anal. Chem. 
+2011 , 83 , 2786 –2793 .21401061 
+Katajamaa M. ; Miettinen J. ; Oresic M. 
+Bioinformatics 
+2006 , 22 , 634 –636 .16403790 
+Prince J. T. ; Marcotte E. M. 
+Anal. Chem. 
+2006 , 78 , 6140 –6152 .16944896 
+Tautenhahn R. ; Böttcher C. ; Neumann S. 
+BMC Bioinf. 
+2008 , 9 , 504 .
+Ivanisevic J. ; Zhu Z. ; Plate L. ; Tautenhahn R. ; Chen S. ; O’Brien P. J. ; Johnson C. H. ; Marletta M. A. ; Patti G. J. ; Siuzdak G. 
+Anal. Chem. 
+2013 , 85 , 6876 –6884 .23781873 
+Chambers M. C. ; Maclean B. ; Burke R. ; Amodei D. ; Ruderman D. L. ; Neumann S. ; Gatto L. ; Fischer B. ; Pratt B. ; Egertson J. ; Hoff K. ; Kessner D. ; Tasman N. ; Shulman N. ; Frewen B. ; Baker T. A. ; Brusniak M.-Y. ; Paulse C. ; Creasy D. ; Flashner L. ; Kani K. ; Moulding C. ; Seymour S. L. ; Nuwaysir L. M. ; Lefebvre B. ; Kuhlmann F. ; Roark J. ; Rainer P. ; Detlev S. ; Hemenway T. ; Huhmer A. ; Langridge J. ; Connolly B. ; Chadick T. ; Holly K. ; Eckels J. ; Deutsch E. W. ; Moritz R. L. ; Katz J. E. ; Agus D. B. ; MacCoss M. ; Tabb D. L. ; Mallick P. 
+Nat. Biotechnol. 
+2012 , 30 , 918 –920 .23051804 
+Creek D. J. ; Chokkathukalam A. ; Jankevics A. ; Burgess K. E. V ; Breitling R. ; Barrett M. P. 
+Anal. Chem. 
+2012 , 84 , 8442 –8447 .22946681 
+Bueschl C. ; Kluger B. ; Berthiller F. ; Lirk G. ; Winkler S. ; Krska R. ; Schuhmacher R. 
+Bioinformatics 
+2012 , 28 , 736 –738 .22238263 
+Hiller K. ; Metallo C. M. ; Kelleher J. K. ; Stephanopoulos G. 
+Anal. Chem. 
+2010 , 82 , 6621 –6628 .20608743 
+Krishnan S. ; Verheij E. E. R. ; Bas R. C. ; Hendriks M. W. B. ; Hankemeier T. ; Thissen U. ; Coulier L. 
+Rapid Commun. Mass Spectrom. 
+2013 , 27 , 917 –923 .23592192 
+Kuhl C. ; Tautenhahn R. ; Böttcher C. ; Larson T. R. ; Neumann S. 
+Anal. Chem. 
+2012 , 84 , 283 –289 .22111785 
+Draper J. ; Enot D. P. ; Parker D. ; Beckmann M. ; Snowdon S. ; Lin W. ; Zubair H. 
+BMC Bioinf. 
+2009 , 10 , 227 .
+Smith C. A. ; O’Maille G. ; Want E. J. ; Qin C. ; Trauger S. a ; Brandon T. R. ; Custodio D. E. ; Abagyan R. ; Siuzdak G. 
+Ther. Drug Monit. 
+2005 , 27 , 747 –751 .16404815 
+Gavillet M. ; Allaman I. ; Magistretti P. J. 
+Glia 
+2008 , 56 , 975 –989 .18383346 
+Ricci G. ; Volpi L. ; Pasquali L. ; Petrozzi L. ; Siciliano G. 
+J. Biol. Phys. 
+2009 , 35 , 317 –336 .19669420 
+Patti G. J. ; Yanes O. ; Shriver L. P. ; Courade J.-P. ; Tautenhahn R. ; Manchester M. ; Siuzdak G. 
+Nat. Chem. Biol. 
+2012 , 8 , 232 –234 .22267119 
+Kind T. ; Tolstikov V. ; Fiehn O. ; Weiss R. H. 
+Anal. Biochem. 
+2007 , 363 , 185 –195 .17316536 
+Berg J. M. ; Tymoczko J. L. ; Stryer L.  Biochemistry ; 7 th ed.; W. H. Freeman : New York, NY , 2010 .
+Hue L. ; Taegtmeyer H. 
+Am. J. Physiol.:
+Endocrinol. Metab. 
+2009 , 297 , E578 –E591 .19531645 
+Frieden C. 
+J. Biol. Chem. 
+1970 , 245 , 5788 –5799 .5472372

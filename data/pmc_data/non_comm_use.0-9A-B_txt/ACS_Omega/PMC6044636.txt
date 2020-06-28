@@ -1,0 +1,1113 @@
+
+==== Front
+ACS OmegaACS OmegaaoacsodfACS Omega2470-1343American Chemical Society 3002347810.1021/acsomega.6b00086ArticlePredicting Binding Affinities for GPCR Ligands Using
+Free-Energy Perturbation Lenselink Eelke
+B. †Louvel Julien †Forti Anna F. †van Veldhoven Jacobus P. D. †de Vries Henk †Mulder-Krieger Thea †McRobb Fiona M. ‡Negri Ana ‡Goose Joseph ‡Abel Robert ‡van
+Vlijmen Herman W. T. †Wang Lingle ‡Harder Edward ‡Sherman Woody ‡IJzerman Adriaan P. *†Beuming Thijs *‡† Division
+of Medicinal Chemistry, Leiden Academic Centre for Drug Research, Leiden University, Leiden 2300 RA, The Netherlands‡ Schrödinger,
+Inc., 120 West 45th Street, New York, New York 10036, United States* E-mail: ijzerman@lacdr.leidenuniv.nl. Phone: +31-71-5274651. Fax: +31-71-5274277 (A.P.I.).* E-mail: thijs.beuming@schrodinger.com. Phone: +1 (212) 548-2333. Fax: +1 (212) 295-5801 (T.B.).30 08 2016 31 08 2016 1 2 293 304 20 06 2016 15 08 2016 Copyright © 2016 American Chemical Society2016American Chemical SocietyThis is an open access article published under an ACS AuthorChoice License, which permits copying and redistribution of the article or any adaptations for non-commercial purposes.
+
+The
+rapid growth of structural information for G-protein-coupled
+receptors (GPCRs) has led to a greater understanding of their structure,
+function, selectivity, and ligand binding. Although novel ligands
+have been identified using methods such as virtual screening, computationally
+driven lead optimization has been possible only in isolated cases
+because of challenges associated with predicting binding free energies
+for related compounds. Here, we provide a systematic characterization
+of the performance of free-energy perturbation (FEP) calculations
+to predict relative binding free energies of congeneric ligands binding
+to GPCR targets using a consistent protocol and no adjustable parameters.
+Using the FEP+ package, first we validated the protocol, which includes
+a full lipid bilayer and explicit solvent, by predicting the binding
+affinity for a total of 45 different ligands across four different
+GPCRs (adenosine A2AAR, β1 adrenergic,
+CXCR4 chemokine, and δ opioid receptors). Comparison with experimental
+binding affinity measurements revealed a highly predictive ranking
+correlation (average spearman ρ = 0.55) and low root-mean-square
+error (0.80 kcal/mol). Next, we applied FEP+ in a prospective project,
+where we predicted the affinity of novel, potent adenosine A2A receptor (A2AR) antagonists. Four novel compounds were
+synthesized and tested in a radioligand displacement assay, yielding
+affinity values in the nanomolar range. The affinity of two out of
+the four novel ligands (plus three previously reported compounds)
+was correctly predicted (within 1 kcal/mol), including one compound
+with approximately a tenfold increase in affinity compared to the
+starting compound. Detailed analyses of the simulations underlying
+the predictions provided insights into the structural basis for the
+two cases where the affinity was overpredicted. Taken together, these
+results establish a protocol for systematically applying FEP+ to GPCRs
+and provide guidelines for identifying potent molecules in drug discovery
+lead optimization projects.
+
+document-id-old-9ao6b00086document-id-new-14ao-2016-00086yccc-price
+==== Body
+Introduction
+Since the release of
+the first G protein-coupled receptor (GPCR)
+crystal structure in 2000,1 research has
+shifted toward structure-based studies on these pharmaceutically relevant
+proteins.2 Indeed, between 2014 and 2016
+more than a dozen novel, unique crystal structures have been reported,
+including multiple class B and two class C GPCRs.3 These crystal structures facilitate the understanding of
+the structural basis of ligand binding, selectivity, and receptor
+function.4 Additionally, they function
+as starting points for structure-based computational studies including
+virtual screening.5
+
+One of the major
+hurdles in drug discovery in terms of costs is
+lead optimization.6 Computer-aided drug
+design (CADD) provides valuable tools for hit and lead discovery;
+however, the added value of CADD techniques in terms of predicting
+binding affinity in lead optimization has traditionally been modest.7 Virtual screening methods often perform well
+in terms of distinguishing weak and strong binders from inactive or
+decoy compounds but do not allow quantitative prediction of affinity
+for a congeneric series.8 On the other
+hand, more rigorous free-energy calculation methods like free-energy
+perturbation (FEP) and thermodynamic integration (TI) have the promise
+of accurately predicting the free energy of binding, but applications
+to drive discovery have been limited due to uncertainties about the
+accuracy of force fields, insufficient sampling, time-consuming setup,
+and significant computational demands.9 In addition, the application of rigorous free-energy methods to
+GPCRs is perhaps more challenging in many cases than soluble enzyme
+targets because of the lipid bilayer, buried waters, binding-site
+flexibility, and other complicating factors.
+
+With the recent
+advances in improved force fields for proteins
+and small molecules10 together with the
+development of more efficient sampling strategies, such as replica
+exchange, orthogonal space tempering, and replica exchange with solute
+tempering (REST),11 accurate and reliable
+predictions of protein–ligand binding free energies have been
+achieved.9a,12 Furthermore, general-purpose graphics processing
+units (GPGPUs or GPUs) have significantly improved the performance
+and cost of running simulations compared to those in traditional central
+processing unit (CPU) clusters. Indeed, it is now possible to get
+more than 200-fold speedup in running molecular dynamics simulations
+on a single GPU compared to a single CPU. The combination of improved
+force fields, enhanced sampling methods, and GPU computing has made
+FEP an attractive approach for lead optimizations in drug discovery
+projects. Prospective applications of FEP have been successful in
+a number of cases, such as predicting one of the most potent non-nucleoside
+reverse transcriptase inhibitors,13 including
+those that show activity toward mutant strains,14 inhibitors of the macrophage migration inhibitory factor,15 and drug-like inhibitors for IRAK4 and TYK2.9a
+
+In the past, several FEP studies have
+been conducted on GPCR homology
+models, usually to validate the model by making changes to the protein
+or to the ligand and predicting the effect.16 Additional studies have used crystal structures of GPCRs to study
+the influence of in silico mutagenesis on agonist- and antagonist-bound
+structures of A2AR,17 to rationalize
+the difference in binding affinity for a fragment,18 or to explain the structure–activity relationship
+(SAR) on JDTic, a κ-opioid receptor (KOP) antagonist.19 However, a systematic validation of FEP calculations
+against multiple GPCRs with different ligand series has not yet been
+performed.
+
+In this study, we have evaluated the performance
+of FEP+,9a a recently developed workflow
+for large-scale
+application of FEP, to a dataset of 45 ligands against four different
+class A GPCRs. Motivated by the promising retrospective performance,
+we also applied FEP+ in a prospective fashion. The affinity of 46
+derivatives was predicted for the A2AR, and four novel
+compounds were synthesized, leading to the discovery of a compound
+with approximately tenfold increase in affinity. These results further
+validate the applicability of FEP+ for lead optimization across a
+wide range of target classes, including membrane-bound proteins.
+
+Results
+and Discussion
+Overall Results
+Our application
+of FEP+ relies on a
+previously published workflow9a adopted
+to accommodate membrane proteins such as GPCRs (see Experimental). Because we were particularly interested in
+the performance of this workflow on different class A GPCRs, we selected
+SAR series ranging from 9 to 11 compounds each for four different
+targets (Figures S1–S5, Supporting
+Information). Targets were selected on the basis of (a) the quality
+of the crystal structure and (b) the availability of a series of congeneric
+compounds similar to the crystal structure ligand. Whereas FEP+ performance
+for all targets studied was in line with what was observed for globular
+proteins reported in a previous publication, the results for the A2AR were particularly promising. Before applying FEP+ in a
+prospective fashion to the A2AR, we first performed additional
+validation using a secondary set of molecules for this target. The
+cumulative results shown in Figure 1 are based on a total of 90 perturbations among 45
+compounds. Overall, the FEP+ method performance against these GPCR
+series is comparable with the studies on non-membrane-bound proteins.9a Indeed, 39 out of the 45 compounds were predicted
+within 1 kcal/mol error of the experimental affinity. This is also
+indicated by the low RMSE of the experimental versus predicted affinities
+(0.80 kcal/mol) and the high ranking correlation coefficient (Spearman
+ρ), which was calculated for every dataset individually and
+weighted by the number of compounds for the total average value that
+we report (ρ = 0.55). Similarly, the weighted mean unsigned
+error (MUE) was calculated on the basis of raw data and weighted for
+every dataset individually by the number of perturbations. The weighted
+ρ of 0.55 (minimum: 0.2, maximum: 0.83) and a weighted MUE of
+0.94 kcal/mol (minimum: 0.58 kcal/mol, maximum: 1.56 kcal/mol) indicate
+significant predictive capabilities and high accuracy. The performance
+quality appeared to be target-dependent, with a range from satisfactory
+to excellent results for four out of five targets. The reasons for
+the system dependence are further discussed in the next section.
+
+Figure 1 Predicted
+vs experimental ΔG for all 45
+compounds. Compounds are labeled with their compound names and colored
+by receptor. The black line represents the line through the origin
+with a slope of 1. The gray lines represent the 1 kcal/mol error line.
+The weighted average ranking correlation coefficient (weighted Spearman
+ρ) was calculated using the ranking correlation coefficient
+for every dataset individually and weighting by the dataset size.
+The root-mean-square deviation was calculated on the individual ΔG values. Finally, the average weighted MUE was calculated
+on the raw data (ΔΔG values) and weighted
+by the number of perturbations for each dataset.
+
+Results by Target
+The results for each individual target
+are shown in Table 1 and Figures S1–S5, demonstrating
+significant target dependence (see Figures S6–S10). The MUE ranged from 0.58 kcal/mol (A2AR) to 1.56 kcal/mol
+(CXCR4) and the coefficient of determination (R),
+from 0.39 (β1-adrenergic receptor, β1AR) to 0.85 (δ opioid receptor, DOP). The R-value, as a general rule, is highly dependent on dataset size and
+potency span, with smaller potency spans resulting in low correlations,
+even if predictions approached experimental accuracy/uncertainty.
+The dependence of this correlation on the dynamic range of the data
+has been covered in detail previously.9a,20 Indeed, the
+low MUE indicates accurate performance of FEP+ on these ligands/targets,
+but datasets with small experimental dynamic ranges of binding affinities
+can result in low R values, even when the MUE is
+low. A more meaningful measure is to compare the observed R with an expected R resulting from assuming
+an expected prediction error of 1.1 kcal/mol. For all cases, expect
+for the CXCR4, the observed correlation coefficient (R) is comparable with the expected R for the given
+range in experimental affinity. For the weighted average, we obtained
+the same values (0.62) for the observed and expected R. Some datasets performed better than average; for the A2AR and DOP receptor, the observed R between the FEP-predicted
+binding free energies and experimental data was somewhat larger than
+expected. In addition, smaller dataset sizes result in more variability
+in the computed statistics, which could explain the cases where the R-value is better than expected.
+
+Table 1 Overview
+of the Results for Each Individual
+Dataset
+dataset/receptor	no. of ligandsa	experimental ΔGa range	R FEP observedb	R MM-GBSA observedb	Rexpectedc	MUE (min/max)b	avg/max hysteresis	
+Minetti et al.25/adenosine A2A	9	–8.61/–11.56	0.78	–0.31	0.68 ± 0.17	0.68 (0.00/2.52)	0.68/2.28	
+Piersanti et al.22/adenosine A2A	7	–9.80/–11.07	0.55	0.33	0.39 ± 0.35	0.58 (0.05/1.44)	0.53/1.15	
+Thoma et al.23/chemokine CXCR4	9	–6.81*/–11.03	0.45	0.11	0.81 ± 0.11	1.56 (0.08/4.18)	1.79/4.34	
+Yuan et al.50/δ-opioid	11	–9.57/–12.85	0.85	–0.25	0.71 ± 0.14	0.69 (0.06/1.72)	1.01/2.50	
+Christopher et al.34/β1-adrenergic	9	–7.90/–9.77	0.39	0.64	0.50 ± 0.27	1.08 (0.13/2.6)	0.82/3.08	
+weighted average R	 	 	0.62	0.01	0.62	 	 	
+a The number
+of ligands and range
+of experimental affinities for the studied ligands (min/max). For
+the Chemokine receptor CXCR4, the minimum affinity was set to −6.81
+kcal/mol (asterisk, see the text).
+
+b As a validation metric, the correlation
+(R) is given for both FEP and MM-GBSA. The MUE was
+calculated for FEP based on the ΔΔG data.
+
+c The expected R was
+calculated by assuming an RMSE of 1.1 kcal/mol in the calculations.20 The average correlation coefficient was weighted
+by the dataset size.
+
+To
+compare FEP+ with a less computationally expensive method, we
+also predicted affinity values using MM-GBSA. In this case, no significant
+correlations were found except for the β1-adrenergic ligands49 (shown in Table 1 and Figures S6–S10).
+
+The calculations of multiple perturbations for each ligand,
+as
+determined using the FEP+ mapper algorithm, allow for the estimation
+of sampling errors in the calculation through cycle closure analysis.12 Problematic calculations can a priori be identified
+from high hysteresis values (Figures S1–S5, red arrows). For example, a number of cycles involving perturbation
+of 11 to 41 for the A2AR were found to have a high hysteresis,
+ranging between 1.34 and 2.11 kcal/mol. Indeed, this prediction had
+a high absolute error of 2.52 kcal/mol. Consequently, when this perturbation
+was excluded from the results, an increase in performance was observed
+(R = 0.82, MUE = 0.57 kcal/mol). In the case of the
+A2AR, perturbations involving compounds 32 and 41 had larger
+errors than other perturbations. This was expected because compounds
+32 and 41 have different cores than those of the other molecules and
+a much large perturbation is required to mutate between compounds
+32 or 41 and other ligands. If compounds 32 and 41 were omitted from
+the analysis, the correlation (R) increased from
+0.78 to 0.96 and the MUE decreased from 0.68 to 0.57 kcal/mol. The
+SAR of these compounds has been studied previously using WaterMap,21 and although the results obtained in that study
+were also predictive, they required an ad hoc correction to ligand
+entropy for best performance.
+
+Next, we validated the performance
+on a second, related dataset22 for the
+A2AR, to further assess if
+FEP+ can be prospectively applied to this target. The correlation
+for the isolated dataset was not high, which was expected given that
+the affinities span less than 1 order of magnitude (Ki range: 7.5–64 nM). The MUE was in the same range
+for both datasets (MUE between 0.58 and 0.68). These results demonstrate
+that FEP+ can be applied successfully on two different datasets and,
+by extension, possibly on novel derivatives of the A2AR.
+
+For the DOP receptor, the performance was comparable with the results
+we obtained for the A2AR. In fact, the observed R was 1 standard deviation higher than the expected R. For both the A2AR and DOP receptor, an exceptionally
+high resolution crystal structure was used (1.8 Å) with most
+water molecules resolved in both binding pockets, which may partially
+explain why FEP+ performed so well on these targets.
+
+For the
+CXCR4, the performance was below the expected R and
+the MUE was also relatively high (R, 0.45;
+MUE, 1.56 kcal/mol). A few aspects of this dataset should be taken
+into account (Figure S5). First, most of
+the perturbations involved modifications at two or even three positions
+of the ligand and were relatively large in size compared to those
+of the other series and what has been previously attempted.9a Moreover, the experimental affinity of compound
+1d was set to 10 000 nM (ΔG = −6.81
+kcal/mol), whereas the true affinity was reported to be over 10 000
+nM.23 Finally, it should be noted that
+these thiourea compounds can adopt different tautomeric states, and
+in this FEP+ map, only one tautomer was considered. Despite these
+relatively high errors, it was still encouraging to see that FEP+
+was able to predict several large perturbations, like 1d to 1c (isopropyl
+to cyclopentyl) and 1g to 1t (cycloheptyl to cyclohexyl), correctly
+(Figure S5).
+
+Because of the relatively
+poor resolution of the β1AR crystal structure (>2.5
+Å), which resulted in a structure
+with no buried binding-site waters, we included water molecules from
+a WaterMap simulation (see Experimental).
+WaterMap has recently been shown to be a useful tool for placing waters
+in structures for which the resolution is relatively low.24 Comparisons with experimental results revealed
+a relatively high MUE compared to that of the A2AR and
+DOP receptor; however, the observed MUE still falls within the range
+of previously reported errors for this method.9a
+
+At the time of writing, an updated version of OPLS
+force field
+was released (OPLS3).10b Therefore, we
+repeated the same perturbations using OPLS3 (Table S2). In most cases, the MUE was in line with the results obtained
+with OPLS2.1, with a slightly higher MUE value for OPLS3 in three
+of the four cases. On the other hand, hysteresis values were lower
+for OPLS3, possibly due to the improved protein parameters.10b Therefore, we used the OPLS3 force field to
+determine the origin of the overpredicted compounds (see section “Overprediction of compounds 11 and 17”).
+
+Prospective Results: Computational Setup
+We further
+validated the performance of FEP+ prospectively, by predicting the
+affinity of 46 potential new derivatives of the Minetti et al. compounds25 (Table S3). These
+compounds were designed to cover a wide range of synthetically accessible
+substitutions. Affinities were predicted by perturbing two reference
+compounds into each derivative. These results were then merged with
+the retrospective map for the Minetti et al. dataset. We excluded
+compounds 32 and 41 from these results because of a different core
+of the molecule (see section Results by Target). Approximately 12 perturbations
+per week were completed on four Nvidia-780GTX graphic cards. Therefore,
+these prospective calculations can typically be completed within 1
+week using 32 GPUs. This throughput is slightly lower than that in
+the previous study, which is a consequence of the system being slightly
+larger compared to the globular proteins studied previously, because
+of the presence of a membrane around the GPCR. Recently, a new version
+of Desmond has been released (version 4.4)26 that has a 2-fold speedup on GPUs compared to that in the version
+used here, making these calculations even more accessible for prospective
+application to live projects.
+
+Experimental Results
+On the basis of the FEP+ calculations
+of the 46 A2AR derivatives, four novel derivatives were
+selected for synthesis. Three of these were predicted to have high
+affinity, and one, compound 13 (VC-28), served as a negative
+control. We further checked the predicted affinities of these four
+test cases by perturbing them into all experimentally tested reference
+compounds from Minetti et al. (Figure 2; Table S3). In addition
+to these novel compounds, we resynthesized three reference compounds
+tested before by Minetti et al. (1–3) to ensure that the affinities were comparable between labs (Figure 2).25
+
+Figure 2 Predicted affinities for the 46 potential derivatives (Table S3) and 7 Minetti et al.25 compounds using the 4EIY PDB structure for the FEP+ simulations.
+Compounds highlighted in orange are Minetti et al. compounds, and
+compounds in dark blue represent the newly synthesized derivatives
+(top half of figure). The numbered compounds are all compounds that
+were synthesized, including the three compounds that have been described
+previously (3/25d, 1/25b, and 2/25e). The predicted and experimental ΔG are
+given; previously determined experimental ΔG’s are highlighted in orange. The error shows the difference
+in predicted vs experimental ΔG.
+
+The four new compounds were synthesized from previously
+described
+purine derivatives. Namely, 6-chloro-2-iodo-9-methyl-9H-purine (4) was reacted with cyclohexylacetylene in
+a Sonogashira coupling to afford 2-alkynylated derivative 5, which in turn was treated with ammonia to yield adenine (6). Hydrogenation of the alkyne afforded alkyl derivative 7, which was then brominated and immediately reacted with
+1,2,3-triazole to yield compound 8. Alternatively, 4 was aminated at the 6-position to afford iodoadenine (9), which was then brominated and reacted with 1,2,3-triazole
+to yield iodo derivative 10. 10 was then
+reacted into a molybdenum-catalyzed aminocarbonylation reaction with
+aniline, with the catalyst Mo(CO)6 also serving as a source
+of CO; this afforded benzamide derivative 11 (Schemes 1–3). 12 was reacted with dimethylamine to afford compound 13. Finally, dichloropurine 14 was diaminated,
+and the resulting compound 15 was submitted to the bromination/triazole
+coupling sequence, the product of which was reacted with benzoyl chloride
+to afford the 2-mono-acylated derivative 17. The synthesized
+compounds were further tested for affinity in a radioligand binding
+assay for the A2AR. (Figures S11 and S12).
+
+Scheme 1 Previously Described and Synthesized Compounds,25 from Left to Right, 1 (25b), 2 (25e), and 3 (25d)
+Scheme 2 Newly Synthesized Compounds 8 and 11
+Reagents
+and conditions: (a)
+cyclohexylacetylene, Pd(PPh3)2Cl2, CuI, NEt3, dioxane, rt, 1 h; (b) aq NH3,
+dioxane, 70 °C, 15 h; (c) H2, Pd/C, EtOH, rt, 60 h,
+44% (3 steps); (d) Br2, acetate buffer pH = 4/MeOH/THF,
+15 °C to rt, 20 min; (e) 1,2,3-triazole, Cs2CO3, dimethylformamide (DMF), 90 °C, 15 h, 4.5% for 8 (2
+steps); (f) aq NH3, CH3CN, 55 °C, 98%;
+(g) Br2, DMF/CCl4 1/2, rt, 15 h; and (h) Mo(CO)6, Et4NCl, aniline, dioxane, 130 °C, 4 h, 2.3%
+(3 steps).
+
+Scheme 3 Newly Synthesized Compounds 13 and 17
+Reagents and conditions: (a)
+Me2NH, H2O, 120 °C, 26%; (b) NH3, EtOH, 160 °C, 24 h, 31%; (c) Br2, DMF/CCl4 1/2, rt, 15 h; (d) 1,2,3-triazole, Cs2CO3,
+DMF, 120 °C, 5 h, 82% (2 steps); and (e) BzCl, pyridine, rt,
+30 min, 21%.
+
+The differences between the experimental
+values obtained here (Figure 2, blue) and in the
+previous study25 (Figure 2, orange) were 0.45 kcal/mol on average.
+The largest difference was found for 3 with a difference
+of 0.71 kcal/mol between two experimental values, which is comparatively
+high but falls within the heterogeneous experimental uncertainty.27 These control compounds indicated that we were
+able to reproduce the affinities found by Minetti et al.25 The negative control was also in line with the
+experimental result, with significantly reduced affinity compared
+to that of the potent Minetti et al. compounds.
+
+Compound 8, which was predicted to be significantly
+more potent than 1, was in fact the most potent derivative
+(Ki = 1.2 nM) of all of the compounds
+tested here. The affinity was improved by approximately 10-fold over
+the most potent compound in the Minetti series, which was compound 1 with an affinity of 10.7 nM (−10.87 kcal/mol). However,
+the predicted values for the benzamide, compound 17,
+and the inverted benzamide, compound 11, deviated from
+what was found experimentally. Compound 17 in particular
+was overpredicted by 3.75 kcal/mol, which is significantly higher
+than the largest error observed in the retrospective data (2.11 kcal/mol
+for the perturbation of 11 to 41).
+
+Overpredictions of Compounds 11 and 17
+The overprediction of the
+affinity of compounds 11 and 17 urged us
+to further analyze simulations involving
+these compounds. Although large errors can occur occasionally, they
+are quite rare, happening only in about 3.3% of the perturbations
+for the previously reported dataset.9a This
+overprediction could be due to several reasons, such as (1) unconverged
+binding site hydration patterns, (2) multiple compound binding modes,
+(3) large inaccuracies in the force field,9d or (4) incorrect system setup. On the basis of further analysis
+of the complex (bound) FEP+ simulations, we observed that the amide
+of compound 17 was able to form an interaction with Glu169EL2 mediated through different water molecules (Figure 3). This interaction was stabilized
+by His2647.29, which was treated as a protonated species
+as predicted by the PROPKA algorithm28 in
+the Protein Preparation Wizard (Figure 4).29 To further test the
+influence of the ionizable residues and the impact of these residues
+on the predicted affinities, we selected another crystal structure
+of the A2AR that was co-crystallized with the same ligand
+(ZM241385, PDB: 3PWH)30 but solved at a higher pH (pH = 8–8.75,
+instead of pH = 5 for 4EIY). When we compared the 4EIY with 3PWH structure, we found that for 3PWH extracellular loop
+(EL) 3 is further away from EL2 with His2647.29 oriented
+away from Glu169EL2 (Figure S13). Because of this structural difference, His2647.29 was
+predicted to be deprotonated (HIE) in the 3PWH structure, in line with both the pH (∼8)
+and pKa of the histidine (pKa = 6 – 6.5). His2647.29 has been shown
+to be a residue that is involved in the dissociation of ZM241385.31 On the basis of this observation, we hypothesized
+that the misassignment of the protonation state of His2647.29 and the conformation of EL3 were responsible for the overprediction
+of compounds 11 and 17. They both contain
+an amide that could interact more favorably with the protonated form
+of His but would require an energetic cost to be paid to protonate
+this His under the pH conditions in the experimental assays.
+
+Figure 3 2D representation
+of FEP+ simulation of replica 11 for ligand 17, showing
+the percentage of time that an interaction is
+present during the 5 ns simulation. One of the most prominent interactions
+of the amide is the interaction with a bridging water that interacts
+with Glu169EL2 and the oxygen of the amide.
+
+Figure 4 Representative snapshot of replica 11 for ligand 17, at 3.36 ns. The interactions that are predicted to be
+beneficial
+among the receptor, the amide, the core of the molecule, and different
+water molecules are shown. Two water molecules form bridging interactions
+with the residue Glu169EL2. Moreover, the protonated His2647.29 stabilizes this interaction by forming an additional interaction
+with Glu169EL2. For clarity, transmembrane (TM) helix 7
+is partially hidden (residues 265–275). The membrane lipids
+(POPC) are shown as spheres.
+
+To enable a direct comparison between the two structures,
+two FEP+
+maps were generated for both crystal structures based on the seven
+compounds that were synthesized in this work (Figures 2, S14, and S15). The predicted affinities for both are shown in Figure 5 (raw data in Table S4). The predictions based on the 3PWH crystal structure
+correlated better with the experimental results (R 3PWH = 0.76, 4EIY = 0.44; MUE 3PWH = 1.24 kcal/mol, 4EIY = 2.33 kcal/mol).
+
+Figure 5 Predicted
+vs experimental ΔG for the seven
+ligands based on either the crystal structure 3PWH or 4EIY. On the basis of
+the difference between 4EIY and 3PWH predictions, we removed ligand 17 and then ligand 11. The red colored bars are predictions based on 4EIY, and the blue bars
+are predictions based on 3PWH. The dashed bars represent predictions for both crystal
+structures after removal of ligands 11 and 17. For instance, for ligand 4, the predicted ΔG based on all ligands is −10.51 kcal/mol, whereas the experimental
+ΔG is −12.16 kcal/mol. After removal
+of ligands 11 and 17, the predicted ΔG is −11.82 kcal/mol. Dashed lines represent a 1
+kcal/mol error line.
+
+This suggests an alternative mechanism for identifying erroneous
+predictions a priori based only on the predicted affinities. If we
+compare the differences between the predicted affinities (Figure 5 and ΔΔG4EIY-3PWH, Table S4), it is clear that the difference on
+average is high (1.44 kcal/mol), resulting mostly from differences
+for compounds 11 and 17. In a prospective
+setting, when the experimental affinity is unknown, a second model
+could be of use; predictions where two models predict significantly
+different results should be deprioritized. For example, removing compounds 11 and 17 from both maps dramatically reduced
+the average difference between the values in the two maps (from 1.44
+to 0.87 kcal/mol), and there was a high correlation between the 4EIY- and 3PWH-based results (R = 0.82 between 4EIY and 3PWH), with 4EIY performing the best for the five remaining compounds (R24EIY = 0.96, 3PWH = 0.87). Although we were able to test this method only retrospectively
+and on a small dataset, these results indicate that there is an added
+value of validating predicted affinities using a second model or crystal
+structure.
+
+Conclusions
+This study shows the
+value that free-energy calculations (specifically,
+FEP+) can have in GPCR drug discovery projects through the accurate
+prediction of relative binding free energies for congeneric compounds.
+The performance of free-energy methods had thus far only been studied
+anecdotally for GPCRs; here we studied it on four different targets
+involving different types of perturbations. Although the retrospective
+results indicated that the results are target-dependent, the results
+were still predictive and accurate for most targets, especially for
+the Adenosine A2A and DOP receptors. Moreover, even for
+some relatively large perturbations, good results were obtained, demonstrating
+the robustness of this approach. These results were in line with those
+that were previously obtained for globular proteins. Because these
+calculations can be performed within in a matter of days, the real
+strength of the approach is the accurate ranking of compounds for
+synthesis. On the basis of FEP+ calculations, we predicted and identified
+a highly potent antagonist (compound 8, Ki = 1.2 nM) and achieved a 10-fold increase in potency
+by synthesizing only four compounds. Several predictions were incorrect,
+including both compounds 11 and 17, where
+we overpredicted the affinity. In that case, the cause of the erroneous
+predictions was retrospectively identified by using a different crystal
+structure. With the increase in the availability of crystal structures
+for GPCRs, we expect that FEP+ will be applied in a more systematic
+fashion, not only limited to predicting affinities of ligands but
+also possibly to the prediction of selectivity of ligands.
+
+Experimental
+Section
+Computational Setup
+All calculations were performed
+using tools available in the Schrodinger Suite.32 Structures were retrieved from the PDB33 and subsequently prepared using the Protein Preparation
+Wizard.29 Protonation states were assigned
+using PROPKA.28 For the A2AR
+(PDB: 4EIY)
+and the DOP receptor (PDB: 4N6H), the BRIL insertion was replaced by the wild-type
+amino acids. For 4EIY, the first few amino acids of the crystal structure were mutated
+back to the original sequence, to improve the stability of TM1 (GAPP
+to MP). For the CXCR4 receptor (PDB: 3ODU), the T4 lysozyme was replaced by intracellular
+loop 3. For the β1AR (PDB: 3ZPQ), the crystal structure
+of piperazine-based fragment “19” was
+used.34 The crystal structure used here
+is a turkey β1AR, whereas the assay data is for the
+human receptor. However, as human and turkey binding sites are 100%
+identical, the results should be comparable.34 The model based on the crystal structure of 3PWH(30) was generated in the following way: residues that were
+missing (e.g., EL2 149–158) were modeled using 4EIY, and we included
+the water molecules and the sodium ion of the high-resolution crystal
+structure (4EIY). For the calculations involving the OPLS3 force field (Table S2 and Figures S9 and S10), a newer release
+of the Schrodinger software was used.26 MM-GBSA calculations were performed using Prime.35
+
+After preparation, the structures were aligned to
+the orientations from the Orientations of Proteins in Membranes (OPM)
+database.36 Structures were embedded in
+a membrane bilayer consisting of POPC lipids. SPC waters and counter
+ions were added using the system builder from Desmond.37 The OPLS2.1 force field was used.10a,38 Additional missing torsion parameters of the reference and crystal
+structure ligands were assigned using the force-field builder, which
+refits the missing torsion parameters to an accurate QM calculation
+(LMP2/cc-pVTZ(-f)). Virtual sites in OPLS2.1 were used for halogens
+as described by Jorgensen et al.39 and
+for heterocycles (the DOP receptor compounds). Implementation and
+utilization of the force-field builder and virtual sites in OPLS3
+have been recently described.10b
+
+Because of the relatively low resolution of the β1AR structure (2.8 Å), additional water molecules were included
+around the (unsubstituted) reference ligand “10”, using the WaterMap40 algorithm.
+These waters were derived from the clustering of the water molecules
+in the binding pocket sampled during the WaterMap trajectory.40 Subsequently, all systems were relaxed using
+the default membrane-relaxation protocol implemented in multisim (Supporting Information).41 Because the ligands of both the A2AR and DOP receptor were similar but distinct from the crystal structure
+ligand, the reference ligand was inserted using core-constrained docking.42 These docked poses were subjected to an additional multisim refinement of 2.5 ns (see Supporting Information). For both the β1AR and CXCR4,
+a subset of ligands was selected from the original articles because
+of the differences in the core and size of derivatives, respectively.
+For simplicity, only the S-chiral form was considered
+in the final results. For one ligand, experimental results were available
+for both forms (e.g., 16b/16c). Calculated
+ΔG for all stereoisomers can be found in the Table S1.
+
+The individual perturbations
+were generated using the FEP+ mapper.
+Each ligand is connected to at least two other ligands, and the connections
+represent the different perturbations performed (Figures 1–5). These maps were generated with a bias toward the reference ligand.
+The same protocol used here has been described before.9a In brief, the FEP+ mapper sets up the individual
+perturbations and builds the system for both the solvent and complex
+simulations. After a short relaxation, 12 λ windows are simulated
+under NPT conditions at 300 K for 5 ns. To further enhance sampling,
+a “hot region” is assigned using REST.11d,43Figure 4 was rendered
+using PyMol.44
+
+Synthesis
+All
+reagents used were obtained from commercial
+sources and all solvents were of analytical grade. Ethyl acetate (EtOAc)
+was redistilled before use. Demineralized water is simply referred
+to as H2O. 1H and 13C NMR spectra
+were recorded at room temperature (rt) on a Bruker AC 400 (1H NMR, 400 MHz; 13C NMR, 100 MHz) spectrometer unless
+specified otherwise. Chemical shifts are reported in δ (ppm),
+and the following abbreviations are used: s, singlet; d, doublet;
+dd, double doublet; t, triplet; q, quadruplet; m, multiplet, br s,
+broad singlet. Coupling constants are reported in hertz and are designated
+as J. Analytical purity of the final compounds was
+determined by high-pressure liquid chromatography (HPLC) with a Phenomenex
+Gemini 3u C18 110A column (50 mm × 4.6 mm, 3 μm), measuring
+UV absorbance at 254 nm. The sample preparation and HPLC method is,
+unless stated otherwise, as follows: 0.3–0.8 mg of compound
+was dissolved in 1 mL of a 1:1:1 mixture of CH3CN/H2O/tBuOH and eluted from the column within 15 min, with a three-component
+system of H2O/CH3CN/1% TFA in H2O,
+decreasing polarity of the solvent mixture in time from 80/10/10 to
+0/90/10. Liquid chromatography–mass spectrometry analysis was
+performed on a Finnigan Surveyor HPLC system with a Gemini C18 50
+mm × 4.60 mm column (detection at 200–600 nm), coupled
+to a Finnigan Licence Controller Qualification Advantage Max mass
+spectrometer with electrospray ionization. The applied buffers were
+H2O, CH3CN, and 1.0% aq TFA. All compounds show
+a single peak at the designated retention time and are at least 95%
+pure. Thin-layer chromatography (TLC) was routinely consulted to monitor
+the progress of reactions, using aluminum-coated Merck silica gel
+F254 plates. Purification by column chromatography was achieved by
+use of Grace Davison Davisil silica column material (LC60A 30–200
+μm). Solutions were concentrated using a Heidolph laborota W8
+2000 efficient rotary evaporation apparatus and by a high vacuum on
+a Binder APT line Vacuum Drying Oven.
+
+6-Chloro-2-(cyclohexylethynyl)-9-methyl-9H-purine
+(5)
+To a solution of 4(45) (290 mg, 0.98 mmol), CuI (18 mg, 0.09 mmol),
+Pd(PPh3)2Cl2 (35 mg, 0.05 mmol) in
+dioxane (4 mL) was added Et3N (210 mL, 1.51 mmol) followed
+by cyclohexylacetylene (140 mL, 1.07 mmol). The mixture was stirred
+at rt for 1 h and then filtered over Celite (cake washed with CH2Cl2). The volatiles were removed under reduced
+pressure and the residue was redissolved in CH2Cl2 (20 mL), washed with H2O (20 mL), and dried with MgSO4. After filtration, the volatiles were removed under reduced
+pressure and the residue was purified using flash chromatography on
+silica gel (0–2% MeOH in CH2Cl2) to afford 5 (263 mg). The product was reacted without further purification.
+
+2-(Cyclohexylethynyl)-9-methyl-9H-purin-6-amine
+(6)
+To a solution of 5 (260 mg,
+0.95 mmol) in dioxane (70 mL) was added NH3 (28% in H2O, 35 mL), and the mixture was heated at 70 °C for 15
+h. The volatiles were then removed under reduced pressure, and the
+residue was purified by flash chromatography on silica gel (CH2Cl2 then 0–10% MeOH in CHCl3/EtOH
+99:1) to afford 6 (201 mg). The product was reacted without
+further purification.
+
+2-(2-Cyclohexylethyl)-9-methyl-9H-purin-6-amine
+(7)
+To a solution of 6 (201 mg,
+0.7 mmol) in EtOH (25 mL) was added Pd/C (10% on charcoal, 200 mg).
+The mixture was purged three times with Ar and then with H2, and the mixture was stirred at rt for 60 h. It was then filtered
+over Celite (washed with MeOH), and the volatiles were removed under
+reduced pressure. The residue was purified by flash chromatography
+on silica gel (0–4% MeOH in CH2Cl2) to
+afford 7 (112 mg, 44% over three steps). 1H NMR (400 MHz, CDCl3) δ 7.71 (s, 1H), 6.02 (br
+s, 2H), 3.81 (s, 3H), 2.83–2.79 9m, 2H), 1.81–1.77 (m,
+2H), 1.73–1.63 (m, 5H), 1.38–1.28 (m, 1H), 1.27–1.10
+(m, 3H), 1.00–0.90 (m, 2H); MS m/z [M + H]+ 260.19.
+
+2-(2-Cyclohexylethyl)-9-methyl-8-(2H-1,2,3-triazol-2-yl)-9H-purin-6-amine
+(8)
+To a solution
+of 7 (112 mg, 0.43 mmol) in a 1:1:1 mixture of MeOH/THF/acetate
+buffer (pH = 4 (3.6 mL) at −15 °C) was added Br2 (220 mL, 4.3 mmol). The mixture was stirred at −15 °C
+for 10 min and then at rt for 10 min, upon which the excess of Br2 was eliminated with Na2S2O5 (1 spatula). The pH was brought to 8–9 by adding sat. aq
+NaHCO3, and the organic solvents were removed under reduced
+pressure. The residue was partitioned between H2O (10 mL)
+and CH2Cl2 (10 mL), the layers were separated,
+and the aqueous layer was extracted with CH2Cl2 (2 × 10 mL). The combined organic layers were dried over MgSO4, filtered, and the volatiles were removed under reduced pressure.
+The residue was dissolved in DMF (4.5 mL), and Cs2CO3 (610 mg, 1.73 mmol) was added, followed by 1,2,3-triazole
+(100 mL, 1.73 mmol). The mixture was heated at 90 °C for 15 h,
+upon which the solvent was removed under reduced pressure. The residue
+was partitioned between H2O (10 mL) and CH2Cl2 (10 mL), the layers were separated, and the aqueous layer
+was extracted with CH2Cl2 (2 × 10 mL).
+The combined organic layers were dried over MgSO4, filtered,
+and the volatiles were removed under reduced pressure. The residue
+was purified by flash chromatography on silica gel (0–4% MeOH
+in CH2Cl2) and then further purified by semipreparative
+HPLC (10–90% CH3CN in H2O + 0.1% TFA
+over 20 min, Phenomenex Gemini C-18 5u 200 × 10 mm, 5 mM, 4 mL/min)
+to afford 8 (6.2 mg, 4.5%). 1H NMR (400 MHz,
+CDCl3) δ 11.25 (br s, 1H), 8.09 (s, 2H), 7.04 (br
+s, 1H), 4.16 (s, 3H), 3.00 (t, J = 8.0 Hz, 2H), 1.82–1.65
+(m, 6H), 1.39–1.15 (m, 5H), 1.03–0.97 (m, 2H); MS m/z [M + H]+ 327.13; HPLC tR = 7.68 min.
+
+2-Iodo-9-methyl-9H-purin-6-amine
+(9)
+To a solution of 4 (985 mg,
+3.34 mmol) in
+CH3CN (13 mL) was added NH3 (28% in H2O, 16 mL). The mixture was then heated at 55 °C for 15 h. The
+volatiles were removed under reduced pressure, and the residue was
+precipitated by adding MeOH. Following filtration, 9 was
+obtained (690 mg, 75%, crude). 1H NMR (400 MHz, CDCl3) δ 8.00 (s, 1H), 7.59 (br s, 2H), 3.67 (s, 3H). The
+product was reacted without further purification.
+
+2-Iodo-9-methyl-8-(2H-1,2,3-triazol-2-yl)-9H-purin-6-amine
+(10)
+To a solution
+of 9 (300 mg, 1.1 mmol) in a mixture of DMF (3.6 mL)
+and CCl4 (7.2 mL) was added Br2 (100 mL, 1.95
+mmol). The mixture was stirred at rt for 15 h, upon which the excess
+of Br2 was removed by co-evaporation with DMF (two times
+5 mL) under reduced pressure.46 The residue
+was partitioned between H2O (30 mL) and EtOAc (50 mL),
+the layers were separated, and the aqueous layer was extracted with
+EtOAc (2 × 50 mL). The combined organic layers were dried over
+MgSO4, filtered, and the volatiles were removed under reduced
+pressure. The residue was dissolved in DMF (10 mL) and Cs2CO3 (1.55 g, 4.4 mmol) was added, followed by 1,2,3-triazole
+(255 mL, 4.4 mmol). The mixture was heated at 90 °C for 15 h,
+upon which the solvent was removed under reduced pressure. The residue
+was partitioned between H2O (10 mL) and CH2Cl2 (10 mL), the layers were separated, and the aqueous layer
+was extracted with CH2Cl2 (2 × 10 mL).
+The combined organic layers were dried over MgSO4, filtered,
+and the volatiles were removed under reduced pressure to afford 10 (280 mg, crude) as a 1:1 mixture of isomers, which was
+used in the next step without further purification.
+
+6-Amino-9-methyl-N-phenyl-8-(2H-1,2,3-triazol-2-yl)-9H-purine-2-carboxamide (11)47
+A 10 mL microwave
+tube with a stirrer bar was charged with Mo(CO)6 (174 mg,
+0.66 mmol) and NEt4Cl (109 mg, 0.66 mmol). Dioxane (1 mL)
+was added and the vial was sealed. It was heated under microwave irradiation
+at 140 °C for 2 min. 10 (230 mg, 0.66 mmol) was
+added, followed by aniline (127 mL, 1.32 mmol), and the mixture was
+heated at 130 °C for 4 h. The solvents were then removed under
+reduced pressure, and the residue was purified by flash chromatography
+on silica gel (1% MeOH in CHCl3/EtOH 99:1) to afford 11 (8.5 mg, 2.3% over 3 steps). 1H NMR (400 MHz,
+CDCl3) δ 10.47 (s, 1H), 8.38 (s, 2H), 7.87 (br s,
+2H), 7.83 (d, J = 8.0 Hz, 2H), 7.39 (t, J = 7.6 Hz, 2H), 7.13 (d, J = 7.2 Hz, 1H), 3.98 (s,
+3H). MS m/z [M + H]+ 335.93; HPLC tR = 6.93 min.
+
+N2,N2,9-Trimethyl-8-(2H-1,2,3-triazol-2-yl)-9H-purine-2,6-diamine (13)
+A solution
+of 12(48) (100 mg, 0.4 mmol)
+in Me2NH (40% in H2O, 50 mL) in a sealed vessel
+was heated at 120 °C for 15 h. The volatiles were removed under
+reduced pressure, and the residue was purified by flash chromatography
+on silica gel (3% MeOH in CH2Cl2). Further recrystallization
+from EtOH afforded 13 (26 mg, 26%). 1H NMR
+(400 MHz, CDCl3) δ 7.94 (s, 2H), 5.26 (br s, 2H),
+3.89 (s, 3H), 3.20 (s, 6H); MS m/z [M + H]+ 260.00; HPLC tR = 5.12 min.
+
+9-Methyl-9H-purine-2,6-diamine (15)49
+A solution of 14(3) (4.01 g, 19.75 mmol) in NH3 (1.5 M in EtOH,
+160 mL) in a sealed vessel was heated at 160 °C
+for h,
+after which full conversion was shown by TLC (15% MeOH in CHCl3). The volatiles were removed under reduced pressure, and
+the resulting residue was purified by recrystallization from water.
+Product 15 was obtained as brown crystals (996 mg, 31%). 1H NMR (400 MHz, DMSO-d6) δ
+7.65 (s, 1H), 6.68 (br s, 2H), 5.83 (br, s, 2H), 3.53 (s, 3H).
+
+9-Methyl-8-(2H-1,2,3-triazol-2-yl)-9H-purine-2,6-diamine
+(16)
+To a solution
+of 15 (250 mg, 1.52 mmol) in a mixture of DMF (5 mL)
+and CCl4 (10 mL) was added Br2 (140 mL, 2.74
+mmol). The mixture was stirred at rt for 15 h, upon which the excess
+of Br2 was removed by co-evaporation with DMF (2 ×
+5 mL) under reduced pressure. The residue was dissolved in DMF (20
+mL), and Cs2CO3 (1.24 mg, 3.89 mmol) was added,
+followed by 1,2,3-triazole (88 mL, 15.2 mmol). The mixture was heated
+at 120 °C for 5 h, upon which the solvent was removed under reduced
+pressure. The residue was partitioned between H2O (30 mL)
+and hot EtOAc (50 mL), the layers were separated, and the aqueous
+layer was extracted with hot EtOAc (5 × 50 mL). The combined
+organic layers were dried over MgSO4, filtered, and the
+volatiles were removed under reduced pressure. The resulting mixture
+was triturated with diethyl ether to afford 17 (289 mg,
+crude) as a 1:1 mixture of isomers, which was used in the next step
+without further purification.
+
+N-(6-Amino-9-methyl-8-(2H-1,2,3-triazol-2-yl)-9H-purin-2-yl)benzamide
+(17)
+To a solution
+of 16 (203 mg, 0.88 mmol) in pyridine was added BzCl
+(500 mL, 8.78 mmol), and the mixture was stirred at rt for 30 min.
+The reaction mixture was quenched with water (10 mL), and the pH was
+adjusted to pH = 12 by the addition of 5 M NaOH (aq) solution. The
+organics were extracted with EtOAc (3 × 50 mL) and brine (1 ×
+10 mL) and dried over MgSO4, and the volatiles were removed
+under reduced pressure. The residue was purified by flash chromatography
+on silica gel (1% MeOH in CHCl3/EtOH 99:1) to afford 17 as a white solid (63 mg, 21%). 1H NMR (400 MHz,
+CDCl3) δ 8.56 (s br, 1H, NH), 8.00 (s, 2H), 7.96–7.92
+(m, 2H), 7.57 (tt, J = 7.2, 1.2 Hz, 1H), 7.53–7.47
+(m, 2H), 5.92 (br s, 2H, NH2), 4.05 (s, 3H); Decoupled 13C NMR (150.9 MHz, CDCl3) δ 165.5, 155.8,
+153.3, 151.6, 142.0, 137.2, 134.8, 132.2, 128.8, 127.5, 114.3, 31.4; 13C NMR without 1H-decoupling (150.9 MHz, CDCl3) δ 165.5 (pseudo doublet C2), 155.8, 153.3, 151.6,
+142.0, 137.2 (dd, J = 196, 12 Hz), 134.8 (t, J = 7.5 Hz), 132.2 (dt, J = 162, 7.5 Hz),
+128.8 (dd, J = 162, 7.5 Hz), 127.6 (dt, J = 160, 7.5 Hz), 114.3 (t, J = 3.9 Hz, C5), 31.4
+(q, J = 143 Hz); 13C NMR with 1H-decoupling o2p = 8.83 ppm (150.9 MHz, CDCl3) δ
+165.5 (s, C2), 155.8, 153.3, 151.6, 142.0, 137.2 (dd, J = 196, 13 Hz), 134.8 (t, J = 7.5 Hz), 132.2 (dt, J = 162, 7.5 Hz), 128.8 (dd, J = 162, 7.5
+Hz), 127.6 (dt, J = 160, 7.5 Hz), 114.3 (t, J = 3.8 Hz, C5), 31.4 (q, J = 143 Hz); 13C NMR with 1H-decoupling o2p = 6.06 ppm (150.9
+MHz, CDCl3) δ 165.5 (s, C2), 155.8, 153.3, 151.6,
+142.0, 137.2 (dd, J = 196, 12 Hz), 134.8 (t, J = 7.5 Hz), 132.2 (dt, J = 162, 7.5 Hz),
+128.8 (dd, J = 162, 7.5 Hz), 127.6 (dt, J = 160, 7.5 Hz), 114.3 (s, C5), 31.4 (q, J = 143
+Hz); MS m/z [M + H]+ 336.00; HPLC tR = 6.07 min.
+
+Radioligand Binding Assays
+[3H]ZM241385 (45.9 Ci/mmol)
+was purchased from ARC Scopus Research (Wageningen, The Netherlands).
+NECA was obtained from Sigma-Aldrich (St. Louis, MO). To determine
+the affinities of the proposed ligands for the A2AR, radioligand
+binding assays were performed. Affinities were determined on membranes
+from HEK 293 cells stably expressing this human receptor, using [3H]ZM241385
+as the radioligand. Membranes (25 μL) containing 10 μg
+of protein were incubated in a total volume of 100 μL, containing
+25 μL of tris–HCl (pH 7.4) buffer, 25 μL of radioligand
+(1.7 nM [3H]ZM241385 plus buffer), and 25 μL of the tested ligands.
+Incubation was done for 2 h at 25 °C in a shaking water bath.
+Nonspecific binding was determined in the presence of 10 mM NECA.
+The samples were harvested after filtration over prewetted Whatman
+GF/B filters under reduced pressure with a Brandel harvester. Filters
+were washed three times with ice-cold buffer and placed in scintillation
+vials. Emulsifier Safe (3.5 mL) was added, and after 2 h, radioactivity
+was counted in a TriCarb 2900TR liquid scintillation counter. Full
+displacement curves of the tested ligands are given in the Figures S5–S7.
+
+Supporting Information Available
+The Supporting Information
+is available free of charge on the ACS Publications website at DOI: 10.1021/acsomega.6b00086.Predicted affinities
+for the different chiral molecules,
+performance of the OPLS3 force field, predicted affinities for the
+46 proposed derivatives, FEP+ maps of the different datasets, full
+displacement curves of the different compounds, structural difference
+between 4EIY and 3PWH and
+FEP+ maps for both (PDF)
+
+
+
+Supplementary Material
+ao6b00086_si_001.pdf
+
+ Author Contributions
+E.B.L., T.B.,
+F.M.M., and A.N. performed the calculations. J.L., A.-F.F., and J.P.V.
+synthesized the compounds. H.V., and T.M.-K. performed the biological
+experiments. E.B.L. wrote the manuscript. All authors discussed, contributed
+to and revised the manuscript.
+
+The
+authors
+declare no competing financial interest.
+
+Acknowledgments
+Adriaan P. IJzerman
+and Eelke B. Lenselink thank the Dutch
+Research Council (NWO) for financial support (NWO-TOP #714.011.001).
+==== Refs
+References
+Palczewski K. ; Kumasaka T. ; Hori T. ; Behnke C. A. ; Motoshima H. ; Fox B. A. ; Le Trong I. ; Teller D. C. ; Okada T. ; Stenkamp R. E. ; Yamamoto M. ; Miyano M. 
+Crystal structure of
+rhodopsin: A G protein-coupled receptor . Science 
+2000 , 289 , 739 –45 . 10.1126/science.289.5480.739 .10926528 
+Overington J. P. ; Al-Lazikani B. ; Hopkins A. L. 
+How many drug targets are there? . Nat. Rev. Drug Discovery 
+2006 , 5 , 993 –996 . 10.1038/nrd2199 .17139284 
+a Hollenstein K. ; Kean J. ; Bortolato A. ; Cheng R. K. ; Doré A. S. ; Jazayeri A. ; Cooke R. M. ; Weir M. ; Marshall F. H. 
+Structure of class B GPCR corticotropin-releasing
+factor receptor 1 . Nature 
+2013 , 499 , 438 –43 . 10.1038/nature12357 .23863939  b Siu F. Y. ; He M. ; de Graaf C. ; Han G. W. ; Yang D. ; Zhang Z. ; Zhou C. ; Xu Q. ; Wacker D. ; Joseph J. S. ; Liu W. ; Lau J. ; Cherezov V. ; Katritch V. ; Wang M. W. ; Stevens R. C. 
+Structure of the human glucagon class B G-protein-coupled
+receptor . Nature 
+2013 , 499 , 444 –9 . 10.1038/nature12393 .23863937  c Wu H. ; Wang C. ; Gregory K. J. ; Han G. W. ; Cho H. P. ; Xia Y. ; Niswender C. M. ; Katritch V. ; Meiler J. ; Cherezov V. ; Conn P. J. ; Stevens R. C. 
+Structure of a class C GPCR metabotropic
+glutamate receptor 1 bound to an allosteric modulator . Science 
+2014 , 344 , 58 –64 . 10.1126/science.1249489 .24603153  d Doré A. S. ; Okrasa K. ; Patel J. C. ; Serrano-Vega M. ; Bennett K. ; Cooke R. M. ; Errey J. C. ; Jazayeri A. ; Khan S. ; Tehan B. ; Weir M. ; Wiggin G. R. ; Marshall F. H. 
+Structure of class C GPCR metabotropic
+glutamate receptor 5 transmembrane domain . Nature 
+2014 , 511 , 557 –62 . 10.1038/nature13396 .25042998  e Jazayeri A. ; Doré A. S. ; Lamb D. ; Krishnamurthy H. ; Southall S. M. ; Baig A. H. ; Bortolato A. ; Koglin M. ; Robertson N. J. ; Errey J. C. 
+Extra-helical binding
+site of a glucagon receptor antagonist . Nature 
+2016 , 533 , 274 –277 . 10.1038/nature17414 .27111510 
+a Venkatakrishnan A. J. ; Deupi X. ; Lebon G. ; Tate C. G. ; Schertler G. F. ; Babu M. M. 
+Molecular signatures
+of G-protein-coupled receptors . Nature 
+2013 , 494 , 185 –94 . 10.1038/nature11896 .23407534  b Katritch V. ; Cherezov V. ; Stevens R. C. 
+Structure-function of the G protein-coupled
+receptor superfamily . Annu. Rev. Pharmacol.
+Toxicol. 
+2013 , 53 , 531 –56 . 10.1146/annurev-pharmtox-032112-135923 .23140243 
+a Andrews S. P. ; Brown G. A. ; Christopher J. A. 
+Structure-based
+and fragment-based GPCR drug discovery . ChemMedChem 
+2014 , 9 , 256 –75 . 10.1002/cmdc.201300382 .24353016  b Beuming T. ; Lenselink E. B. ; Pala D. ; McRobb F. ; Repasky M. ; Sherman W. 
+Docking and Virtual Screening Strategies for GPCR Drug
+Discovery . Methods Mol. Biol. 
+2015 , 1335 , 251 –76 . 10.1007/978-1-4939-2914-6_17 .26260606 
+Paul S. M. ; Mytelka D. S. ; Dunwiddie C. T. ; Persinger C. C. ; Munos B. H. ; Lindborg S. R. ; Schacht A. L. 
+How to
+improve R&D
+productivity: the pharmaceutical industry’s grand challenge . Nat. Rev. Drug Discovery 
+2010 , 9 , 203 –214 . 10.1038/nrd3078 .20168317 
+Schneider G. 
+Virtual screening:
+an endless staircase? . Nat. Rev. Drug Discovery 
+2010 , 9 , 273 –276 . 10.1038/nrd3139 .20357802 
+Li Y. ; Han L. ; Liu Z. ; Wang R. 
+Comparative assessment of scoring
+functions on an updated benchmark: 2. Evaluation methods and general
+results . J. Chem. Inf. Model. 
+2014 , 54 , 1717 –36 . 10.1021/ci500081m .24708446 
+a Wang L. ; Wu Y. ; Deng Y. ; Kim B. ; Pierce L. ; Krilov G. ; Lupyan D. ; Robinson S. ; Dahlgren M. K. ; Greenwood J. ; Romero D. L. ; Masse C. ; Knight J. L. ; Steinbrecher T. ; Beuming T. ; Damm W. ; Harder E. ; Sherman W. ; Brewer M. ; Wester R. ; Murcko M. ; Frye L. ; Farid R. ; Lin T. ; Mobley D. L. ; Jorgensen W. L. ; Berne B. J. ; Friesner R. A. ; Abel R. 
+Accurate and reliable prediction of relative ligand binding potency
+in prospective drug discovery by way of a modern free-energy calculation
+protocol and force field . J. Am. Chem. Soc. 
+2015 , 137 , 2695 –703 . 10.1021/ja512751q .25625324  b Limongelli V. ; Bonomi M. ; Parrinello M. 
+Funnel metadynamics as accurate binding
+free-energy method . Proc. Natl. Acad. Sci. U.S.A. 
+2013 , 110 , 6358 –6363 . 10.1073/pnas.1303186110 .23553839  c Homeyer N. ; Stoll F. ; Hillisch A. ; Gohlke H. 
+Binding Free Energy
+Calculations for Lead Optimization: Assessment of Their Accuracy in
+an Industrial Drug Design Context . J. Chem.
+Theory Comput. 
+2014 , 10 , 3331 –3344 . 10.1021/ct5000296 .26588302  d Hansen N. ; van Gunsteren W. F. 
+Practical Aspects of Free-Energy
+Calculations: A Review . J. Chem. Theory Comput. 
+2014 , 10 , 2632 –47 . 10.1021/ct500161f .26586503 
+a Shivakumar D. ; Harder E. ; Damm W. ; Friesner R. A. ; Sherman W. 
+Improving the Prediction of Absolute
+Solvation Free Energies Using the Next Generation OPLS Force Field . J. Chem. Theory Comput. 
+2012 , 8 , 2553 –8 . 10.1021/ct300203w .26592101  b Harder E. ; Damm W. ; Maple J. ; Wu C. ; Reboul M. ; Xiang J. Y. ; Wang L. ; Lupyan D. ; Dahlgren M. K. ; Knight J. L. ; Kaus J. W. ; Cerutti D. S. ; Krilov G. ; Jorgensen W. L. ; Abel R. ; Friesner R. A. 
+OPLS3:
+A Force Field Providing Broad Coverage of Drug-like Small Molecules
+and Proteins . J. Chem. Theory Comput. 
+2016 , 12 , 281 –96 . 10.1021/acs.jctc.5b00864 .26584231 
+a Woods C. J. ; Essex J. W. ; King M. A. 
+The development
+of replica-exchange-based free-energy methods . J. Phys. Chem. B 
+2003 , 107 , 13703 –13710 . 10.1021/jp0356620 . b Zheng L. ; Yang W. 
+Practically Efficient and Robust
+Free Energy Calculations: Double-Integration Orthogonal Space Tempering . J. Chem. Theory Comput. 
+2012 , 8 , 810 –23 . 10.1021/ct200726v .26593343  c Jiang W. ; Roux B. 
+Free Energy Perturbation Hamiltonian
+Replica-Exchange Molecular Dynamics (FEP/H-REMD) for Absolute Ligand
+Binding Free Energy Calculations . J. Chem. Theory
+Comput. 
+2010 , 6 , 2559 –2565 . 10.1021/ct1001768 .21857813  d Wang L. ; Friesner R. A. ; Berne B. J. 
+Replica exchange
+with solute scaling: a more efficient version of replica exchange
+with solute tempering (REST2) . J. Phys. Chem.
+B 
+2011 , 115 , 9431 –8 . 10.1021/jp204407d .21714551 
+Wang L. ; Deng Y. ; Knight J. L. ; Wu Y. ; Kim B. ; Sherman W. ; Shelley J. C. ; Lin T. ; Abel R. 
+Modeling Local
+Structural Rearrangements Using FEP/REST: Application to Relative
+Binding Affinity Predictions of CDK2 Inhibitors . J. Chem. Theory Comput. 
+2013 , 9 , 1282 –93 . 10.1021/ct300911a .26588769 
+Bollini M. ; Domaoal R. A. ; Thakur V. V. ; Gallardo-Macias R. ; Spasov K. A. ; Anderson K. S. ; Jorgensen W. L. 
+Computationally-Guided
+Optimization of a Docking Hit to Yield Catechol Diethers as Potent
+Anti-HIV Agents . J. Med. Chem. 
+2011 , 54 , 8582 –8591 . 10.1021/jm201134m .22081993 
+Jorgensen W. L. ; Bollini M. ; Thakur V. V. ; Domaoal R. A. ; Spasov K. A. ; Anderson K. S. 
+Efficient discovery of potent anti-HIV agents targeting
+the Tyr181Cys variant of HIV reverse transcriptase . J. Am. Chem. Soc. 
+2011 , 133 , 15686 –96 . 10.1021/ja2058583 .21853995 
+Jorgensen W. L. 
+Efficient
+drug lead discovery and optimization . Acc. Chem.
+Res. 
+2009 , 42 , 724 –33 . 10.1021/ar800236t .19317443 
+a Hénin J. ; Maigret B. ; Tarek M. ; Escrieut C. ; Fourmy D. ; Chipot C. 
+Probing a
+model of
+a GPCR/ligand complex in an explicit membrane environment: the human
+cholecystokinin-1 receptor . Biophys. J. 
+2006 , 90 , 1232 –40 . 10.1529/biophysj.105.070599 .16326901  b Boukharta L. ; Gutierrez-de-Teran H. ; Aqvist J. 
+Computational prediction
+of alanine scanning and ligand binding energetics in G-protein coupled
+receptors . PLoS Comput. Biol. 
+2014 , 10 , e100358510.1371/journal.pcbi.1003585 .24743773  c Rivail L. ; Chipot C. ; Maigret B. ; Bestel I. ; Sicsic S. ; Tarek M. 
+Large-scale molecular dynamics of
+a G protein-coupled receptor, the human 5-HT 4 serotonin receptor,
+in a lipid bilayer . J. Mol. Struct.: THEOCHEM 
+2007 , 817 , 19 –26 . 10.1016/j.theochem.2007.04.012 .
+a Keränen H. ; Gutierrez-de-Teran H. ; Aqvist J. 
+Structural and Energetic Effects of A(2A) Adenosine
+Receptor Mutations on Agonist and Antagonist Binding . PLoS One 
+2014 , 9 , e10849210.1371/journal.pone.0108492 .25285959  b Keränen H. ; Aqvist J. ; Gutierrez-de-Teran H. 
+Free energy
+calculations of A(2A) adenosine receptor mutation effects on agonist
+binding . Chem. Commun. (Cambridge, U. K.) 
+2015 , 51 , 3522 –5 . 10.1039/C4CC09517K .
+Chen D. ; Ranganathan A. ; IJzerman A. P. ; Siegal G. ; Carlsson J. 
+Complementarity
+between in silico and biophysical screening approaches in fragment-based
+lead discovery against the A2A adenosine receptor . J. Chem. Inf. Model. 
+2013 , 53 , 2701 –2714 . 10.1021/ci4003156 .23971943 
+Goldfeld D.
+A. ; Murphy R. ; Kim B. ; Wang L. ; Beuming T. ; Abel R. ; Friesner R. A. 
+Docking
+and free energy perturbation
+studies of ligand binding in the kappa opioid receptor . J. Phys. Chem. B 
+2015 , 119 , 824 –35 . 10.1021/jp5053612 .25395044 
+Brown S. P. ; Muchmore S. W. ; Hajduk P. J. 
+Healthy
+skepticism: assessing realistic
+model performance . Drug Discovery Today 
+2009 , 14 , 420 –7 . 10.1016/j.drudis.2009.01.012 .19340931 
+Higgs C. ; Beuming T. ; Sherman W. 
+Hydration
+Site Thermodynamics Explain
+SARs for Triazolylpurines Analogues Binding to the A2A Receptor . ACS Med. Chem. Lett. 
+2010 , 1 , 160 –4 . 10.1021/ml100008s .24900189 
+Piersanti G. ; Bartoccini F. ; Lucarini S. ; Cabri W. ; Stasi M. A. ; Riccioni T. ; Borsini F. ; Tarzia G. ; Minetti P. 
+Synthesis
+and Biological Evaluation of Metabolites of 2-n-Butyl-9-methyl-8-[1,
+2, 3] triazol-2-yl-9 H-purin-6-ylamine (ST1535), A Potent Antagonist
+of the A2A Adenosine Receptor for the Treatment of Parkinson’s
+Disease . J. Med. Chem. 
+2013 , 56 , 5456 –5463 . 10.1021/jm400491x .23789814 
+Thoma G. ; Streiff M. B. ; Kovarik J. ; Glickman F. ; Wagner T. ; Beerli C. ; Zerwes H. G. 
+Orally bioavailable isothioureas
+block function of the chemokine receptor CXCR4 in vitro and in vivo . J. Med. Chem. 
+2008 , 51 , 7915 –20 . 10.1021/jm801065q .19053768 
+Lenselink E. B. ; Beuming T. ; Sherman W. ; van Vlijmen H. W. ; IJzerman A. 
+Selecting an optimal number of binding
+site waters
+to improve virtual screening enrichments against the adenosine A2A
+receptor . J. Chem. Inf. Model. 
+2014 , 54 , 1737 –46 . 10.1021/ci5000455 .24835542 
+Minetti P. ; Tinti M. O. ; Carminati P. ; Castorina M. ; Di Cesare M. A. ; Di Serio S. ; Gallo G. ; Ghirardi O. ; Giorgi F. ; Giorgi L. 
+2-n-Butyl-9-methyl-8-[1, 2, 3] triazol-2-yl-9
+H-purin-6-ylamine and Analogues as A2A Adenosine Receptor Antagonists.
+Design, Synthesis, and Pharmacological Characterization . J. Med. Chem. 
+2005 , 48 , 6887 –6896 . 10.1021/jm058018d .16250647 
+Schrödinger Release
+2015-4: Desmond Molecular Dynamics
+System , v., D. E. Shaw Research, New York, NY, 2015. Maestro-Desmond
+Interoperability Tools, version 4.4; Schrödinger : New York, NY , 2015 .
+Kramer C. ; Kalliokoski T. ; Gedeck P. ; Vulpetti A. 
+The experimental
+uncertainty
+of heterogeneous public K(i) data . J. Med. Chem. 
+2012 , 55 , 5165 –73 . 10.1021/jm300131x .22643060 
+Bas D. C. ; Rogers D. M. ; Jensen J. H. 
+Very fast prediction and rationalization
+of pKa values for protein-ligand complexes . Proteins 
+2008 , 73 , 765 –83 . 10.1002/prot.22102 .18498103 
+Sastry G. M. ; Adzhigirey M. ; Day T. ; Annabhimoju R. ; Sherman W. 
+Protein and ligand preparation: parameters,
+protocols,
+and influence on virtual screening enrichments . J. Comput.-Aided Mol. Des. 
+2013 , 27 , 221 –34 . 10.1007/s10822-013-9644-8 .23579614 
+Doré A. S. ; Robertson N. ; Errey J. C. ; Ng I. ; Hollenstein K. ; Tehan B. ; Hurrell E. ; Bennett K. ; Congreve M. ; Magnani F. ; Tate C. G. ; Weir M. ; Marshall F. H. 
+Structure
+of the adenosine A(2A) receptor in complex with ZM241385 and the xanthines
+XAC and caffeine . Structure 
+2011 , 19 , 1283 –93 . 10.1016/j.str.2011.06.014 .21885291 
+Guo D. ; Pan A. C. ; Dror R. O. ; Mocking T. ; Liu R. ; Heitman L. H. ; Shaw D. E. ; AP I. J. 
+Molecular Basis
+of Ligand Dissociation from the Adenosine A2A Receptor . Mol. Pharmacol. 
+2016 , 89 , 485 –91 . 10.1124/mol.115.102657 .26873858 
+Schrödinger Release
+2014-3: Maestro , v.; Schrödinger,
+LLC : New York,
+NY , 2014 .
+Berman H. M. ; Westbrook J. ; Feng Z. ; Gilliland G. ; Bhat T. N. ; Weissig H. ; Shindyalov I. N. ; Bourne P. E. 
+The Protein Data Bank . Nucleic
+Acids Res. 
+2000 , 28 , 235 –242 . 10.1093/nar/28.1.235 .10592235 
+Christopher J. A. ; Brown J. ; Doré A. S. ; Errey J. C. ; Koglin M. ; Marshall F. H. ; Myszka D. G. ; Rich R. L. ; Tate C. G. ; Tehan B. 
+Biophysical fragment
+screening of the β1-adrenergic receptor:
+identification of high affinity arylpiperazine leads using structure-based
+drug design . J. Med. Chem. 
+2013 , 56 , 3446 –3455 . 10.1021/jm400140q .23517028 
+Schrödinger
+Release 2016-2: Prime , version
+4.4; Schrödinger, LLC : New York, NY , 2016 .
+Lomize M. A. ; Lomize A. L. ; Pogozheva I. D. ; Mosberg H. I. 
+OPM: orientations
+of proteins in membranes database . Bioinformatics 
+2006 , 22 , 623 –5 . 10.1093/bioinformatics/btk023 .16397007 
+Desmond Molecular
+Dynamics System , v., D. E. Shaw
+Research, New York, NY, 2014. Maestro-Desmond Interoperability Tools,
+version 3.9; Schrödinger : New York, NY , 2014 .
+Wang L. ; Berne B. J. ; Friesner R. A. 
+On achieving high accuracy and reliability
+in the calculation of relative protein-ligand binding affinities . Proc. Natl. Acad. Sci. U.S.A. 
+2012 , 109 , 1937 –1942 . 10.1073/pnas.1114017109 .22308365 
+Jorgensen W. L. ; Schyman P. 
+Treatment of Halogen Bonding in the OPLS-AA Force Field;
+Application to Potent Anti-HIV Agents . J. Chem.
+Theory Comput. 
+2012 , 8 , 3895 –3901 . 10.1021/ct300180w .23329896 
+a Young T. ; Abel R. ; Kim B. ; Berne B. J. ; Friesner R. A. 
+Motifs for molecular recognition
+exploiting hydrophobic enclosure in protein-ligand binding . Proc. Natl. Acad. Sci. U.S.A. 
+2007 , 104 , 808 –13 . 10.1073/pnas.0610202104 .17204562  b Abel R. ; Young T. ; Farid R. ; Berne B. J. ; Friesner R. A. 
+Role of the active-site solvent in the thermodynamics
+of factor Xa ligand binding . J. Am Chem. Soc. 
+2008 , 130 , 2817 –31 . 10.1021/ja0771033 .18266362 
+Lyman E. ; Higgs C. ; Kim B. ; Lupyan D. ; Shelley J. C. ; Farid R. ; Voth G. A. 
+A Role for a Specific Cholesterol
+Interaction in Stabilizing the Apo Configuration of the Human A2A
+Adenosine Receptor . Structure 
+2009 , 17 , 1660 –1668 . 10.1016/j.str.2009.10.010 .20004169 
+a Friesner R.
+A. ; Banks J. L. ; Murphy R. B. ; Halgren T. A. ; Klicic J. J. ; Mainz D. T. ; Repasky M. P. ; Knoll E. H. ; Shelley M. ; Perry J. K. ; Shaw D. E. ; Francis P. ; Shenkin P. S. 
+Glide: a new approach
+for rapid,
+accurate docking and scoring. 1. Method and assessment of docking
+accuracy . J. Med. Chem. 
+2004 , 47 , 1739 –49 . 10.1021/jm0306430 .15027865  b Halgren T. A. ; Murphy R. B. ; Friesner R. A. ; Beard H. S. ; Frye L. L. ; Pollard W. T. ; Banks J. L. 
+Glide: A new approach for rapid,
+accurate docking and scoring. 2. Enrichment factors in database screening . J. Med. Chem. 
+2004 , 47 , 1750 –1759 . 10.1021/jm030644s .15027866 c Small-Molecule
+Drug Discovery Suite 2014-3: Glide , v.; Schrödinger, LLC : New York,
+NY , 2014 .
+a Liu P. ; Kim B. ; Friesner R. A. ; Berne B. J. 
+Replica exchange
+with solute tempering: a method for
+sampling biological systems in explicit water . Proc. Natl. Acad. Sci. U.S.A. 
+2005 , 102 , 13749 –54 . 10.1073/pnas.0506346102 .16172406  b Wang L. ; Berne B. J. ; Friesner R. A. 
+On achieving high accuracy and reliability in the calculation
+of relative protein-ligand binding affinities . Proc. Natl. Acad. Sci. U.S.A. 
+2012 , 109 , 1937 –42 . 10.1073/pnas.1114017109 .22308365 
+Liu R. ; Groenewoud N. J. ; Peeters M. C. ; Lenselink E. B. ; IJzerman A. P. 
+A yeast screening
+method to decipher the interaction
+between the adenosine A2B receptor and the C-terminus of different
+G protein α-subunits . Purinergic Signalling 
+2014 , 10 , 441 –453 . 10.1007/s11302-014-9407-6 .24464644 
+Harada H. ; Asano O. ; Hoshino Y. ; Yoshikawa S. ; Matsukura M. ; Kabasawa Y. ; Niijima J. ; Kotake Y. ; Watanabe N. ; Kawata T. 
+2-Alkynyl-8-aryl-9-methyladenines
+as novel adenosine receptor antagonists: Their synthesis and structure–activity
+relationships toward hepatic glucose production induced via agonism
+of the A2B receptor . J. Med. Chem. 
+2001 , 44 , 170 –179 . 10.1021/jm990499b .11170626 
+Holý A. ; Gunter J. ; Dvorakova H. ; Masojidkova M. ; Andrei G. ; Snoeck R. ; Balzarini J. ; De Clercq E. 
+Structure-antiviral activity relationship in the series
+of pyrimidine and purine N-[2-(2-phosphonomethoxy)ethyl] nucleotide
+analogues. 1. Derivatives substituted at the carbon atoms of the base . J. Med. Chem. 
+1999 , 42 , 2064 –2086 . 10.1021/jm9811256 .10377214 
+Roberts B. ; Liptrot D. ; Alcaraz L. ; Luker T. ; Stocks M. J. 
+Molybdenum-Mediated
+Carbonylation of Aryl Halides with Nucleophiles Using Microwave Irradiation . Org. Lett. 
+2010 , 12 , 4280 –4283 . 10.1021/ol1016965 .20795725 
+Jörg M. ; Shonberg J. ; Mak F. S. ; Miller N. D. ; Yuriev E. ; Scammells P. J. ; Capuano B. 
+Novel adenosine A(2A) receptor ligands:
+A synthetic, functional and computational investigation of selected
+literature adenosine A(2A) receptor antagonists for extending into
+extracellular space . Bioorg. Med. Chem. Lett. 
+2013 , 23 , 3427 –3433 . 10.1016/j.bmcl.2013.03.070 .23602401 
+Kos N. J. ; Vanderplas H. C. 
+Deamination
+of 6-Amino and 6-(Alkylamino)-9-Alkylpurines
+and Demethylation of Methylthiopurines by Sodium in Liquid-Ammonia . J. Org. Chem. 
+1981 , 46 , 5000 –5003 . 10.1021/jo00337a037 .
+Yuan Y. ; Zaidi S. A. ; Elbegdorj O. ; Aschenbach L. C. ; Li G. ; Stevens D. L. ; Scoggins K. L. ; Dewey W. L. ; Selley D. E. ; Zhang Y. 
+Design, synthesis, and biological evaluation of 14-heteroaromatic-substituted
+naltrexone derivatives: pharmacological profile switch from mu opioid
+receptor selectivity to mu/kappa opioid receptor dual selectivity . J. Med. Chem. 
+2013 , 56 , 9156 –69 . 10.1021/jm4012214 .24144240
+

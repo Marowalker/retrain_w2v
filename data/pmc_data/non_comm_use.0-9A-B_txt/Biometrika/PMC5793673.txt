@@ -1,0 +1,5792 @@
+
+==== Front
+BiometrikaBiometrikabiometBiometrika0006-34441464-3510Oxford University Press 10.1093/biomet/asx053asx053ArticlesDoubly robust nonparametric inference on the average treatment
+effect Benkeser D 1
+1 
+Department of Biostatistics and Bioinformatics, Emory University, 1518 Clifton Rd
+NE, Atlanta, Georgia 30322, U.S.A.
+benkeser@emory.edu
+Carone M 2
+2 
+Department of Biostatistics, University of Washington, 1705 NE Pacific Street, Box
+357232, Seattle, Washington 98195, U.S.A.
+mcarone@uw.edu
+Laan M J Van Der 3
+3 
+Division of Biostatistics, University of California, 108 Haviland Hall, Berkeley,
+California 94720, U.S.A.
+laan@berkeley.edu
+Gilbert P B 4
+4 
+Vaccine and Infectious Disease Division, Fred Hutchinson Cancer Research Center,
+1100 Fairview Avenue North, PO Box 19024, Seattle, Washington 98109, U.S.A.
+pgilbert@scharp.org
+12 2017 16 10 2017 01 12 2018 104 4 863 880 28 6 2016 © 2017 Biometrika Trust2017Summary
+Doubly robust estimators are widely used to draw inference about the average effect of a
+treatment. Such estimators are consistent for the effect of interest if either one of two
+nuisance parameters is consistently estimated. However, if flexible, data-adaptive
+estimators of these nuisance parameters are used, double robustness does not readily
+extend to inference. We present a general theoretical study of the behaviour of doubly
+robust estimators of an average treatment effect when one of the nuisance parameters is
+inconsistently estimated. We contrast different methods for constructing such estimators
+and investigate the extent to which they may be modified to also allow doubly robust
+inference. We find that while targeted minimum loss-based estimation can be used to solve
+this problem very naturally, common alternative frameworks appear to be inappropriate for
+this purpose. We provide a theoretical study and a numerical evaluation of the
+alternatives considered. Our simulations highlight the need for and usefulness of these
+approaches in practice, while our theoretical developments have broad implications for the
+construction of estimators that permit doubly robust inference in other problems.
+
+Adaptive estimationDoubly robust estimationEfficient influence functionTargeted minimum loss-based estimationNational Institutes of Health10.13039/100000002
+==== Body
+1. Introduction
+In recent years, doubly robust estimators have gained immense popularity in many fields,
+including causal inference. An estimator is said to be doubly robust if it is consistent for
+the target parameter of interest when any one of two nuisance parameters is consistently
+estimated. This property gives doubly robust estimators a natural appeal: any possible
+inconsistency in the estimation of one nuisance parameter may be mitigated by the consistent
+estimation of the other. In many problems, doubly robust estimators arise naturally in the
+pursuit of asymptotic efficiency. Locally efficient estimators often exhibit double
+robustness due to the form of the efficient influence function of the estimated parameter in
+the statistical model considered. For many parameters that arise in causal inference, the
+efficient influence function assumes a doubly robust form, which may explain why doubly
+robust estimators arise so frequently in that area. For example, under common causal
+identification assumptions, the statistical parameter identifying the mean counterfactual
+response under a point treatment yields a doubly robust efficient influence function in a
+nonparametric model (Robins et al., 1994). Thus,
+locally efficient estimators of this statistical target parameter are naturally doubly
+robust. General frameworks for constructing locally efficient estimators can therefore be
+utilized to generate estimators that are doubly robust.
+
+While the conceptual appeal of doubly robust estimators is clear, questions remain about
+how they should be constructed in practice. It has long been noted that finite-dimensional
+models are generally too restrictive to permit consistent estimation of nuisance parameters
+(Bang & Robins, 2005), but much current work on
+double robustness involves parametric working models and maximum likelihood estimation.
+Kang & Schafer (2007) showed that doubly robust
+estimators can be poorly behaved if both nuisance parameters are inconsistently estimated,
+leading to recent proposals for estimators that minimize bias resulting from
+misspecification (Vermeulen & Vansteelandt, 2014,
+2016). While providing an improvement over
+conventional techniques, these estimators rely upon consistent estimation of at least one
+nuisance parameter using a parametric model. An alternative approach is to employ flexible,
+data-adaptive estimation techniques for both nuisance parameters to reduce the risk of
+inconsistency (van der Laan & Rose, 2011).
+
+A general study of the behaviour of doubly robust estimators under inconsistent estimation
+of a nuisance parameter is needed in order to understand how to perform robust inference.
+This topic has not received much attention, perhaps because the problems arising from
+misspecification are well understood when parametric models are used. For example, if
+nuisance parameters are estimated using maximum likelihood, the resulting estimator of the
+parameter of interest is asymptotically linear even if one of the nuisance parameter models
+has been misspecified. Although in this scenario the asymptotic variance of the estimator
+may not be easy to calculate explicitly, resampling techniques may be employed for
+inference. When the estimator is the solution of an estimating equation, robust
+sandwich-type variance estimators may also be available. In contrast, when nuisance
+parameters are estimated using data-adaptive approaches, the implications of inconsistently
+estimating one nuisance parameter are much more serious. Generally, the resulting estimator
+is irregular, exhibits large bias and has a convergence rate slower than
+root-\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n$\end{document}. As we show below, the implications for
+inference are dire: regardless of nominal level, the coverage of naïve two-sided confidence
+intervals tends to zero and the Type I error rate of two-sided hypothesis tests tends to
+unity as the sample size increases. This phenomenon cannot simply be avoided by better
+variance estimation, and it occurs even when the true variance of the estimator is known
+exactly. Neither is the nonparametric bootstrap a remedy, as, due to the use of
+data-adaptive procedures, it is not generally valid for inference.
+
+In view of these challenges, investigators may believe it simpler to use to parametric
+models. However, this is unappealing since both nuisance parameters, and hence also the
+parameter of interest, are then likely to be inconsistently estimated. The use of flexible
+data-adaptive techniques, such as ensemble machine learning, appears necessary if one is to
+have any reasonable expectation of consistency for any of the nuisance parameter estimators
+(van der Laan & Polley, 2007). However, because
+such methods are highly adaptive, research is needed into developing appropriate methods for
+doubly robust inference that use such tools.
+
+A first theoretical study of the problem of doubly robust nonparametric inference is the
+work of van der Laan (2014), who focused on the
+counterfactual mean under a single time-point intervention and considered targeted minimum
+loss-based estimation. As the average treatment effect is the difference between two
+counterfactual means under different treatments, it too was directly addressed. The
+estimators proposed therein were shown to be doubly robust with respect to not only
+consistency but also asymptotic linearity. Furthermore, under regularity conditions, the
+analytic form of the influence function in van der Laan
+(2014) is known, paving the way for the construction of doubly robust confidence
+intervals and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$p$\end{document}-values. The proposed procedure is quite
+complex and has never been implemented. We are therefore motivated to study theoretically
+and numerically the following three questions about doubly robust nonparametric inference on
+an average treatment effect or, equivalently, on a counterfactual mean: 1. How badly does inconsistent nuisance parameter
+estimation affect inference using data-adaptive estimators, and how do estimators that
+allow doubly robust inference perform?
+
+2. Can existing
+targeted minimum loss-based estimators be improved by new versions that require
+estimation of lower-dimensional nuisance parameters?
+
+3.
+Can simpler alternatives to targeted minimum loss-based estimation be used to
+construct estimators that are doubly robust for inference and also easier to
+implement?
+
+
+
+As we shall demonstrate in § 5, the answer to
+question 1 is that na§vely constructed confidence intervals can have very poor coverage,
+whereas intervals constructed based on appropriate correction procedures have coverage near
+their nominal level. This suggests that the methods discussed in the present paper are truly
+needed and may be quite useful. For question 2, we show that it is possible to reduce the
+dimension of the nuisance parameters introduced in the quest for doubly robust inference,
+which can provide finite-sample benefits relative to van der
+Laan (2014). More importantly, this methodological advance is likely to be critical
+to any extension of the methods discussed here to the setting of treatments defined by
+multiple time-point interventions. For question 3, we show that the most popular alternative
+framework to targeted minimum loss-based estimation, the so-called one-step approach, may
+not be used to theoretically guarantee doubly robust inference unless one knows which
+nuisance parameter is consistently estimated.
+
+2. Doubly robust estimation
+2.1. Notation and background
+Suppose that the observed data unit is \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$O = (W,A,Y) \sim P_0$\end{document}, where
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W$\end{document} is a vector of baseline covariates,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A\in\{0,1\}$\end{document} is a binary treatment,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Y$\end{document} is an outcome, and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0$\end{document} is the true data-generating
+distribution, known only to lie in some model \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mathcal{M}$\end{document}. We take
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mathcal{M} = \mathcal{M}_0$\end{document}, where
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mathcal{M}_0$\end{document} is a nonparametric model,
+although arbitrary restrictions on the distribution of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A$\end{document} given
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W$\end{document} are allowed without affecting our
+derivations. We focus on the parameter \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi: \mathcal{M}_0 \rightarrow \mathbb{R}$\end{document}
+defined as  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+\Psi(P)=\int \bar{Q}(w) \,{\rm d} Q_W(w), \quad P\in\mathcal{M}_0,
+\]\end{document}  where \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}(w)\,{=}\,\bar{Q}_P(w)\,{=}\,E_P (Y \mid A\,{=}\,1, W\,{=}\,w)$\end{document}
+is the so-called outcome regression and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_W(w)=Q_{W,P}(w)={\rm pr}_P(W\leqslant w)$\end{document} is
+the distribution function of the covariate vector. The parameter value
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi(P)$\end{document} represents the treatment-specific,
+covariate-adjusted mean outcome implied by \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P \in \mathcal{M}_0$\end{document}. Under
+additional causal assumptions, it can be interpreted as the mean counterfactual outcome
+under the treatment corresponding to \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A=1$\end{document} (Rubin, 1974). Because all developments below immediately apply to the
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A=0$\end{document} case, and therefore to the average
+treatment effect, without loss of generality we explicitly examine only the case where
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A=1$\end{document}.
+
+As the parameter of interest depends on \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P$\end{document} only through
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q=Q(P)=(\bar{Q}, Q_W)$\end{document}, we will at times
+write \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi(Q)$\end{document} in place of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi(P)$\end{document}. We will denote
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q(P_0)$\end{document} by \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_0=(\bar{Q}_0,Q_{W,0})$\end{document} for short, where
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} is the true outcome regression
+and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_{W,0}$\end{document} the true distribution of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W$\end{document}. The propensity score, defined as
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g(w)=g_P(w) = {\rm pr}(A=1\mid W=w)$\end{document}, plays
+an important role, and throughout this paper the true propensity score
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} is assumed to satisfy
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0(w) > \delta$\end{document} for some
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\delta>0$\end{document} and all \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$w$\end{document} in the
+support of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_{W,0}$\end{document}. Below, we make use of empirical
+process notation, letting \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Pf$\end{document} denote \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\int f(o) \,{\rm d} P(o)$\end{document} for each
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P\in\mathcal{M}_0$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P$\end{document}-integrable function
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$f$\end{document}. We also denote by
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_n$\end{document} the empirical distribution function
+based on \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$O_1,\ldots,O_n$\end{document}, so
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_n f$\end{document} is the average
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{-1} \sum_{i=1}^n f(O_i)$\end{document}.
+
+Recall that a regular estimator \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n$\end{document} of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0=\Psi(Q_0)$\end{document} is asymptotically linear
+if and only if it can be written as \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n = \psi_0 + P_n D(P_0) + o_{\rm p}(n^{-1/2})$\end{document},
+where \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D(P_0)\in L_2^0(P_0)$\end{document} is a gradient of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi$\end{document} at \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0$\end{document}
+relative to model \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mathcal{M}$\end{document}. Here, for each
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P\in\mathcal{M}$\end{document}, we denote by
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L_2^0(P)$\end{document} the Hilbert space of all
+real-valued functions with zero mean and finite variance defined on the support of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P$\end{document} endowed with the covariance inner
+product. The function \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D(P)\in L_2^0(P)$\end{document} is said to be a gradient
+of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi$\end{document} at \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P$\end{document}
+relative to \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mathcal{M}$\end{document} if  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+\left.\frac{{\rm d}}{{\rm d}\epsilon}\Psi(P_\epsilon)\right|_{\epsilon=0}=\int D(P)(o)s(o)\,{\rm d} P(o)
+\]\end{document}  for any regular one-dimensional parametric submodel
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\{P_\epsilon\}\subseteq \mathcal{M}$\end{document} with
+score \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$s$\end{document} for \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\epsilon$\end{document}
+at \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\epsilon=0$\end{document} and such that
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_{\epsilon=0}=P$\end{document}. In the nonparametric
+case, where \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mathcal{M} = \mathcal{M}_0$\end{document}, an example of
+such a submodel is given by \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}${\rm d} P_{\epsilon}(o)=\mbox{expit}\{2\epsilon s(o)\}\,{\rm d} P(o)/c_s(\epsilon)$\end{document},
+where \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$c_s(\epsilon)$\end{document} is a normalizing constant and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mbox{expit}(u)=\exp(u)/\{1+\exp(u)\}$\end{document} for
+any \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$u\in\mathbb{R}$\end{document}. Under sampling from
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0$\end{document}, a regular and asymptotically linear
+estimator is efficient if and only if its influence function is the efficient influence
+function \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D^*(P_0)$\end{document}. The efficient influence function
+is the unique gradient that lies in the tangent space \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$T_{\mathcal{M}}(P_0) \subseteq L_2^0(P_0)$\end{document}
+of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mathcal{M}$\end{document} at \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0$\end{document}, and
+it is a crucial ingredient in the construction of asymptotically efficient estimators. For
+an overview of efficiency theory, see Bickel et al.
+(1997).
+
+The efficient influence function of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi$\end{document} at
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P$\end{document} relative to \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\mathcal{M}_0$\end{document} is  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+D^*(P)(o)=D^*(Q,g)(o)=\frac{a}{g(w)} \, \bigl\{y - \bar{Q}(w)\bigr\} + \bar{Q}(w) - \Psi(Q),
+\end{align*}\end{document}  with \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o=(w,a,y)$\end{document} denoting a
+realized value of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$O$\end{document} (van der
+Laan & Robins, 2003).
+
+2.2. Doubly robust consistency
+Suppose that \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_n$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_n$\end{document} are
+estimators of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document},
+respectively, and denote by \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g$\end{document} their
+respective in-probability limits. We write \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n=(\bar{Q}_n,Q_{W,n})$\end{document},
+where \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_{W,n}$\end{document} is the empirical distribution based
+on observations \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W_1,\ldots,W_n$\end{document}. A linearization of the
+parameter allows us to write  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+\Psi(Q_n)-\Psi(Q_0) &= -P_0D^*(Q_n,g_n)+R(Q_n,Q_0,g_n,g_0)\\
+&= (P_n-P_0)D^*(Q_n,g_n)-P_nD^*(Q_n,g_n)+R(Q_n,Q_0,g_n,g_0)\\
+&= (P_n-P_0)D^*(Q,g)-P_nD^*(Q_n,g_n)+R(Q_n,Q_0,g_n,g_0)\\
+&\quad +(P_n-P_0)\{D^*(Q_n,g_n)-D^*(Q,g)\} ,
+\end{align*}\end{document}  where \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R(Q_n,Q_0,g_n,g_0)=P_0\{(g_n-g_0)(\bar{Q}_n-\bar{Q}_0)/g_n\}$\end{document}.
+The first equality is expected because \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi$\end{document} is strongly
+differentiable in the sense of Pfanzagl (1982). As
+shorthand, we will write \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_n(Q_n, g_n)= P_n D^*(Q_n,g_n)$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_{n}(Q_n, Q, g_n, g)=(P_n - P_0)\{D^*(Q_n,g_n) - D^*(Q,g)\}$\end{document}.
+Using this notation, we can express \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi(Q_n) - \Psi(Q_0)$\end{document} as
+ (1) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align}
+(P_n-P_0) D^*(Q, g)- B_n(Q_n, g_n) + M_{n}(Q_n, Q, g_n, g) + R(Q_n,Q_0,g_n,g_0) \text{.}
+\end{align}\end{document} 
+
+This representation reduces the analysis of the plug-in estimator
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi(Q_n)$\end{document} to the consideration of four
+terms. The first term, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$(P_n-P_0)D^*(Q,g)$\end{document}, is the average of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n$\end{document} independent draws of the random variable
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D^*(Q,g)(O) - P_0 D^*(Q,g)$\end{document}, which has mean
+zero if either \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q=Q_0$\end{document} or \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g=g_0$\end{document}.
+This observation is a simple but fundamental fact underlying doubly robust estimation.
+Since \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_{W,n}$\end{document} is known to converge to
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_{W,0}$\end{document}, the statement
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q=Q_0$\end{document} is equivalent to
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}=\bar{Q}_0$\end{document}. The second term,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_n(Q_n, g_n)$\end{document}, is a first-order bias term
+that must be accounted for to allow \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi(Q_n)$\end{document} to be
+asymptotically linear. The third term is an empirical process term that is often
+asymptotically negligible, that is, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_n=M_{n}(Q_n, Q, g_n, g)=o_{\rm p}(n^{-1/2})$\end{document}.
+This is true, for example, if \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D^*(Q_n,g_n)$\end{document} falls in a
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0$\end{document}-Donsker class with probability tending
+to 1 and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0\{D^*(Q_n,g_n) - D^*(Q,g)\}^2$\end{document} converges
+to zero in probability. For a comprehensive reference on empirical processes, we refer
+readers to van der Vaart & Wellner (1996).
+Finally, the fourth term, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n=R(Q_n,Q_0,g_n,g_0)$\end{document}, is the remainder
+from the linearization. By inspection, this term tends to zero at a rate determined by how
+fast the nuisance functions \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} are
+estimated.
+
+To correct for the first-order bias term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_n(Q_n, g_n)$\end{document}, two
+general strategies may be used: the one-step Newton–Raphson approach and targeted minimum
+loss-based estimation. The first, hereafter called the one-step approach, suggests
+performing an additive correction for the first-order bias, leading to the estimator
+ \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+\psi_n^+=\Psi(Q_n)+B_n(Q_n,g_n) \text{.}
+\]\end{document} 
+
+This approach appeared in Ibragimov & Has’minskii
+(1981) and Pfanzagl (1982), and is the
+infinite-dimensional extension of the one-step Newton–Raphson technique for efficient
+estimation in parametric models. In this paper, the efficient influence function is a
+linear function of the parameter of interest. As such, the one-step estimator equals the
+solution of the optimal estimating equation for this parameter and is therefore equivalent
+to the so-called augmented inverse probability of treatment estimator (Robins et al., 1994; van der Laan & Robins, 2003). Owing to their simple construction, one-step
+estimators are generally computationally convenient, though this convenience comes at a
+cost, as the one-step correction may produce estimates outside the parameter space, such
+as probability estimates either below zero or above one. Targeted minimum loss-based
+estimation, formally developed in van der Laan & Rubin
+(2006) and comprehensively discussed in van der
+Laan & Rose (2011), provides an algorithm to convert
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n$\end{document} into a targeted estimator
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n^*$\end{document} of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_0$\end{document} such
+that \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_n(Q_n^*,g_n)=0$\end{document}, which may then be used to
+define the targeted plug-in estimator \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^*=\Psi(Q_n^*)$\end{document}. The
+first update of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n$\end{document} in this recursive scheme consists of
+the minimizer of an empirical risk over a least favourable submodel through
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n$\end{document}. The process is iterated using updated
+versions of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n$\end{document} until convergence to yield
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n^*$\end{document}. In the problem considered here,
+convergence occurs in a single step. By virtue of being a plug-in estimator,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^*$\end{document} may exhibit improved finite-sample
+behaviour relative to its one-step counterpart (Porter et
+al., 2011).
+
+The large-sample properties of both \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^+$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^*$\end{document} can be studied through (1). As above, suppose that the empirical
+process term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_{n}$\end{document} is asymptotically negligible. If both
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_0$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} are
+estimated consistently, so that \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q=Q_0$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g=g_0$\end{document}, and if estimation of these nuisance
+functions is fast enough to ensure that the remainder term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{n}$\end{document} is
+asymptotically negligible, then \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^+$\end{document} is
+asymptotically linear with influence function equal to \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D^*(Q_0,g_0)$\end{document}, and thus it is asymptotically
+efficient. The same can be said of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^*$\end{document} if the same
+conditions on \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_n$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} hold
+with \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n$\end{document} replaced by \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n^*$\end{document}.
+If only one of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q=Q_0$\end{document} or \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g=g_0$\end{document}
+holds, it is impossible to guarantee the asymptotic negligibility of the remainder term,
+even if both \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g$\end{document} lie in
+parametric models. Nevertheless, provided \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q=Q_0$\end{document} or
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g=g_0$\end{document}, under very mild conditions, the
+remainder term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} based on either
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n$\end{document} or \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n^*$\end{document}
+tends to zero in probability, and the empirical process term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_n$\end{document}
+remains asymptotically negligible. Since \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D^*(Q,g)(O)$\end{document} has mean zero
+if either \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q=Q_0$\end{document} or \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g=g_0$\end{document}
+and has finite variance, the central limit theorem implies that \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$(P_n-P_0)D^*(Q,g)$\end{document} is
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$O_{\rm p}(n^{-1/2})$\end{document}, so both
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^+$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^*$\end{document}
+are consistent estimators of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0$\end{document}. This is so-called double
+robustness: consistent estimation of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0$\end{document} if either of the
+nuisance functions \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_0$\end{document} or \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} is
+consistently estimated.
+
+2.3. Doubly robust asymptotic linearity
+Doubly robust asymptotic linearity is a more stringent requirement than doubly robust
+consistency. It is also arguably more important, since without it the construction of
+valid confidence intervals and tests may be very difficult, if not impossible. A careful
+study of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} is required to determine how doubly
+robust inference may be obtained.
+
+When both the outcome regression and the propensity score are consistently estimated,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} is a second-order term consisting of
+the product of two differences, both tending to zero. Hence, provided
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} are
+estimated sufficiently fast, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{n} = {o}_{\rm p}(n^{-1/2})$\end{document}. This holds,
+for example, if both \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{n} - \bar{Q}_{0}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{n} - g_{0}$\end{document} are \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/4})$\end{document} with respect to the
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L^2(P_0)$\end{document}-norm. If only one of the outcome
+regression or propensity score is consistently estimated, one of the differences in
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} does not tend to zero. Consequently,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} is either of the same order as or tends
+to zero more slowly than \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$(P_n-P_0)D^*(Q,g)$\end{document}. As such,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} at least contributes to the first-order
+behaviour of the estimator and may determine it entirely. If a correctly specified
+parametric model is used to estimate either \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} or
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document}, the delta method generally implies
+that \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} is asymptotically linear. In this case,
+both \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^+$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^*$\end{document}
+are also asymptotically linear, though their influence function is the sum of two terms:
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D^*(Q,g) - P_0 D^*(Q,g)$\end{document} and the influence
+function of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} as an estimator of zero. Correctly
+specifying a parametric model is seldom feasible in realistic settings, however, so it may
+be preferable to use adaptive estimators of the nuisance functions. In such a situation,
+whenever one nuisance parameter is inconsistently estimated, the remainder term
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} tends to zero slowly and thus dominates
+the first-order behaviour of the estimator of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0$\end{document}. Therefore, in
+this case the one-step and targeted minimum loss-based estimators are doubly robust with
+respect to consistency but not with respect to asymptotic linearity.
+
+To illustrate the deleterious effect of the remainder on inference in these situations,
+suppose that we construct an asymptotic level-\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$(1-\alpha)$\end{document} two-sided
+Wald-type confidence interval for \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0$\end{document} based on a
+consistent estimator \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n$\end{document}, say with true standard error
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$s_n$\end{document}. Suppose further that
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$|\psi_n-\psi_0|/s_n$\end{document} tends to
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$+\infty$\end{document} in probability, which often occurs
+when the bias of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n$\end{document} tends to zero more slowly than its
+standard error. Denoting by \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$z_{\beta}$\end{document} the \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\beta$\end{document}
+quantile of the standard normal distribution, the coverage of the oracle Wald-type
+interval \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n\pm z_{1-\alpha/2}s_n$\end{document} is such that
+ \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+{\rm pr}_{P_0} ( \psi_n - z_{1-\alpha/2}s_n< \psi_0< \psi_n + z_{1-\alpha/2}s_n )={\rm pr}_{P_0}\!\left(\left|\frac{\psi_n-\psi_0}{s_n}\right|<z_{1-\alpha/2}\right) \rightarrow 0
+\]\end{document}  as \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n \rightarrow \infty$\end{document}. This remains true if
+we replace \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$s_n$\end{document} by any random sequence that converges
+to zero at the same rate or faster. If asymptotic linearity were preserved under
+inconsistent estimation of one of the nuisance parameters, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$(\psi_n-\psi_0)/s_n$\end{document} would instead tend to a
+standard normal variate. The oracle Wald-type intervals, and in fact any Wald-type
+interval using a consistent standard error estimator, would have correct asymptotic
+coverage. This argument therefore stresses the benefit of constructing estimators that are
+doubly robust with respect to asymptotic linearity for the sake of obtaining confidence
+intervals and tests whose validity is doubly robust.
+
+3. Doubly robust inference via targeted minimum loss-based estimation
+3.1. Existing construction
+
+van der Laan (2014) proposed a targeted minimum
+loss-based estimator of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0$\end{document} that is not only locally efficient
+and doubly robust for consistency but also doubly robust for asymptotic linearity. To do
+so he showed that, with some additional bias correction, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} may
+be rendered asymptotically linear with a well-described influence function. This requires
+approximating the first-order behaviour of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} using additional
+nuisance parameters, which consist of a bivariate and a univariate regression, defined
+respectively as  (2) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align}
+g_{0,r}(\bar{Q},g)(w) &= E_{P_0}\{A \mid \bar{Q}(W)=\bar{Q}(w), g(W)=g(w)\} , \\
+\end{align}\end{document}  (3) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align}
+\bar{Q}_{0,r}(\bar{Q},g)(w) &= E_{P_0}\{Y - \bar{Q}(W) \ \mid \ A=1, g(W)=g(w)\} \text{.}
+\end{align}\end{document} 
+
+Expression (2) is the bivariate
+regression of the true propensity of treatment on an outcome regression and a propensity
+score, whereas (3) is the univariate
+regression of the residual from an outcome regression on a propensity score in the treated
+subgroup. The subscript \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$r$\end{document} emphasizes that these nuisance parameters
+are of reduced dimension relative to \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document}. This dimension reduction is
+critical since it essentially guarantees that consistent estimators of these parameters
+can be constructed in practice. For example, we may be unable to consistently estimate
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document}, which is a function of the entire
+vector of potential confounders; however, we can guarantee consistent estimation of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{0,r}$\end{document}, which involves only a bivariate
+summary of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W$\end{document}.
+
+Key to the study of how these additional nuisance parameters may be used to approximate
+the first-order behaviour of the remainder term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n$\end{document} are the functions
+ \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+D_A(\bar{Q}_{0,r},g)(o) &= \frac{\bar{Q}_{0,r}(w)}{g(w)} \,\{ a - g(w) \} , \notag \\
+D_Y(\bar{Q},g_{0,r},g)(o) &= \frac{a}{g_{0,r}(w)} \left\{\frac{g_{0,r}(w) - g(w)}{g(w)}\right\}\{ y - \bar{Q}(w)\} \text{.}
+\end{align*}\end{document} 
+
+In Appendix A, we show that the remainder term
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R(Q_n,Q,g_n,g)$\end{document} can be represented as
+ (4) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{equation*} \begin{aligned} &R^*_n - I(g = g_0) \bigl\{(P_n - P_0) D_A(\bar{Q}_{0,r},g) - B_{A,n}(\bar{Q}_{n,r}, g_n) - R_{g,n} \bigr\} \\ & \quad - I(\bar{Q} = \bar{Q}_0) \bigl\{(P_n - P_0) D_Y(\bar{Q},g_{0,r},g) - B_{Y,n}(\bar{Q}_n, g_{n,r}, g_n) - R_{Q,n} \bigr\} , \end{aligned} \end{equation*}\end{document}  where \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_{A,n}(\bar{Q}_{n,r}, g_n)= P_n D_A(\bar{Q}_{n,r}, g_n)$\end{document}
+and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_{Y,n}(\bar{Q}_n, g_{n,r}, g_n)= P_n D_Y(\bar{Q}_n, g_{n,r}, g_n)$\end{document}
+are bias terms, and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n^*$\end{document}, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{g,n}$\end{document}
+and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{Q,n}$\end{document} are second-order terms. The
+specific form of these terms is provided in Appendix
+A, where we also discuss sufficient conditions for ensuring their asymptotic
+negligibility. Just as the bias term in (1) had to be accounted for to achieve doubly robust consistency, so too must the
+bias terms in (4) to achieve doubly
+robust asymptotic linearity.
+
+The iterative targeted minimum loss-based estimation algorithm proposed in Theorem 3 of
+van der Laan (2014) produces estimators
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_n^*$\end{document}, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_n^*$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{n,r}^*$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{n,r}^*$\end{document} from initial estimators
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Q_n$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_n$\end{document} in
+such a manner as to ensure that  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+B_n(Q_n^*,g_n^*)=B_{A,n}(\bar{Q}^*_{n,r},g_n^*)=B_{Y,n}(\bar{Q}_n^*,g^*_{n,r},g_n^*)=o_{\rm p}(n^{-1/2}) \text{.}
+\]\end{document} 
+
+In view of (1) and (4), \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^*=\Psi(Q_n^*)$\end{document} is asymptotically linear
+with influence function  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+D^{*,\#}(Q,g)=D^*(Q, g) - P_0 D^*(Q,g) - I(g=g_0) D_A(\bar{Q}_{0,r}, g) - I(\bar{Q}=\bar{Q}_0)D_Y(\bar{Q}, g_{0,r}, g),
+\]\end{document}  provided either \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} or
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} is estimated consistently. If
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} are
+estimated consistently, then \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{0,r}=0$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{0,r}=g_0$\end{document}. In this case,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D_A(\bar{Q}_{0,r}, g)$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D_Y(\bar{Q},g_{0,r},g)$\end{document} are identically
+zero, which establishes local efficiency of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^*$\end{document}.
+
+3.2. Novel reduced-dimension construction
+We now show how to theoretically improve upon the proposal of van der Laan (2014) through an alternative formulation of a targeted
+minimum loss-based estimator. We derive an approximation of the remainder that relies on
+alternative nuisance parameters of lower dimension than those presented in § 3.1. This makes the estimation problem involved more
+feasible and may also pave the way to a generalization of this work to settings with
+longitudinal treatments.
+
+In Appendix B, we argue that the remainder term in
+(4) can be represented using
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{0,r}$\end{document} as previously defined and the
+additional nuisance parameters  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+g_{1,0,r}(\bar{Q})(w) &= E_{P_0}\{A \mid \bar{Q}(W)=\bar{Q}(w) \},\\
+g_{2,0,r}(\bar{Q},g)(w) &= E_{P_0}\!\left\{ \frac{A-g(W)}{g(W)} \; \bigg| \; \bar{Q}(W)=\bar{Q}(w) \right\}\!\text{.}
+\end{align*}\end{document} 
+
+These are univariate regressions, in contrast to the bivariate regression
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{0,r}(\bar{Q},g)$\end{document} described in § 3.1 and used in van
+der Laan (2014). Nonparametric estimators of these univariate parameters often
+achieve better rates than those proposed therein. Use of this alternative representation
+yields estimators guaranteed to be asymptotically linear under weaker conditions than
+previously required.
+
+Here, we state the main result describing the behaviour of the estimator implied by this
+parameterization of the remainder term; we also discuss an iterative implementation of the
+estimator. Redefining  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+D_Y(\bar{Q},g_{1,0,r},g_{2,0,r})(o) &= \frac{a}{g_{1,0,r}(w)} \ g_{2,0,r}(w) \{ y - \bar{Q}(w) \} ,
+\end{align*}\end{document}  we have the following result.
+
+Theorem 1. 
+Suppose that either \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}=\bar{Q}_0$\end{document} or
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g=g_0$\end{document}. Provided that the nuisance
+estimators \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$(\bar{Q}_n^*,\bar{Q}^*_{n,r},g_n^*,g_{1,n,r}^*,g_{2,n,r}^*)$\end{document}
+satisfy
+ (5) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align}
+B_n(Q_n^*,g_n^*) = B_{A,n}(\bar{Q}_{n,r}^*,g_n^*) = B_{Y,n}(\bar{Q}_n^*,g_{1,n,r}^*,g_{2,n,r}^*)=o_{\rm p}(n^{-1/2})
+\end{align}\end{document} 
+and that the second-order terms \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{Q,n}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{g,n}$\end{document} described in Appendix B are \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/2})$\end{document}, the plug-in
+estimator \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{*,{\rm c}}=\Psi(Q_n^*)$\end{document} is
+asymptotically linear with influence function \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D^{*,\#}(Q,g)$\end{document}. Furthermore,
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{1/2}(\psi_n^{*,{\rm c}}-\psi_0)$\end{document}
+converges in law to a zero-mean normal random variable with variance estimated
+consistently by
+ \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+\sigma_n^{2} = P_n \bigl\{D^*(Q^*_{n}, g^*_n) - P_n D^*(Q^*_{n}, g^*_n) - D_A(\bar{Q}^{*}_{n,r}, g^*_n) - D_Y(\bar{Q}^*_n, g^{*}_{1,n,r}, g^{*}_{2,n,r})\bigr\}^2 \text{.}
+\]\end{document} 
+
+
+An algorithm to construct nuisance estimators that satisfy (5) can be devised based on targeted minimum loss-based estimation.
+Without loss of generality, suppose \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$0 \leqslant Y \leqslant 1$\end{document}. Defining
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_1(g)(a,w) = a / g(w)$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_2(g_1,g_2)(a,w) = a g_2(w)/g_1(w)$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_3(\bar{Q},g)(w) = \bar{Q}(w)/g(w)$\end{document}, we
+implement the following recursive procedure.
+
+Step 1. Construct initial estimates \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_n^0$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_n^0$\end{document} of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document},
+and set \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$k=0$\end{document}.
+
+Step 2. Define \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{1n,k}=H_1(g^k_n)(A,W)$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L_{1n,k}=\mbox{logit}\, \bar{Q}^k_n(W)$\end{document};
+fit a logistic regression with outcome \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Y$\end{document}, covariate
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{1n,k}$\end{document} and offset
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L_{1n,k}$\end{document} using only data points with
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A=1$\end{document}; set \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\epsilon_{1n,k}$\end{document} as the estimated
+coefficient of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{1n,k}$\end{document}; and define  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+\bar{Q}_n^{k,\circ}(w) = \mbox{expit}\bigl\{ \mbox{logit} \,\bar{Q}^k_n(w) + \epsilon_{1n,k} H_1\bigl(g^k_n\bigr)(1,w)\bigr\}\text{.}
+\]\end{document} 
+
+Step 3. Construct estimates \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g^{k}_{1,n,r}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g^{k}_{2,n,r}$\end{document} of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{1,0,r}$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{2,0,r}$\end{document} based on
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_n^k$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_n^{k,\circ}$\end{document}.
+
+Step 4. Define \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{2n,k}=H_2(g^k_{1,n,r},g^k_{2,n,r})(A,W)$\end{document}
+and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L_{2n,k}=\mbox{logit} \,\bar{Q}^{k,\circ}_n(W)$\end{document};
+fit a logistic regression with outcome \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Y$\end{document}, covariate
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{2n,k}$\end{document} and offset
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L_{2n,k}$\end{document} using only data points with
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A=1$\end{document}; set \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\epsilon_{2n,k}$\end{document} as the estimated
+coefficient of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{2n,k}$\end{document}; and define  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+\bar{Q}_n^{k+1}(w) = \mbox{expit}\bigl\{ \mbox{logit}\, \bar{Q}^{k,\circ}_n(w) + \epsilon_{2n,k} H_2\bigl(g^k_{1,n,r},g^k_{2,n,r}\bigr)(1,w)\bigr\}\text{.}
+\]\end{document} 
+
+Step 5. Construct estimates \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}^{k}_{n,r}$\end{document} of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{0,r}$\end{document} based on
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_n^k$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_n^{k+1}$\end{document}.
+
+Step 6. Define \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{3n,k}=H_3(\bar{Q}_{n,r}^k,g_n^k)(W)$\end{document}
+and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L_{3n,k}=\mbox{logit}\, g^k_n(W)$\end{document}; fit a
+logistic regression with outcome \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A$\end{document}, covariate
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{3n,k}$\end{document} and offset
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L_{3n,k}$\end{document}; set \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\epsilon_{3n,k}$\end{document} as the estimated
+coefficient of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$H_{3n,k}$\end{document}; and define  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\[
+g_n^{k+1}(w) = \mbox{expit}\bigl\{ \mbox{logit}\, g^{k}_n(w) + \epsilon_{3n,k} H_3\bigl(\bar{Q}_{n,r}^k,g_n^k\bigr)(w)\bigr\}\text{.}
+\]\end{document} 
+
+Step 7. Set \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$k=k+1$\end{document} and iterate Steps 1–6 until
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$K$\end{document} is large enough that
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_n D^*(Q_n^{K}, g_n^K) \approx P_n D_A(\bar{Q}_{n,r}^K, g_n^K) \approx P_n D_Y(\bar{Q}_n^K, g_{1,n,r}^K, g_{2,n,r}^K) \approx 0$\end{document}.
+
+Step 8. Set \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{n,r}^* = \bar{Q}_{n,r}^K$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_n^*=g_n^K$\end{document}, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{n,r}^* = \bar{Q}_{n,r}^K$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{1,n,r}^* = g_{1,n,r}^K$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{2,n,r}^*= g_{2,n,r}^K$\end{document}.
+
+Theorem 1 implies that doubly robust confidence intervals and tests can readily be
+crafted. For example, the Wald construction \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{*,{\rm c}} \pm z_{1-\alpha/2} \sigma_n n^{-1/2}$\end{document}
+is a doubly robust \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$100\times(1-\alpha)\%$\end{document} asymptotic confidence
+interval for \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0$\end{document}, and prescribing rejection of the
+null hypothesis \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0=\psi^\circ$\end{document} versus the alternative
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0\neq\psi^\circ$\end{document} only when
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$| n^{1/2}(\psi_n^{*,{\rm c}}-\psi^\circ)/\sigma_n|>z_{1-\alpha/2}$\end{document}
+constitutes a doubly robust hypothesis test with asymptotic level
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\alpha$\end{document}. Thus, valid statistical inference
+is preserved when one nuisance parameter is inconsistently estimated, in contrast to
+conventional doubly robust estimation, wherein only consistency is preserved.
+
+4. Doubly robust inference via one-step estimation
+In § 2 we discussed the construction of doubly
+robust, locally efficient estimators of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0$\end{document} and argued that both
+the one-step approach and targeted minimum loss-based estimation can be used for bias
+correction. For the sake of constructing asymptotically efficient estimators, these two
+strategies are generally considered to be alternatives, with targeted minimum loss-based
+estimation possibly delivering better finite-sample behaviour but the one-step approach
+often simpler to implement. In § 3, we outlined how
+the bias-correction feature of the targeted minimum loss-based estimation framework could be
+leveraged to achieve doubly robust asymptotic linearity and thus perform doubly robust
+inference. Since targeted minimum loss-based estimation can be more complicated to implement
+than the one-step correction procedure, it is natural to wonder whether a one-step approach
+could also account for the additional bias terms that result from the inconsistent
+estimation of either \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} or \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document}. If
+so, the resulting one-step estimator could provide a computationally convenient alternative
+to the algorithm described in § 3.2.
+
+We recall that the doubly robust, locally efficient one-step estimator
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^+$\end{document} was constructed by adding the bias
+term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B^*_n(Q_n,g_n)$\end{document} to the initial plug-in
+estimator \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\Psi(Q_n)$\end{document}. By extension, it seems sensible to
+investigate whether the estimator  (6) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{equation*} \psi_n^{+,{\rm c}} = \psi_n^+ - B_{A,n}(\bar{Q}_{n,r}, g_n) - B_{Y,n}(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) \end{equation*}\end{document}  is doubly robust with respect to asymptotic linearity.
+By (1) and (4), the estimator  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{equation*}
+\psi_n^{\circ} = \psi_n^+ - I(g = g_0) B_{A,n}(\bar{Q}_{n,r}, g_n) - I(\bar{Q} = \bar{Q}_0) B_{Y,n}(\bar{Q}_n, g_{1,n,r}, g_{2,n,r})
+\end{equation*}\end{document}  is asymptotically linear with influence function
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D^{\#}(Q,g)$\end{document}, just as the targeted minimum
+loss-based estimators in the previous section. Therefore, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{\circ}$\end{document} is locally efficient and doubly
+robust with respect to asymptotic linearity. Nevertheless, to compute
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{\circ}$\end{document}, the analyst must know which
+nuisance parameter, if any, is inconsistently estimated. Such information will generally not
+be available, except in the case of a randomized trial, where \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} may be
+known to the experimenter. To study the properties of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{+,{\rm c}}$\end{document}, we note that  (7) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align}
+&\psi_n^{\circ} - \psi_n^{+,{\rm c}} =I(g \neq g_0) B_{A,n}(\bar{Q}_{n,r}, g_n)+ I(\bar{Q} \neq \bar{Q}_0)B_{Y,n}(\bar{Q}_n, g_{1,n,r}, g_{2,n,r})\text{.}
+\end{align}\end{document} 
+
+The one-step estimator \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{+,{\rm c}}$\end{document} corrects for both
+inconsistent estimation of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document} and inconsistent estimation of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document}. However, for consistent estimation of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_0$\end{document}, no more than one of these two
+nuisance parameters can in reality be inconsistently estimated. In this case there is
+necessarily overcorrection in \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{+,{\rm c}}$\end{document}, and it is not a priori
+obvious whether this may be detrimental to the behaviour of the estimator. Elucidating this
+issue requires a careful study of each of the two bias-correction terms in settings where
+they are not in fact needed. For example, the term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_{A,n}(\bar{Q}_{n,r}, g_n)$\end{document}, used to correct
+for bias resulting from inconsistent estimation of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0$\end{document},
+must be analysed in the scenario where it is actually \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0$\end{document} that
+has been inconsistently estimated.
+
+In Appendix C, we show that under reasonable
+conditions, we can represent the first summand on the right-hand side of (7) as  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}
+\begin{align*}
+B_{A,n}(\bar{Q}_{n,r}, g_n)=P_0\!\left\{ \left(\frac{g_0 - g}{g}\right)\bar{Q}_{n,r}\right\} + o_{\rm p}(n^{-1/2})
+\end{align*}\end{document}  when \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g \ne g_0$\end{document}, and we can
+represent the second summand as  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+B_{Y,n}(\bar{Q}_n, g_{1,n,r}, g_{2,n,r})=P_0\!\left\{ \frac{A}{g_{1,n,r}}\left( \bar{Q}_0 - \bar{Q} \right) g_{2,n,r}\right\} + o_{\rm p}(n^{-1/2})
+\end{align*}\end{document}  when \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q} \ne \bar{Q}_0$\end{document}. This
+implies that the first-order behaviour of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{+,{\rm c}}$\end{document} is
+driven by these terms. In particular, the rate of convergence of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{+,{\rm c}}$\end{document} is determined by that of the
+estimators \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{n,r}$\end{document}, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{1,n,r}$\end{document}
+and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{2,n,r}$\end{document} of the reduced-dimension nuisance
+parameters. In practice, these terms are unlikely to be estimable at the parametric rate,
+since this would require the correct specification of a parametric model for a complex
+object, and adaptive techniques are likely to be used. Because the rates achieved by these
+techniques are generally slower than \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{-1/2}$\end{document}, the estimator
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{+,{\rm c}}$\end{document} fails to be
+root-\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n$\end{document} consistent and hence doubly robust with
+respect to asymptotic linearity. Using an argument identical to that in § 2.3, we can show that Wald-type confidence intervals
+for \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\psi_n^{+,{\rm c}}$\end{document} have similarly poor
+asymptotic coverage. Therefore, at least theoretically, the one-step construction does not
+appear helpful.
+
+This warrants further discussion. The above theory shows that the targeted minimum
+loss-based estimation framework is able to simultaneously account for inconsistent
+estimation of either the outcome regression or the propensity score without the need to know
+which is required. In contrast, the one-step approach requires knowledge of which nuisance
+parameter is possibly inconsistently estimated to achieve doubly robust asymptotic
+linearity. Without this knowledge, asymptotic linearity cannot be guaranteed in a doubly
+robust fashion. This is relevant for future work to derive procedures for doubly robust
+inference on other parameters admitting doubly or multiply robust estimators.
+
+5. Simulation study
+5.1. Data-generating mechanism and crossvalidation set-up
+In each of the simulations below, the baseline covariate vector \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W = (W_1, W_2)$\end{document} had independent components
+with \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W_1$\end{document} distributed according to a uniform
+distribution over the interval \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$(-2,+2)$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W_2$\end{document} distributed as a binary random variable
+with success probability \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$1/2$\end{document}. The conditional probability of
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A=1$\end{document} given \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W=(w_1,w_2)$\end{document} was \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_0(w_1,w_2)=\mbox{expit}(-w_1 + 2 w_1 w_2)$\end{document}.
+The outcome \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$Y$\end{document} was a binary random variable whose
+conditional probability of occurrence given \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$A=a$\end{document} is
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_0(a,w) = \mbox{expit}(0{\cdot}2a - w_1 + 2 w_1 w_2)$\end{document}.
+
+We implemented and compared the performance of the following six estimators: (i) the standard, uncorrected targeted minimum
+loss-based estimator;
+
+(ii) the corrected targeted
+minimum loss-based estimator using bivariate nuisance regression, as proposed by
+van der Laan
+(2014);
+
+(iii) the corrected targeted minimum
+loss-based estimator using univariate nuisance regressions, as introduced in Theorem
+1;
+
+(iv) the standard, uncorrected one-step estimator,
+commonly referred to as the augmented inverse probability weighted
+estimator;
+
+(v) the corrected one-step estimator using
+bivariate nuisance regression;
+
+(vi) the corrected
+one-step estimator using univariate nuisance regressions, as given in (6).
+
+
+
+We evaluated these estimators in the following three scenarios.
+
+
+I. Only the outcome regression is consistently estimated.
+
+II. Only the propensity score is consistently estimated.
+
+III. Both the outcome regression and the propensity score are consistently
+estimated.
+
+
+
+
+The consistently estimated nuisance parameter, either the outcome regression or the
+propensity score, was estimated using a bivariate Nadaraya–Watson estimator with bandwidth
+selected by crossvalidation, while the inconsistently estimated nuisance parameter was
+estimated using a logistic regression model with main terms only, thus ignoring the
+interaction between \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W_1$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$W_2$\end{document}. The
+reduced-dimension nuisance parameters required for the additional correction procedure
+involved in computing estimators (ii), (iii), (v) and (vi) were estimated using the
+Nadaraya–Watson estimator with bandwidth selected by leave-one-out crossvalidation (Racine & Li, 2004). For scenarios I and II, we
+considered sample sizes \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n=250, 500, 1000, 3000, 5000, 9000$\end{document}. For
+scenario III, theory dictates that all estimators considered should be asymptotically
+equivalent, so we used only the sample sizes \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n=100, 250, 500, 750, 1000$\end{document}. For each
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n$\end{document} we generated 5000 datasets. We summarized
+estimator performance in terms of bias, bias times \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\surd n$\end{document},
+coverage of 95% confidence intervals, and accuracy of the standard error estimator, which
+we assessed by comparing the Monte Carlo variance of the estimator and the average
+estimated variance across simulations. We examined the following hypotheses based on our
+theoretical work.
+
+
+(A) In scenarios I and II, the bias of estimators (i), (iv), (v) and (vi) tends to
+zero more slowly than \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{-1/2}$\end{document}, whereas that of estimators
+(ii) and (iii) does so faster than \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{-1/2}$\end{document}.
+
+(B) In scenarios I and II, the slow convergence of the bias for estimators (i),
+(iv), (v) and (vi) adversely affects the nominal confidence interval coverage,
+whereas the corrected targeted minimum loss-based estimators (ii) and (iii) have
+asymptotically nominal coverage.
+
+(C) In scenarios I and II, influence function-based variance estimators are
+accurate for the corrected estimators (ii), (iii), (v) and (vi), but not for the
+uncorrected estimators (i) and (iv).
+
+(D) In scenario III, all estimators exhibit approximately the same behaviour.
+
+
+
+
+5.2. Results
+We first focus on the results for scenario I, in which only the outcome regression is
+consistently estimated. In Fig. 1(a), the bias of
+each estimator tends to zero, illustrating the conventional double robustness of these
+estimators. However, Fig. 1(b) supports hypothesis
+(A), as the bias of the uncorrected estimators tends to zero at a slower rate than
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{-1/2}$\end{document}, while the bias of the corrected
+targeted minimum loss-based estimators tends to zero faster. The bias of the corrected
+one-step estimators is reduced relative to the uncorrected estimators, and for the sample
+sizes considered we do not yet see the expected divergence in the bias when inflated by
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{1/2}$\end{document}. Figure 1(c) indicates strong support for hypothesis (B): the coverage of
+intervals based on the uncorrected estimators is not only far from the nominal level but
+also U-shaped, suggesting worsening coverage in larger samples, as is expected based on
+our arguments in § 2.3. Intervals based on the
+corrected estimators have approximately nominal coverage in moderate and large samples.
+Figure 1(d) indicates that the variance estimators
+for the uncorrected estimators are liberal, which contributes to the poor coverage of
+intervals. The variance estimators for the corrected estimators are approximately accurate
+in larger samples, thus supporting hypothesis (C).
+
+Fig. 1. Simulation results when only the outcome regression is consistently estimated, with
+the following performance measures plotted against the sample size
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n$\end{document}: (a) bias; (b)
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\surd n\,\times\:$\end{document}bias; (c) coverage of
+95% confidence intervals; (d) accuracy of the standard error estimator. Squares
+represent estimators that do not account for inconsistent nuisance parameter
+estimation, circles represent estimators using the bivariate correction of van der Laan (2014), and triangles represent
+estimators using the proposed univariate corrections.
+
+
+Figure 2 summarizes the results for scenario II. In
+Fig. 2(b) we again see that the bias of the
+uncorrected estimators tends to zero more slowly than \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{-1/2}$\end{document}; this is also true of the corrected
+one-step estimators. In contrast, the bias of the corrected targeted minimum loss-based
+estimators appears to converge to zero faster than \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n^{-1/2}$\end{document}. Figure
+2(c) partially supports hypothesis (B): intervals based on the uncorrected
+estimators achieve near-nominal coverage for moderate and large sample sizes in spite of
+the large bias. However, we again find the expected U-shape, with an eventual downturn in
+coverage as the sample size increases further. Intervals based on the corrected targeted
+minimum loss-based estimators using bivariate nuisance regression have improved coverage
+throughout, and intervals based on either corrected targeted minimum loss-based estimator
+have nearly nominal coverage in larger samples. Intervals based on the corrected one-step
+estimator with the univariate correction achieve approximately nominal coverage, while
+those based on the one-step estimator with bivariate correction do not, probably due to
+larger bias. Figure 2(d) shows that the variance
+estimator for the uncorrected one-step estimator is conservative, whereas that based on
+the uncorrected targeted minimum loss-based estimator is approximately accurate. The
+variance estimators based on the corrected one-step or targeted minimum loss-based
+estimators appear to be valid throughout, although that based on the latter using
+univariate nuisance regressions appears to be liberal in smaller samples.
+
+Fig. 2. Simulation results when only the propensity score is consistently estimated: (a)
+bias, (b) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\surd n\,\times\:$\end{document}bias, (c) coverage of
+95% confidence intervals, and (d) accuracy of the standard error estimator plotted
+against \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n$\end{document}. Squares represent estimators that do
+not account for inconsistent nuisance parameter estimation, circles represent
+estimators using the bivariate correction of van der
+Laan (2014), and triangles represent estimators using the proposed univariate
+corrections.
+
+Finally, Fig. 3 supports hypothesis (D): when both
+the propensity score and the outcome regression are consistently estimated, all of the
+estimators perform approximately equally well, even in smaller samples. This suggests that
+implementing the correction procedures needed to achieve doubly robust asymptotic
+linearity and inference does not come at the cost of estimator performance in situations
+where the additional corrections are not needed.
+
+Fig. 3. Simulation results when both the outcome regression and the propensity score are
+consistently estimated: (a) bias, (b) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\surd n\,\times\:$\end{document}bias, (c) coverage of 95%
+confidence intervals, and (d) accuracy of the standard error estimator plotted against
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$n$\end{document}. Squares represent estimators that do
+not account for inconsistent nuisance parameter estimation, circles represent
+estimators using the bivariate correction of van der
+Laan (2014), and triangles represent estimators using the proposed univariate
+corrections.
+
+The run-times for the targeted minimum loss-based estimators (ii) and (iii) are on
+average two to three times as long as those of their one-step counterparts. The run-time
+required for the bivariate correction of estimators (ii) and (v) is on average one and a
+half times as long as the univariate correction for estimators (iii) and (iv). Two
+additional simulation studies in the Supplementary Material compare the proposed estimators with existing doubly
+robust estimators. The results demonstrate the advantage of estimators that allow for
+flexible nuisance parameter estimation in complex data-generating mechanisms. Results from
+a simulation study including a greater number of covariates, reported in the Supplementary Material, suggest a
+potential reduction in finite-sample bias for the proposed univariate-corrected targeted
+minimum loss-based estimator relative to the bivariate-corrected estimator of van der Laan (2014).
+
+6. Concluding remarks
+An interesting finding of this work is that it is possible to theoretically guarantee
+doubly robust inference under mild conditions using targeted minimum loss-based estimation,
+though not with the one-step approach. While we have found the corrected one-step estimators
+to perform relatively well in simulations, we cannot expect this in all scenarios, since
+theory suggests otherwise. Therefore, the preferred approach to providing doubly robust
+inference, in spite of its computational complexity, may be targeted minimum loss-based
+estimation. These methods are implemented in the R (R
+Development Core Team, 2017) package drtmle, available from the Comprehensive R
+Archive Network (Benkeser, 2017).
+
+It may be fruitful to incorporate universally least favourable parametric submodels (van der Laan, 2016) into the targeted minimum loss-based
+estimation algorithms used here. Such submodels facilitate the construction of estimators
+using minimal data-fitting in the bias-reduction step of the algorithm. Rather than
+requiring iterations to perform bias reduction, use of these submodels would yield
+algorithms that converge in only a single step. This could yield improved performance in
+finite samples, particularly in extensions of this work to more complex parameters, such as
+average treatment effects defined by longitudinal interventions.
+
+Supplementary Material
+Supplementary Data Click here for additional data file.
+
+ Acknowledgement
+The authors thank the associate editor and reviewer for helpful suggestions. This work was
+a portion of the PhD thesis of Benkeser, supervised by Carone and Gilbert and funded by the
+Bill and Melinda Gates Foundation. Carone, van der Laan and Gilbert were partially funded by
+the National Institute of Allergy and Infectious Diseases. Carone was also funded by the
+University of Washington Department of Biostatistics Career Development Fund.
+
+Supplementary material
+
+Supplementary material available
+at Biometrika online includes results from an additional simulation
+study.
+
+Appendix A
+First-order expansion of the remainder
+We derive equation (4) and sufficient
+conditions under which it holds. Note that  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+R(\bar{Q}_n, \bar{Q}_0, g_n, g_0) = P_0 \!\left\{ (\bar{Q}_n - \bar{Q}_0) \left(\frac{g_n - g_0}{g_n} \right) \right\} = P_0\! \left\{ (\bar{Q}_n - \bar{Q}_0) \left( \frac{g_n - g_0}{g} \right) \right\} + R_{1n},
+\end{align*}\end{document}  where we define the second-order remainder term by
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$ R_{1,n} =P_0 \{ (\bar{Q}_n - \bar{Q}_0) (g_n - g_0)(g - g_n)/(g_ng) \}$\end{document}.
+Adding and subtracting \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g$\end{document} and
+simplifying, we find that  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{equation*}
+P_0 \!\left\{ (\bar{Q}_n - \bar{Q}_0) \left(\frac{g_n - g_0}{g} \right) \right\} = P_0\!\left\{(\bar{Q}_n - \bar{Q}) \left(\frac{g - g_0}{g}\right) \right\} + P_0\!\left\{ (\bar{Q} - \bar{Q}_0) \left(\frac{g_n - g}{g} \right) \right\} + R_{2n} ,
+\end{equation*}\end{document}  where the second-order remainder term is
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{2,n}=P_0 \{(\bar{Q}_n - \bar{Q})(g_n - g)/g\}$\end{document}.
+Assuming that either \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}=\bar{Q}_0$\end{document} or
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g=g_0$\end{document}, we can write  (A1) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align}
+P_0\!\left\{ (\bar{Q} - \bar{Q}_0) \left(\frac{g_n - g}{g} \right) \right\} &= I(g = g_0) P_0\!\left\{ (\bar{Q} - \bar{Q}_0) \left(\frac{g_n - g_0}{g} \right) \right\} , \\
+\end{align}\end{document}  (A2) \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align}
+P_0\!\left\{(\bar{Q}_n - \bar{Q}) \left(\frac{g - g_0}{g}\right) \right\} &= I(\bar{Q} = \bar{Q}_0) P_0\!\left\{(\bar{Q}_n - \bar{Q}_0) \left(\frac{g - g_0}{g}\right) \right\}\!\text{.}
+\end{align}\end{document} 
+
+Examining (A1), and with some abuse
+of notation, we observe that  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+P_0\!\left\{ (\bar{Q} - \bar{Q}_0) \left(\frac{g_n - g_0}{g} \right) \right\} &= -P_0\!\left\{ \frac{A}{g_0^2}\left(Y - \bar{Q}\right)\left(g_n - g_0\right) \right\}= -P_0\!\left\{ \frac{\bar{Q}_{0n,r}}{g_0} (g_n - g_0 ) \right\} \!,
+\end{align*}\end{document}  where we have set \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{0n,r}(w) = E_{P_0}\{Y - \bar{Q}(W)\mid g_n(W)=g_n(w), g_0(W)=g_0(w)\}$\end{document}.
+Then we may write  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+-P_0\!\left\{ \frac{\bar{Q}_{0n,r}}{g_0} (g_n - g_0 ) \right\} = -(P_n - P_0) \!\left\{\frac{\bar{Q}_{n,r}}{g_0} \ (A - g_n) \right\} + B_{A,n}(\bar{Q}_{n,r}, g_n) + R_{3n} + R_{4n} + M_{1n} ,
+\end{align*}\end{document}  where we define  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+R_{3n} &= P_0\!\left\{ \left(\frac{\bar{Q}_{0n,r} - \bar{Q}_{0,r}}{g_0}\right) (g_0 - g_n) \right\}\!,\quad R_{4n}= P_0\!\left\{ \left(\frac{\bar{Q}_{0,r}}{g_0} - \frac{\bar{Q}_{n,r}}{g_n}\right) \ (g_0 - g_n) \right\}\!,\\
+M_{1n} &= (P_n - P_0) \left\{D_{A}(\bar{Q}_{n,r}, g_n) - D_A(\bar{Q}_{0,r}, g_0) \right\}\!\text{.}
+\end{align*}\end{document} 
+
+If, for example, each of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{0n,r} - \bar{Q}_{n,r}$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{n,r} - \bar{Q}_{0,r}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_n - g_0$\end{document} is \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/4})$\end{document} in the
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L^2(P_0)$\end{document}-norm, then
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{3n}$\end{document} and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{4n}$\end{document}
+are \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/2})$\end{document}. Furthermore, if
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D_A(\bar{Q}_{n,r}, g_{n})$\end{document} falls in a
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0$\end{document}-Donsker class with probability tending
+to one and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0\{D_A(\bar{Q}_{n,r}, g_{n}) - D_A(\bar{Q}_{0,r}, g_{0})\}^2 = o_{\rm p}(1)$\end{document},
+then \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_{1n} = o_{\rm p}(n^{-1/2})$\end{document}.
+
+Examining (A2) and again allowing
+some abuse of notation, we find that  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+P_0\!\left\{(\bar{Q}_n - \bar{Q}_0) \left(\frac{g - g_0}{g}\right) \right\} &= -P_0\!\left\{(\bar{Q}_n - \bar{Q}_0)\left(\frac{A - g}{g}\right) \right\} = P_0\!\left\{\frac{A}{g_{0n,r}} \frac{g_{0n,r} - g}{g} \left(Y - \bar{Q}_n\right) \right\} \!,
+\end{align*}\end{document}  where the additional nuisance parameter is defined as
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$ g_{0n,r}(\bar{Q}_n, \bar{Q}_0, g) = E_{P_0} \{ A \ \mid \ \bar{Q}_n, \bar{Q}_0, g \}$\end{document}.
+Some algebraic manipulation allows us to write  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+&P_0\!\left\{\frac{A}{g_{0n,r}} \frac{g_{0n,r} - g}{g} (Y - \bar{Q}_n) \right\} \\
+& \quad = -(P_n-P_0) D_Y(\bar{Q}_0, g_{0,r}) + B_{Y,n}(\bar{Q}_n, g_{n,r}) + R_{5,n} + R_{6,n} + R_{7,n} + M_{2,n} ,
+\end{align*}\end{document}  where we define  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+R_{5n} &= -P_0\!\left\{\frac{g_{0n,r} - g_{0,r}}{g}\, (\bar{Q}_n - \bar{Q}_0) \right\}\!,\quad R_{6n} = -P_0\!\left\{\frac{g_{n,r} - g_{0,r}}{g_{n,r}} \, (\bar{Q}_n - \bar{Q}_0) \right\}\!, \\
+R_{7n} &= -P_0\!\left\{\frac{g_{0,r}}{g_n g}\, (g_{n} - g) (\bar{Q}_n - \bar{Q}_0) \right\}\!,\quad M_{2n} = (P_n - P_0) \left\{D_Y(\bar{Q}_n, g_{n,r}) - D_Y(\bar{Q}_0, g_{0,r}) \right\} \text{.}
+\end{align*}\end{document} 
+
+If, for example, each of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_n - \bar{Q}_0$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{0n,r} - g_{0,r}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{n,r} - g_{0,r}$\end{document} is
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/4})$\end{document} in the
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L^2(P_0)$\end{document}-norm, then
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{5n}$\end{document}, \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{6n}$\end{document}
+and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{7n}$\end{document} are \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/2})$\end{document}. Furthermore, if
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D_Y(\bar{Q}_n, g_{n,r})$\end{document} falls in a
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0$\end{document}-Donsker class with probability tending
+to one and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0 \{D_Y(\bar{Q}_n, g_{n,r}) - D_Y(\bar{Q}_0, g_{0,r}) \}^2 = o_{\rm p}(1)$\end{document},
+then \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_{2n}=o_{\rm p}(n^{-1/2})$\end{document}. Thus, we have
+shown that (4) holds with
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n^* = R_{1n} + R_{2n}$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{Q,n} = R_{3n} + R_{4n} + M_{1n}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{g,n} = R_{5n} + R_{6n} + R_{7n} + M_{2n}$\end{document}.
+
+Appendix B
+Derivation of the reduced-dimension remainder representation
+We proceed similarly to the derivations above, but now, with regard to (A2) and with some abuse of notation, we
+have  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+P_0\!\left\{(\bar{Q}_n - \bar{Q}_0) \left(\frac{g - g_0}{g}\right) \right\} &= -P_0\!\left\{(\bar{Q}_n - \bar{Q}_0)\left(\frac{A - g}{g}\right) \right\}\\
+&= -P_0\!\left\{g_{2,0n,r}(\bar{Q}_n - \bar{Q}_0)\right\} = P_0\!\left\{\frac{A}{g_{1,0n,r}} g_{2,0n,r} \left(Y - \bar{Q}_n\right) \right\}\!,
+\end{align*}\end{document}  where we define the nuisance terms
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{1,0n,r}(\bar{Q}_n, \bar{Q}_0)(w) = E_{P_0}\{A \mid \bar{Q}_n(W)=\bar{Q}_n(w), \bar{Q}_0(W)=\bar{Q}_0(w)\}$\end{document}
+and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{2,0n,r}(\bar{Q}_n, \bar{Q}_0, g)(w)=E_{P_0}[\{A - g(W)\}/g(W) \mid \bar{Q}_n(W)=\bar{Q}_n(w), \bar{Q}_0(W)=\bar{Q}_0(w) ]$\end{document}.
+We can then write  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+&P_0\!\left\{\frac{A}{g_{1,0n,r}} g_{2,0n,r} \left(Y - \bar{Q}_n\right) \right\} \\
+&\quad = -(P_n-P_0) D_Y(\bar{Q}_0, g_{1,0,r}, g_{2,0,r}) + B_{Y,n}(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) + \tilde{R}_{5n} + \tilde{R}_{6n} + \tilde{M}_{2n} ,
+\end{align*}\end{document}  where  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+\tilde{R}_{5n} &= P_0\!\left\{\left(\frac{A}{g_{1,0n,r}}g_{2,0n,r} - \frac{A}{g_{1,0,r}}g_{2,0,r}\right) (\bar{Q}_0 - \bar{Q}_n) \right\}\!,\\
+\tilde{R}_{6n} &= P_0\!\left\{\left(\frac{A}{g_{1,0,r}} g_{2,0,r} - \frac{A}{g_{1,n,r}} g_{2,n,r}\right) (\bar{Q}_0 - \bar{Q}_n) \right\}\!, \\
+\tilde{M}_{2n} &= (P_n - P_0) \left\{D_Y(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) - D_Y(\bar{Q}_0, g_{1,0,r}, g_{2,0,r}) \right\} \text{.}
+\end{align*}\end{document} 
+
+If, for example, each of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_n - \bar{Q}_0$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{2,0n,r} - g_{2,0,r}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{2,n,r} - g_{2,0,r}$\end{document} is
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/4})$\end{document} in the
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$L^2(P_0)$\end{document}-norm, it generally follows that
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\tilde{R}_{5n}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\tilde{R}_{6n}$\end{document} are
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/2})$\end{document}. Furthermore, if
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D_Y(\bar{Q}_n, g_{1,n,r}, g_{2,n,r})$\end{document} falls
+in a \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0$\end{document}-Donsker class with probability tending
+to one and \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$P_0\{D_Y(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) - D_Y(\bar{Q}_0, g_{1,0,r}, g_{2,0,r})\}^2 = o_{\rm p}(1)$\end{document},
+it also follows that \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\tilde{M}_{2n}=o_{\rm p}(n^{-1/2})$\end{document}. This
+implies that (4) holds with
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_n^* = R_{1,n} + R_{2,n}$\end{document},
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{Q,n} = R_{3n} + R_{4n} + M_{1n}$\end{document} and
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$R_{g,n} = \tilde{R}_{5n} + \tilde{R}_{6n} + \tilde{M}_{2n}$\end{document}
+when the alternative reduced-dimension parameterization of the remainder is used.
+
+Appendix C
+Behaviour of unnecessary correction terms
+We first examine the behaviour of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_{A,n}(\bar{Q}_{n,r}, g_n)$\end{document} when
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q} = \bar{Q}_0$\end{document}. We note that
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_{A,n}(\bar{Q}_{n,r}, g_n) = P_n D_A(\bar{Q}_{n,r}, g_n) = P_0 D_A(\bar{Q}_{n,r}, g_n) + M_{A,n} $\end{document},
+where we define the empirical process term \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_{A,n} = (P_n - P_0)\{D_A(\bar{Q}_{n,r}, g_n) - D_A(\bar{Q}_{0,r}, g)\}$\end{document},
+which can reasonably be assumed to be \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/2})$\end{document}. The
+second equality is a consequence of the fact that \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D_A(\bar{Q}_{0,r}, g) = 0$\end{document} for all
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g$\end{document}, because \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}_{0,r} = 0$\end{document}. With some abuse of
+notation, we can write  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+P_0 D_A(\bar{Q}_{n,r}, g_n) = P_0\!\left\{\frac{\bar{Q}_{n,r}}{g_n} (A - g_n)\right\} = P_0\!\left\{\frac{\bar{Q}_{n,r}}{g_n} (g_0 - g_n)\right\} = P_0\!\left\{\frac{\bar{Q}_{n,r}}{g} (g_0 - g)\right\} + R_{A,n} ,
+\end{align*}\end{document}  where  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{equation*}
+R_{A,n} = P_0\!\left\{\bar{Q}_{n,r} \left(\frac{g - g_n}{g_ng} \right)( g_0 - g_n) \right\} + P_0\!\left\{ \frac{\bar{Q}_{n,r}}{g} (g - g_n) \right\} \!,
+\end{equation*}\end{document}  which is \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/2})$\end{document} under
+the rate conditions outlined in Appendices A and B.
+
+We next examine the behaviour of \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$B_{Y,n}(\bar{Q}_n, g_{1,n,r}, g_{2,n,r})$\end{document} when
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g = g_0$\end{document}. We have  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+B_{Y,n}(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) &= P_n D_Y(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) = P_0 D_Y(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) + M_{Y,n} ,
+\end{align*}\end{document}  where we define the empirical process term
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$M_{Y,n} = (P_n - P_0) \{D_Y(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) - D_Y(\bar{Q}, g_{1,0,r}, g_{2,0,r}) \}$\end{document},
+which can reasonably be assumed to be \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/2})$\end{document}. As
+above, the second equality is a consequence of the fact that \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$D_Y(\bar{Q}, g_{1,0,r}, g_{2,0,r}) = 0$\end{document} for
+all \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$\bar{Q}$\end{document}, because \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g_{2,0,r} = 0$\end{document} when \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$g = g_0$\end{document}.
+With some abuse of notation we can write  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{align*}
+P_0 D_Y(\bar{Q}_n, g_{1,n,r}, g_{2,n,r}) &= P_0\!\left\{\frac{A}{g_{1,n,r}} g_{2,n,r} \left(Y - \bar{Q}_n\right) \right\} = P_0\!\left\{\frac{A}{g_{1,n,r}} g_{2,n,r} (\bar{Q}_0 - \bar{Q}_n) \right\} \\
+&= P_0\!\left\{\frac{A}{g_{1,0,r}} (\bar{Q}_0 - \bar{Q}) g_{2,n,r} \right\} + R_{Y,n},
+\end{align*}\end{document}  where  \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}\begin{equation*}
+R_{Y,n} = P_0\!\left\{A \left(\frac{g_{1,0,r} - g_{1,n,r}}{g_{1,0,r} g_{1,n,r}} \right) g_{2,n,r} (\bar{Q}_0 - \bar{Q}_n) \right\} + P_0\!\left\{\frac{A}{g_{1,0,r}} g_{2,n,r} (\bar{Q} - \bar{Q}_n ) \right\} \!,
+\end{equation*}\end{document}  which is \documentclass[12pt]{minimal}
+\usepackage{amsmath}
+\usepackage{wasysym} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{amsbsy}
+\usepackage{upgreek}
+\usepackage{mathrsfs}
+\setlength{\oddsidemargin}{-69pt}
+\begin{document}
+}{}$o_{\rm p}(n^{-1/2})$\end{document} under
+the rate conditions above.
+==== Refs
+References
+
+Bang H.  & Robins J.
+M.   (2005 ). Doubly
+robust estimation in missing data and causal inference
+models. Biometrics 61 ,
+962 –73 .16401269 
+
+Benkeser D.   (2017 ). drtmle: Doubly-Robust Nonparametric
+Estimation and Inference . R package version
+1.0.0. 
+
+Bickel P. , Klaassen C. ,
+Ritov Y.  &
+Wellner J.  
+(1997 ). Efficient and Adaptive Estimation for Semiparametric
+Models. Baltimore, Maryland :
+Johns Hopkins University Press. 
+
+Ibragimov I. A.  & Has’minskii R.
+Z.   (1981 ). Statistical
+Estimation: Asymptotic Theory , vol. 2. New
+York : Springer .
+
+Kang J. D.  & Schafer J.
+L.   (2007 ).
+Demystifying double robustness: A comparison of alternative strategies
+for estimating a population mean from incomplete data. Statist.
+Sci. 22 , 523 –39 .
+
+Pfanzagl J.   (1982 ). Contributions to a General Asymptotic
+Statistical Theory . New York :
+Springer. 
+
+Porter K. E. , Gruber S. , van der Laan M.
+J.  & Sekhon J.
+S.   (2011 ). The
+relative performance of targeted maximum likelihood
+estimators. Int. J. Biostatist. 7 ,
+1 –34 .
+
+R Development Core Team  (2017 ). R: A Language and
+Environment for Statistical Computing . R Foundation for Statistical
+Computing, Vienna, Austria 
+ISBN
+3-900051-07-0. http://www.R-project.org.
+
+Racine J.  & Li Q.  
+(2004 ). Nonparametric estimation of regression functions
+with both categorical and continuous data. J.
+Economet. 119 ,
+99 –130 .
+
+Robins J. M. , Rotnitzky A.  &
+Zhao L.
+P.   (1994 ).
+Estimation of regression coefficients when some regressors are not always
+observed. J. Am. Statist. Assoc. 89 ,
+846 –66 .
+
+Rubin D. B.   (1974 ). Estimating causal effects of
+treatments in randomized and nonrandomized studies. J. Educ.
+Psychol. 66 ,
+688 –701 .
+
+van der Laan M. J.   (2014 ). Targeted estimation of nuisance
+parameters to obtain valid statistical inference. Int. J.
+Biostatist. 10 ,
+29 –57 .
+
+van der Laan M. J.   (2016 ). One-step targeted minimum loss-based
+estimation based on universal least favorable one-dimensional
+submodels. Int. J. Biostatist. 12 ,
+351 –78 .
+
+van der Laan M. J.  & Polley E.
+C.   (2007 ). Super
+learner. Statist. Appl. Genet. Molec.
+Biol. 6 , 1 –23 .
+
+van der Laan M. J.  & Robins J.
+M.   (2003 ). Unified
+Methods for Censored Longitudinal Data and Causality . New
+York : Springer. 
+
+van der Laan M. J.  & Rose S.  
+(2011 ). Targeted Learning: Causal Inference for Observational and
+Experimental Data . New York :
+Springer. 
+
+van der Laan M. J.  & Rubin D.  
+(2006 ). Targeted maximum likelihood
+learning. Int. J. Biostatist. 2 ,
+1 –40 .
+
+van der Vaart A. W.  & Wellner J.
+A.   (1996 ). Weak
+Convergence and Empirical Processes: With Applications to Statistics .
+New York :
+Springer .
+
+Vermeulen K.  & Vansteelandt S.  
+(2014 ). Bias-reduced doubly robust
+estimation. J. Am. Statist. Assoc. 110 ,
+1024 –36 .
+
+Vermeulen K.  & Vansteelandt S.  
+(2016 ). Data-adaptive bias-reduced doubly robust
+estimation. Int. J. Biostatist. 12 ,
+253 –82 .
+

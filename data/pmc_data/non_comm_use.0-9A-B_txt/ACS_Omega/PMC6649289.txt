@@ -1,0 +1,844 @@
+
+==== Front
+ACS OmegaACS OmegaaoacsodfACS Omega2470-1343American Chemical Society 3145952810.1021/acsomega.8b03150ArticleReal Gas Model Parameters for High-Density Combustion
+from Chemical Kinetic Model Data Zheng Chenwei Coombs Deshawn Murray Akih-Kumgeh Benjamin *Department of Mechanical and Aerospace
+Engineering, Syracuse University, Syracuse, New York 13210, United States* E-mail: bakihkum@syr.edu.12 02 2019 28 02 2019 4 2 3074 3082 12 11 2018 01 02 2019 Copyright © 2019 American Chemical
+Society2019American Chemical
+SocietyThis is an open access article published under an ACS AuthorChoice License, which permits copying and redistribution of the article or any adaptations for non-commercial purposes.
+
+Low emissions and high efficiencies
+can be realized in combustion
+systems that operate at high-pressure and low-temperature conditions
+(high densities). The design of such engines relies on accurate models
+of the physical processes involved. Under these conditions, the ideal
+gas model widely used in computational fluid dynamics (CFD) simulations
+fails to properly capture the relation among pressure, density, and
+temperature as well as inter-relations among other thermodynamic and
+transport properties. As such, discrepancies between experimental
+observations and CFD simulations cannot only be traced to uncertainties
+from experiments, turbulent, or combustion models. This paper offers
+a possible solution to the implementation of the real gas equation
+of state models in combustion simulations. The large number of species
+in combustion simulations requires effort to provide the relevant
+real gas properties. A method is suggested for incorporating these
+properties in simulations based on available transport and thermodynamic
+data of chemical kinetic models. This attempt also brings out an often-ignored
+problem in existing chemical kinetic models in the literature, namely,
+the nonsystematic assignment of transport properties for various species.
+To clearly demonstrate the need for real gas models in reacting flows,
+simulations are carried out of a high-pressure n-heptane
+jet into a quiescent chamber of air based on ideal gas and real gas
+models. The defects of the ideal gas model are revealed, and the proposed
+method of property estimation is justified as a convenient solution.
+
+document-id-old-9ao8b03150document-id-new-14ao-2018-03150uccc-price
+==== Body
+1 Introduction
+Advanced combustion systems
+characterized by high efficiencies
+and low emissions can be realized by organizing combustion processes
+at high pressures and low or moderate temperature conditions. For
+example, modern diesel engines with turbo chargers reach pressures
+at about 100 atm; gas turbines now approach 50 atm at take off; and
+rocket engines operate around 200–300 atm. Combustion systems
+under these conditions require real gas models.
+
+The need to
+account for real gas effects in computational fluid
+dynamics (CFD) simulations has been recognized, with the result that
+increasingly more studies try to address this problem.1−10 Recent comprehensive reviews of work on real gas behavior in reacting
+flows have been presented by Bellan11 Sazhin12 and Yang.13 These
+works established that the fluid flow is different once either pressure
+or temperature exceeds the critical state values. In addition to all
+of the classical problems of multiphase chemically reacting flows,
+a unique set of problem arises from the introduction of thermodynamic
+nonidealities and transport anomalies. Models of real gas behavior
+are needed.
+
+There are many models of real gas equations of state
+used in CFD.
+These include theoretically grounded equations, such as the van der
+Waals equation. Complex empirical equations of state are also used,
+including the 32-term version of the Benedict–Webb–Rubin
+(BWR) equation.14,15 Most practical real gas equation
+of state (EOS) is modifications of the semi-empirical van der Waals
+EOS. Currently, in order to simplify computational tasks associated
+with EOS evaluations, two-term cubic equations of state such as the
+Redlich–Kwong (RK) model,16 Soave–Redlich–Kwong
+(SRK),17 and Peng–Robinson (PR)18 are widely used for research projects. These
+models should also bridge the vapor and liquid states.
+
+Vapor–liquid
+equilibrium processes of n-alkanes from C2 to C20 were presented by Zhu
+and Reitz19 to examine the effects of real
+gas EOS. It was found that the PR and SRK EOS were superior to the
+RK EOS in predicting nonideal gas properties.
+
+Real gas effects
+in nonreacting flow simulations can be described
+in mixing problems. In this area, Yang’s group20,21 and Bellan’s research group4,22,23 have carried out several simulation studies. Oefelein
+and Yang20 used large eddy simulation (LES)
+to study the 2D mixing of hydrogen and oxygen. Choices for real gas
+behavior were the 32-term BWR EOS14 proposed
+by Jacobsen and Stewart24 near critical
+points and the SRK real gas model elsewhere.25 Bellan’s team4,22,23 opted for the PR EOS in direct numerical simulation and the LES
+study of high-pressure mixing layers.
+
+Apart from nonreacting
+flows, real gas effects have been included
+in several reacting flow simulations with simplified chemistry models.26−33 The consideration of real gas effects resulted in the change of
+the flow structure and development of the flow. Kim et al.30 simulated a liquid rocket reacting flow, where
+liquid oxygen (83 K) and gaseous hydrogen (275 K) were introduced
+to a combustion chamber at 6.0 MPa. The simulation used a modified
+SRK EOS and consistent thermodynamics along with a real fluid flamelet
+model, formulated in a mixture fraction space. The real-fluid flamelet
+was found to be capable of realistically predicting the overall characteristics
+of a turbulent nonpremixed GH2/LOx flame at supercritical pressures.
+
+With the need to include
+more chemical kinetic effects in combustion
+simulations, one encounters a high number of species whose critical
+properties are not well known or would be too cumbersome to be assigned
+manually. It is preferable that any method used to address this problem
+be computationally convenient.
+
+This paper develops a framework
+to generate parameters of real
+gas EOS from transport and thermodynamics data, which are available
+and are already used in combustion chemical kinetic models.34 We first describe the method to obtain required
+real gas EOS parameters from chemical kinetic models and their associated
+data.35,36 We further highlight an existing problem
+in the way current transport data are estimated because significant
+differences are observed. Thereafter, we demonstrate through simulations
+that using real gas EOS leads to differences in the flow field at
+combustion-relevant conditions, compared to simulations based on ideal
+gas EOS. As further justification for the proposed solution, we review
+the theoretical link between EOS parameters and transport properties,
+namely, their relation to intermolecular potentials.
+
+2 Results and Discussion
+2.1 Method of EOS Parameter
+Estimation
+Our goal is to determine for each species in a
+given mechanism its
+real gas EOS parameters, that is, Tc, Pc, and ω. Using an appropriate mixing
+rule, the EOS parameters for a given combustion gas mixture can be
+determined from those of the individual species. As mentioned before,
+for reacting flow simulation, there is a connection between the critical
+state properties and the parameters of intermolecular potentials.
+The latter are used in combustion flows to generate required transport
+properties (viscosity, conductivity, and thermal diffusivity). One
+can reverse-engineer the transport data to obtain the critical state
+parameters needed for the EOS. Many empirical relations between parameters
+of intermolecular potentials and the critical state properties have
+been proposed as reviewed by Tee et al.37 Some of these require knowledge of the acentric factor while others
+do not. The most widely used of these
+equations are in the form (Table 1) 1   2  where
+ε is the depth of the potential
+well and σ is the distance at which the potential is zero.
+
+Table 1 Parameters for Estimation
+Methods	Tee et
+al.37	Kee et al.38	Holley et al.39	
+aσ	2.3551	2.393	2.3551	
+bσ	0.0874	0	0.3955	
+aε	0.7915	0.75	0.8063	
+bε	0.1693	0	0.6802	
+In
+chemical kinetic models, the estimation rules proposed in Kee
+et al.38 are often used. It appears that
+the Tee et al.37 performed better than
+the Kee et al.38 when predicted transport
+variables are compared with empirical observations. Tc, Pc,and ω are observable
+or experimentally derivable quantities whereas the accuracy of σ
+and ε can only be inferred from their prediction of transport
+properties. This circularity can lead to a verification problem. Holley
+et al.39 have suggested updated coefficients
+for the Tee correlation. This means that with an appropriate correlation,
+one can obtain Tc and Pc from transport data, as far as consistency in applied
+estimating σ, ε from properties, and reverse calculation
+of those properties from σ, ε.
+
+The acentric factor,
+ω, poses a challenge that can only be
+resolved through structure–activity correlations. For instance,
+for alkanes, it can established that ω depends on the number
+of carbon (Nc):40 ω = 0.004423[ln(3.3063 + 3.4381Nc)]3.651. The necessary carbon number can be obtained from
+the model thermodynamic data file. Taken together, the above offers
+ways to generate critical state properties and hence EOS parameters
+from currently available resources.
+
+One might check the effectiveness
+of the proposed approach by comparing
+predicted critical state parameters with measured data for some species
+of relevance to combustion. An example is shown in Figure 1 for C1–C12 n-alkanes with critical properties from the literature.25 Intermolecular potential parameters σ
+and ε are chosen from the JetSurF 2.0 mechanism36 and LLNL n-heptane mechanism, respectively.
+The observed differences in Tc and Pc trace back to differences in the transport
+data σ and ε, which are often not given critical attention
+in model evaluations.
+
+Figure 1 Critical property estimation based on intermolecular constants.
+(a,b) are estimated Tc and Pc based on Tee’s method; (c,d) are estimated Tc and Pc based on
+Kee’s method; (e,f) are estimated Tc and Pc based on Holley’s method.
+
+As shown in Figure 1, Tee’s correlation with the LLNL
+chemical kinetic database
+provides accurate critical properties. While for large carbon alkanes,
+Holley’s correlation with JetSurF 2.0 shows good agreement
+with experimental data, for small carbon alkanes, the correlation
+results in inconsistency. Kee’s correlation does not require
+an acentric factor but errors occur as the carbon number increases
+because of deviation from the spherical shape. Therefore, we recommend
+using Tee’s correlation with the LLNL database. This correlation
+can still be used with other databases. The methodical differences
+are still insignificant compared to using the ideal gas model at high-density
+conditions.
+
+2.2 Algorithmic Description
+of Implementing the
+Method
+Steps to using chemical kinetic files for CFD simulation (Figure 2):1 Identify
+species in the model and locate
+the transport data
+
+2 Locate
+the thermochemical file carbon
+number and estimate the acentric factor ω
+
+3 Use appropriate correlation to determine Tc and Pc
+
+4 Determine the EOS properties ai and bi for each species
+
+5 Save Tc, Pc, ω, ai, and bi in a
+file
+
+6 During computation,
+read in Tc, Pc, ω, ai, and bi file to apply the mixing
+rule to code
+
+
+
+Figure 2 Algorithmic description flow chart.
+
+2.3 LES of n-Heptane Jets
+The problem we consider here consists
+of an n-heptane
+jet introduced into a hot chamber of air to investigate the effect
+of real gas models on CFD simulations of mixing. Two different types
+of inlet conditions, which are kept constant for simulations, are
+used. In the first case, we keep the inlet velocity of 86 m/s using
+both ideal gas EOS and real gas EOS. In the second case, the momentum
+is the same, thus, when the ideal gas EOS velocity is 86 m/s, the
+real gas velocity is reduced to 53.73 m/s to obtain the same momentum
+because of the density difference.
+
+The conditions are such that
+the chamber filled with air at 50 atm has a temperature of 1050 K.
+The subsonic n-heptane jet is injected with a temperature
+of T = 575 K. Simulations are carried out using both
+ideal gas EOS and real gas (PR) EOS for species. The real gas EOS
+requires the critical state parameters and acentric factor, which
+for n-heptane are Tc =
+540.15 K, Pc = 27.36 bar, and ω
+= 0.349; for oxygen are Tc = 154.58 K, Pc = 50.43 bar, and ω = 0.025; and for
+nitrogen are Tc = 126.20 K, Pc = 34.00 bar, and ω = 0.039.
+
+In order to
+properly resolve the flow field, the turbulence model
+chosen here is LES with wall-adapting local eddy as the subgrid scale
+model. To simulate the combustion flow field, the eddy-break up model
+is employed. The mesh consists of 2 393 042 cells in
+total with a minimum cell size Δxmin = 0.1 mm. Simulation is carried out using the segregated solver
+of Star-CCM+. The time discretization is implicit, and to obtain good
+convergence of the solver at each time step, the following under-relaxation
+factors were used, 0.8 for velocity, 0.2 for pressure, and 0.9 for
+both the species and energy equations. A maximum of 50 iterations
+for the iterative matrix solvers was used to ensure the solution reached
+a converged state at each time step. The time step was set to a maximum
+local CFL number of approximately 2.4.
+
+2.3.1 Case
+1: Inlet Speed the Same
+The
+resulting flow field can be compared using scalars such as the temperature
+and Q-criterion as a measure of vorticity. Figure 3 is the instantaneous
+temperature profile with a nonreacting flow. The spread and penetration
+depth of the flow are different between ideal gas and real gas with
+PR EOS, predicting a further propagated flow. Similar flow pattern
+could be found in the reacting case, as shown in Figure 4. With the combustion model,
+the flow contains higher energy, hence, the difference is more pronounced.
+The temperature fields also reflect differences that align with the
+mixing field. These fields are affected through the use of the EOS
+to relate the pressure, density, and temperature, which appear in
+the conservation equations.
+
+Figure 3 Nonreacting temperature contour at 0.5 and 1.0
+ms. Top: ideal gas;
+bottom: real gas.
+
+Figure 4 Temperature contour at
+0.5 and 1.0 ms for a combustion flow of n-heptane
+showing effect of EOS. Top: ideal gas; bottom:
+real gas.
+
+Instantaneous snapshots of the
+jet dynamics at two different instances
+in time are shown in Figure 5 through isosurfaces of the Q-criterion colored
+with temperature. The Q-criterion is an appropriate
+quantity to visualize coherent structures from LES. Coherent structures
+in the form of horseshoe vortices are visible at the edge of the jet.
+These structures contain a major fraction of the energy. As a result
+of the lower chemistry of the ideal gas, low momentum is injected
+into the flow compared to the case of the real gas. This leads to
+lower energy content and faster dissipation of coherent structures
+in ideal gas.
+
+Figure 5 Q-Criterion isosurface (Q = 5
+× 108). (a,b) Ideal gas model, (c,d) real gas model;
+nonreacting results are on the top and reacting results are at the
+bottom. Colored by temperature in [K] at 1 ms.
+
+Similar behavior is observed between nonreacting and reacting
+flow,
+where the combustion model generates more turbulent energy and coupled
+with the higher momentum, the real gas case reaches to a stronger
+coherent structure.
+
+These differences have implications on the
+interpretation of experimental
+data used for validation. It must be justified whether the inlet conditions
+are estimated based on assumption of a given EOS.
+
+2.3.2 Case 2: Flow-Field Comparison for the Same
+Inlet Mass Flow Rate
+From Figure 4, we see that the choice of EOS in the simulation
+of high-pressure combustion systems, such a fuel injection is important
+to the prediction of the flow field. Using a constant velocity boundary
+condition with the real gas and ideal gas EOS models results in difference
+in the penetration depth, with the real gas jet going further. This
+occurs because of the differences in the inlet momentum of the two
+jets. An interesting question would be to see whether the penetration
+depth be made similar by prescribing the same momentum for the two
+cases. This would validate the explanation for the differences in Figure 4.
+
+In Figures 6 and 7, we compare the results from real gas and ideal gas EOS simulations
+in which the inlet jet mass flow rate is held fixed at 0.1 kg/s. Because
+of the higher density of the real gas EOS prediction, the inlet velocity
+is low, requiring more time to reach the same penetration depth.
+
+Figure 6 Reacting
+experiment with the fixed mass flow rate inlet condition
+and temperature profiles. Top: ideal gas (1 ms); bottom: real gas
+(2 ms).
+
+Figure 7 Q-criterion isosurface (Q = 5
+× 105) colored by temperature in [K] for the case
+of the fixed inlet mass flow rate. Top: ideal gas (1 ms); bottom:
+real gas (2 ms).
+
+2.3.3 Case
+3: Flow-Field Comparison for the Same
+Inlet Momentum
+From Figure 4, we see that the choice of EOS in the simulation of
+high-pressure combustion systems, such a fuel injection is important
+to the prediction of the flow field. Using a constant velocity boundary
+condition with the real gas and ideal gas EOS models results in difference
+in the penetration depth, with the real gas jet going further. This
+occurs because of the differences in the inlet momentum of the two
+jets. An interesting question would be to see whether the penetration
+depth be made similar by prescribing the same momentum for the two
+cases. This would validate the explanation for the differences in Figure 4.
+
+In Figures 8 and 9, we compare the results from real gas and ideal gas EOS simulations
+in which the inlet jet momentum is held fixed. Because of the higher
+density of the real gas EOS prediction, the inlet velocity is low,
+requiring more time to reach the same penetration depth.
+
+Figure 8 Reacting experiment
+with the fixed momentum inlet condition and
+temperature contours at 1 ms. Top: ideal gas; bottom: real gas.
+
+Figure 9 Q-criterion isosurface (Q = 5
+× 105). Colored by temperature in [K] at 1 ms. Reacting
+experiment with the fixed momentum inlet condition. Top: ideal gas;
+bottom: real gas.
+
+The above discussion
+brings to light another problem that must
+be considered in the simulation of physical problems or experiments,
+the errors that can occur due to boundary conditions. For experiments
+of fuel injection, the injection boundary conditions would be specified
+either as a measured mass flow rate or a velocity. The boundary condition
+would then be interpreted by the numerical modeler and adjusted to
+velocity or the mass flow rate to fit with the numerical model of
+the experiment. In a high-pressure combustion simulation, the careful
+interpretation of these boundary conditions and the EOS assumptions
+that have been made during the measurement is important to the comparison
+of experiment and computation.
+
+The observed differences in the
+flow field thus justify the need
+for real gas models. The method of estimating these real gas model
+parameters from available resources is a convenient solution.
+
+3 Conclusions
+In this paper, the problem of
+real gas equations of state for high-density
+flow simulations is considered. The importance of such equations of
+state is underlined by comparing the LES results of a n-heptane jet into an air vessel realized using LES with ideal and
+real gas equations of state. It is then suggested that parameters
+of a cubic EOS, namely, the critical state variables, can be determined
+from the transport data of chemical kinetic models. It is further
+observed that the transport data of various chemical kinetic models
+are not necessarily consistent, suggesting further attention to this
+modeling problem.
+
+4 Computational Methods
+This paper presented a solution to real gas model parameter estimations.
+This section sketches the theoretical background to the estimation
+approach. It first shows how real gas effects enter into CFD simulation.
+It then discusses EOS models and intermolecular potentials.
+
+4.1 Real Gas Effects in CFD Modeling and Analysis
+Accurate
+determination of density and other thermodynamic properties
+based on the EOS is very important because CFD governing equations
+are sensitive to these. The index notation form of the governing equations
+for chemically reacting flows is 3   4   5   6  
+
+The density deviation
+of the ideal
+gas law cannot be ignored at high-density conditions because it can
+be large as shown in Figure 10. The ideal gas law deviation of density increases when the
+carbon number becomes larger, while the real gas equations of state
+provide good agreements with experimental data. PR and RK seem to
+do comparably well over a range of conditions. When it comes to large
+hydrocarbon fuels, the SRK seems to be preferred.17 The PR and RK can be recommended, unless special considerations
+demand use of more complex RG EOS.
+
+Figure 10 Variation of n-propane
+and n-heptane
+density with temperature (at P = 50 atm), highlighting
+importance of real gas EOS.
+
+Thermodynamic properties are generally taken as the sum of
+values
+provided by the ideal gas model and a departure function accounting
+for the real gas effects. The difference in flow patterns can be induced
+by the departure function in internal energy or enthalpy 7   8  where
+the second terms are the departure terms. While the ideal gas EOS
+will result in zero for the departure term, real gas EOS contributes
+to the overall function. Therefore, the energy function would be slightly
+different for the two EOS, and eventually causing the variation in
+the flow field.
+
+4.2 Modeling Real Gas EOS
+Semiempirical
+cubic equations of state for real gases are used widely in combustion
+simulation projects because of their simplicity. For a pure compound,
+the cubic EOS requires critical properties, Tc and Pc as input, while some of
+the equations need the acentric factor, ω. By applying certain
+mixing rules, one can obtain the EOS parameters for the multispecies
+mixture.
+
+According to Zhu and Reitz,19 the general form of cubic equations of state can be written as 9  where V is the volume of
+a system and R is the universal gas constant; q and w are constants depending on the
+type of cubic EOStbl. For pure species, a and b are functions of temperature. The expressions for EOS
+parameters are presented in Table 2, where Tc and Pc are critical temperature and critical pressure,
+ω is the acentric factor, and κ is a constant that depends
+on the acentric factor and the reduced temperature, Tr = T/Tc.
+
+Table 2 Parameters for Cubic EOS
+Equation
+name	b	a	q	w	
+RK	  	  	1	0	
+SRK	  	  	1	0	
+ 	 	κ = (0.480 + 1.574ω
+– 0.176ω2)	 	 	
+PR	  	  	2	–1	
+ 	 	κ = 0.37464 + 1.54226ω
+– 0.26992ω2	 	 	
+For multispecies
+systems, a binary mixing rule with regard to a and b is suggested by Peng and Robinson18 as 10  where δij is an empirically determined binary interaction
+coefficient, characterizing
+the binary interaction formed by component i and
+component j. δij is observed to lie between −0.2 and 0.2 and in majority binary
+mixtures, it is postulated to be 0.0.41
+
+Another method to deal with the mixing rule is the pseudocritical
+method based on the corresponding state principle (CSP). To obtain
+an EOS, we first calculate the pseudocritical properties for the mixture.
+According to Poling et al.,25 the pseudocritical
+temperature Tcm can be estimated by the
+simplest mole fraction average method:42Tcm = ∑i=1nyiTci. As for the pseudocritical pressure, Pcm, a mole fraction average of pure-component critical
+pressures is normally unsatisfactory. This is because the critical
+pressure for most systems goes through a maximum or minimum with composition.
+The only exceptions are if all components of the mixture have similar
+critical pressures or critical volumes. The simplest rule which can
+give acceptable Pcm values for two-parameter
+or three-parameter CSP is the modified rule of Prausnitz and Gunn43 11  where
+all of the mixture pseudocriticals Zcm, Tcm, and Vcm are given by mole fraction averages and R is the
+universal gas constant.
+
+The mixture pseudo acentric factor is
+commonly given by a mole
+fraction average44 12  
+
+Thus, with knowledge of the critical temperature and critical
+pressure
+of each species, the EOS for the mixture is determined.
+
+4.3 Intermolecular Potentials and Combustion Modeling
+For
+ideal gases, it is usual to assume elastic collision to be
+such that no interacting forces are felt beyond a characteristic separation r > σ, but the potential is infinite for r ≤ σ, necessitating bounce off. Ideal gases
+hold that
+most of the time, gaseous particles are sufficiently far apart such
+that no forces are felt except during collision. The situation changes
+in dense fluids.
+
+In real fluids, particles interact with others
+according to an intermolecular potential which is a superposition
+of nuclei–electrons attraction and electrons–electrons
+or nuclei–nuclei repulsion. Various modeling approaches exist
+for describing the potential in interacting systems, from the simplest
+model rigid impenetrable spheres to complicated four-parameter Buckingham
+potential. The most widely used Lennard-Jones 6-12 potential is defined
+as45 13  where ε is the potential energy depth,
+and σ is the distance at which the interparticle potential is
+zero. These parameters are illustrated in Figure 11.
+
+Figure 11 Lennard-Jones Potential.46
+
+In combustion simulations
+involving chemical kinetic models, Lennard-Jones
+potential parameters are widely used to determine transport properties,
+such as the viscosity, thermal conductivity, and diffusion coefficient,
+because these transport processes are grounded in the momentum exchange
+of particles.34
+
+The viscosity of
+a simple coefficient is given by47 14  where mi is the molecular mass, kB is the
+Boltzmann constant, T is the temperature, and σk is the Lennard-Jones collision diameter.
+
+The thermal conductivity can be obtained from 15  where A is a constant and Cv,i is the
+specific heat capacity at constant volume for species i.
+
+The binary diffusion coefficient for species i and j is defined as48 16  Ω1,1* and
+Ω2,2* are dimensionless collision integrals as a
+function of , which have been provided by Monchick and
+Mason.49
+
+Thus, with knowledge of
+σ and ε of each species, the
+transport properties are fully determined.
+
+4.4 Real
+Gas EOS and Lennard-Jones Potential
+The widely used two-term
+cubic equations of state such as the RK
+model, (SRK) and PR require the critical properties of chemical species.
+
+The critical and phase change properties of a fluid reflect the
+nature of intermolecular interactions. A direct theoretical connection
+or correlation has been sought to link critical state parameters to
+molecular dynamics. Therefore, real gas properties have been investigated
+by many groups using molecular dynamics and Monte Carlo simulations,
+starting with Wood and Parker.50 Verlet51 later used the Lennard-Jones potential to study
+the EOS of a fluid. Subsequently, an accurate EOS database was compiled
+by Nicolas et al.52 After many more studies,
+the EOS was refitted by Johnson et al.53 Frenkel and Smit54 used the Monte Carlo
+simulation to predict the results from Johnson et al.,53 including the vapor–liquid coexistence
+region. Traditionally, the Lennard-Jones potential is used to model
+hard-core neutral atoms or spherical molecules. With the development
+of the statistical-associated fluid theory,55 the Lennard-Jones EOS was analytically studied for hard-core homo-nuclear
+chain molecules.56,57 Chen et al.58 extended the theory into pure and binary n-alkane systems and presented an accurate estimation of phase equilibrium.
+
+With accurate description of the molecular interactions, it is
+therefore possible to predict real gas behavior. The connection between
+Lennard-Jones potentials of spherical molecules and their critical
+properties can be explored using Monte Carlo simulations. However
+for more practical applications, semiempirical relations are needed
+for rapid estimation of state properties from molecular potential
+parameters.
+
+For each species in a given chemical kinetic model,
+its real gas
+EOS parameters, that is, Tc, Pc, ω, can therefore be estimated. Using an appropriate
+mixing rule, the EOS parameters for a given combustion gas mixture
+can then be determined from those of the individual species. As mentioned
+before, for reacting flow simulation, there is a connection between
+the critical state properties and the parameters of intermolecular
+potentials. The latter are used in combustion flows to generate required
+transport properties (viscosity, conductivity, and thermal diffusivity).
+One can therefore reverse-engineer the transport data to obtain the
+critical state parameters needed for the EOS, as done in Section 2.
+
+The
+authors declare no
+competing financial interest.
+
+Acknowledgments
+C.Z. was supported by Syracuse University
+Water
+Fellowship and NRT: Education Model Program on Water-Energy Research
+(EMPOWER) at Syracuse University (DGE-1449617). This research was
+supported in part through computational resources provided by Syracuse
+University.
+==== Refs
+References
+Williams A. 
+Combustion
+of droplets of liquid fuels: a review . Combust.
+Flame 
+1973 , 21 , 1 –31 . 10.1016/0010-2180(73)90002-3 .
+Reitz R. ; Rutland C. 
+Development and testing
+of diesel engine CFD models . Prog. Energy Combust.
+Sci. 
+1995 , 21 , 173 –196 . 10.1016/0360-1285(95)00003-z .
+Aggarwal S. K. 
+A review
+of spray ignition phenomena: present status and future research . Prog. Energy Combust. Sci. 
+1998 , 24 , 565 –600 . 10.1016/s0360-1285(98)00016-1 .
+Miller R. S. ; Harstad K. G. ; Bellan J. 
+Direct numerical simulations
+of supercritical
+fluid mixing layers applied to heptane–nitrogen . J. Fluid Mech. 
+2001 , 436 , 1 –39 . 10.1017/s0022112001003895 .
+Schmitt T. ; Selle L. ; Cuenot B. ; Poinsot T. 
+Large-Eddy Simulation
+of transcortical flows . Comptes Rendus Mec. 
+2009 , 337 , 528 –538 . 10.1016/j.crme.2009.06.022 .
+Schmitt T. ; Selle L. ; Ruiz A. ; Cuenot B. 
+Large-eddy simulation
+of supercritical-pressure round jets . AIAA J. 
+2010 , 48 , 2133 –2144 . 10.2514/1.j050288 .
+Jarczyk M.-M. ; Pfitzner M.  Large eddy simulation
+of supercritical nitrogen jets . 50th AIAA
+Aerospace Sciences Meeting including the New Horizons Forum and Aerospace
+Exposition , 2012 ; p 1270 .
+Müller H. ; Niedermeier C. A. ; Jarczyk M. ; Pfitzner M. ; Hickel S. ; Adams N. A.  Large-eddy
+simulation of trans-and supercritical injection . Progress in Propulsion Physics , 2016 ; Vol. 8 , pp 5 –24 .
+Hempert F. ; Boblest S. ; Ertl T. ; Sadlo F. ; Offenhäuser P. ; Glass C. W.C. ; Hoffmann M. ; Beck A. ; Munz C.-D. ; Iben U. 
+Simulation of real gas effects in
+supersonic methane jets using a
+tabulated equation of state with a discontinuous Galerkin spectral
+element method . Comput. Fluids 
+2017 , 145 , 167 –179 . 10.1016/j.compfluid.2016.12.024 .
+Zheng C. ; Coombs D. ; Akih-Kumgeh B.  Modeling
+Real Gas Equations
+of State in High Density Combustion ; ICDERS : Boston, USA , July 30–Aug
+4, 2017 .
+Bellan J. 
+Supercritical
+(and subcritical) fluid behavior and modeling: drops, streams, shear
+and mixing layers, jets and sprays . Prog. Energy
+Combust. Sci. 
+2000 , 26 , 326 10.1016/s0360-1285(00)00008-3 .
+Sazhin S. 
+Advanced models
+of fuel droplet heating and evaporation . Prog.
+Energy Combust. Sci. 
+2006 , 32 , 162 10.1016/j.pecs.2005.11.001 .
+Yang V. 
+Modeling of
+supercritical vaporization, mixing, and combustion processes in liquid-fueled
+propulsion systems . Proc. Combust. Inst. 
+2000 , 28 , 925 10.1016/s0082-0784(00)80299-4 .
+Benedict M. ; Webb G. B. ; Rubin L. C. 
+An Empirical Equation
+for Thermodynamic
+Properties of Light Hydrocarbons and Their Mixtures II. Mixtures of
+Methane, Ethane, Propane, and n-Butane . J. Chem.
+Phys. 
+1942 , 10 , 747 –758 . 10.1063/1.1723658 .
+Younglove B. A. ; Ely J. F. 
+Thermophysical properties
+of fluids. II. Methane, ethane,
+propane, isobutane, and normal butane . J. Phys.
+Chem. Ref. Data 
+1987 , 16 , 577 –798 . 10.1063/1.555785 .
+Redlich O. ; Kwong J. N. S. 
+On the thermodynamics
+of solutions. V. An equation
+of state. Fugacities of gaseous solutions . Chem.
+Rev. 
+1949 , 44 , 233 –244 . 10.1021/cr60137a013 .18125401 
+Soave G. 
+Equilibrium
+constants from a modified Redlich-Kwong equation of state . Chem. Eng. Sci. 
+1972 , 27 , 1197 –1203 . 10.1016/0009-2509(72)80096-4 .
+Peng D.-Y. ; Robinson D. B. 
+A new two-constant equation of state . Ind. Eng. Chem. Fundam. 
+1976 , 15 , 59 –64 . 10.1021/i160057a011 .
+Zhu G.-S. ; Reitz R. D. 
+A model for high-pressure
+vaporization of droplets
+of complex liquid mixtures using continuous thermodynamics . Int. J. Heat Mass Transfer 
+2002 , 45 , 495 10.1016/s0017-9310(01)00173-9 .
+Oefelein J. C. ; Yang V. 
+Modeling high-pressure
+mixing and combustion processes in liquid
+rocket engines . J. Propul. Power 
+1998 , 14 , 843 10.2514/2.5349 .
+Zong N. ; Meng H. ; Hsieh S.-Y. ; Yang V. 
+A numerical study of
+cryogenic fluid injection and mixing under supercritical conditions . Phys. Fluids 
+2004 , 16 , 4248 –4261 . 10.1063/1.1795011 .
+Okong’o N. ; Bellan J. 
+Perturbation and initial
+Reynolds number effects on
+transition attainment of supercritical, binary, temporal mixing layers . Comput. Fluids 
+2004 , 33 , 1023 –1046 . 10.1016/j.compfluid.2003.10.001 .
+Taskinoglu E. S. ; Bellan J. 
+A posteriori study using a DNS database describing
+fluid disintegration and binary-species mixing under supercritical
+pressure: heptane and nitrogen . J. Fluid Mech. 
+2010 , 645 , 211 –254 . 10.1017/s0022112009992606 .
+Jacobsen R. T. ; Stewart R. B. 
+Thermodynamic properties
+of nitrogen including liquid
+and vapor phases from 63K to 2000K with pressures to 10,000 bar . J. Phys. Chem. Ref. Data 
+1973 , 2 , 757 –922 . 10.1063/1.3253132 .
+Poling B. E. ; Prausnitz J. M. ; O’connell J. P.  The properties
+of gases and liquids ; Mcgraw-hill : New York , 2001 ; Vol. 5 .
+Oefelein J. C. 
+Mixing
+and combustion of cryogenic oxygen-hydrogen shear-coaxial jet flames
+at supercritical pressure . Combust. Sci. Technol. 
+2006 , 178 , 229 –252 . 10.1080/00102200500325322 .
+Zong N. ; Yang V. 
+Near-field flow and
+flame dynamics of LOX/methane shear-coaxial injector
+under supercritical conditions . Proc. Combust.
+Inst. 
+2007 , 31 , 2309 –2317 . 10.1016/j.proci.2006.08.106 .
+Schmitt T. ; Méry Y. ; Boileau M. ; Candel S. 
+Large-eddy simulation
+of oxygen/methane flames under transcortical conditions . Proc. Combust. Inst. 
+2011 , 33 , 1383 –1390 . 10.1016/j.proci.2010.07.036 .
+Matsuyama S. ; Shinjo J. ; Ogawa S. ; Mizobuchi Y.  Large eddy simulation of LOx/GH2
+shear-coaxial jet flame at supercritical pressure . 48th AIAA Aerospace Sciences Meeting Including the New Horizons Forum
+and Aerospace Exposition , 2010 ; p 208 .
+Kim T. ; Kim Y. ; Kim S.-K. 
+Real-fluid
+flannelet modeling for gaseous hydrogen/cryogenic
+liquid oxygen jet flames at supercritical pressure . J. Supercrit. Fluids 
+2011 , 58 , 254 –262 . 10.1016/j.supflu.2011.05.020 .
+Pohl S. ; Jarczyk M. ; Pfitzner M. ; Rogg B.  Real gas CFD simulations
+of
+hydrogen/oxygen supercritical combustion . Progress in Propulsion Physics , 2013 ; Vol. 4 , pp 583 –614 .
+Huo H. ; Yang V. 
+Large-Eddy Simulation of Supercritical Combustion:
+Model Validation
+Against Gaseous H2-O2 Injector . J. Propul. Power 
+2017 , 33 , 1272 –1284 . 10.2514/1.b36368 .
+Bellan J. 
+Evaluation
+of mixture-fraction-based turbulent-reaction-rate model assumptions
+for high-pressure reactive flows . Combust. Flame 
+2017 , 179 , 253 –266 . 10.1016/j.combustflame.2017.02.004 .
+Kee R. J. ; Dixon-Lewis G. ; Warnatz J. ; Coltrin M. E. ; Miller J. A.  A Fortran Computer
+Code Package For The Evaluation Of Gas-Phase Multicomponent Transport
+Properties ; Sandia National Laboratories ; Report SAND86-8246, 1986 ; Vol. 13 , pp 80401 –81887 .
+Mehl M. ; Pitz W. J. ; Westbrook C. K. ; Curran H. J. 
+Kinetic modeling
+of gasoline surrogate components and mixtures under engine conditions . Proc. Combust. Inst. 
+2011 , 33 , 193 –200 . 10.1016/j.proci.2010.05.027 .
+Wang H. ; Dames E. ; Sirjean B. ; Sheen D. ; Tangko R. ; Violi A. ; Lai J. ; Egolfopoulos F. ; Davidson D. ; Hanson R. ; Bowman C.  A high-temperature chemical kinetic model of n-alkane
+(up to n-dodecane), cyclohexane, and methyl-, ethyl-, n-propyl and
+n-butyl-cyclohexane oxidation at high temperatures . JetSurF , version 2.0, 2010 ; Vol. 2 ; p 19 .
+Tee L. S. ; Gotoh S. ; Stewart W. E. 
+Molecular parameters for normal fluids.
+Lennard-Jones 12-6 Potential . Ind. Eng. Chem.
+Fundam. 
+1966 , 5 , 356 –363 . 10.1021/i160019a011 .
+Kee R. ; Coltrin M. ; Glarborg P.  Chemically
+Reacting Flow:
+Theory and Practice ; John Wiley & Sons , 2005 .
+Holley A.
+T. ; You X. Q. ; Dames E. ; Wang H. ; Egolfopoulos F. N. 
+Sensitivity
+of propagation and extinction of large hydrocarbon flames to fuel
+diffusion . Proc. Combust. Inst. 
+2009 , 32 , 1157 10.1016/j.proci.2008.05.067 .
+Han B. ; Peng D.-Y. 
+A groupcontribution correlation for predicting the
+acentric factors of organic compounds . Can.
+J. Chem. 
+1993 , 71 , 332 10.1002/cjce.5450710223 .
+Abudour A. M. ; Mohammad S. A. ; Robinson R. L. Jr.; Gasem K. A. M. 
+Generalized
+binary interaction parameters for the Peng-Robinson equation of state . Fluid Phase Equilib. 
+2014 , 383 , 156 –173 . 10.1016/j.fluid.2014.10.006 .
+Kay W. B. 
+Gases and
+vapors at high temperature and pressure-density of hydrocarbon . Ind. Eng. Chem. 
+1936 , 28 , 1014 –1019 . 10.1021/ie50321a008 .
+Prausnitz J. M. ; Gunn R. D. 
+Volumetric properties of nonpolar gaseous mixtures . AIChE J. 
+1958 , 4 , 430 –435 . 10.1002/aic.690040410 .
+Joffe J. 
+Combining
+rules for the third parameter in the pseudoclassical method for mixtures . Ind. Eng. Chem. Fundam. 
+1971 , 10 , 532 –533 . 10.1021/i160039a031 .
+Laurendeau N. M.  Statistical
+Thermodynamics: Fundamentals and Applications ; Cambridge University Press , 2005 .
+Jiang C. Y. A. 
+New
+Approach to Model Adsorption in Heterogeneous Phase System with Monte
+Carlo Method . Am. J. Mater. Sci. 
+2014 , 4 , 25 –38 . 10.5923/j.materials.20140401.05 .
+Hirschfelder J. ; Bird R. B. ; Curtiss C. F.  Molecular Theory of
+Gases and Liquids ; Wiley , 1964 .
+Warnatz J.  Numerical Methods In
+Laminar Flame Propagation ; Springer , 1982 ; pp 87 –111 .
+Monchick L. ; Mason E. A. 
+Transport properties
+of polar gases . J. Chem. Phys. 
+1961 , 35 , 1676 –1697 . 10.1063/1.1732130 .
+Wood W. W. ; Parker F. R. 
+Monte Carlo Equation of State of Molecules Interacting
+with the Lennard-Jones Potential. I. A Supercritical Isotherm at about
+Twice the Critical Temperature . J. Chem. Phys. 
+1957 , 27 , 720 –733 . 10.1063/1.1743822 .
+Verlet L. 
+Computer ″Experiments″
+on Classical Fluids. I. Thermodynamical Properties of Lennard-Jones
+Molecules . Phys. Rev. 
+1967 , 159 , 98 10.1103/physrev.159.98 .
+Nicolas J. J. ; Gubbins K. E. ; Streett W. B. ; Tildesley D. J. 
+Equation
+of state for the Lennard-Jones fluid . Mol. Phys. 
+1979 , 37 , 1429 –1454 . 10.1080/00268977900101051 .
+Johnson J. K. ; Zollweg J. A. ; Gubbins K. E. 
+The Lennard-Jones
+equation of state
+revisited . Mol. Phys. 
+1993 , 78 , 591 –618 . 10.1080/00268979300100411 .
+Frenkel D. ; Smit B.  Understanding Molecular Simulation:
+From Algorithms To Applications ; Elsevier
+(formerly published by Academic Press) , 2002 ; Vol. 1 .
+Wertheim M.
+S. 
+Thermodynamic
+perturbation theory of polymerization . J. Chem.
+Phys. 
+1987 , 87 , 7323 –7331 . 10.1063/1.453326 .
+Chapman W. G. ; Gubbins K. E. ; Jackson G. ; Radosz M. 
+New reference equation
+of state for associating liquids . Ind. Eng.
+Chem. Res. 
+1990 , 29 , 1709 –1721 . 10.1021/ie00104a021 .
+Chiew Y. C. 
+Percus-Yevick
+integral-equation theory for athermal hard-sphere chains . Mol. Phys. 
+1990 , 70 , 129 –143 . 10.1080/00268979000100891 .
+Chen C.-k. ; Banaszak M. ; Radosz M. 
+Statistical
+Associating Fluid Theory
+Equation of State with Lennard-Jones Reference Applied to Pure and
+Binaryn-Alkane Systems . J. Phys. Chem. B 
+1998 , 102 , 2427 –2431 . 10.1021/jp9731819 .
+

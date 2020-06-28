@@ -1,0 +1,405 @@
+
+==== Front
+BiosystemsBioSystemsBio Systems0303-26471872-8324Elsevier Science Ireland S0303-2647(14)00066-510.1016/j.biosystems.2014.05.002ArticleFast Bayesian parameter estimation for stochastic logistic growth models Heydari Jonathan Lawless Conor conor.lawless@ncl.ac.uk⁎Lydall David A. Wilkinson Darren J. Newcastle University, UK⁎ Corresponding author. Tel.: +44 01912087320 conor.lawless@ncl.ac.uk1 8 2014 8 2014 122 55 72 25 11 2013 9 4 2014 20 5 2014 © 2014 The Authors2014The transition density of a stochastic, logistic population growth model with multiplicative intrinsic noise is analytically intractable. Inferring model parameter values by fitting such stochastic differential equation (SDE) models to data therefore requires relatively slow numerical simulation. Where such simulation is prohibitively slow, an alternative is to use model approximations which do have an analytically tractable transition density, enabling fast inference. We introduce two such approximations, with either multiplicative or additive intrinsic noise, each derived from the linear noise approximation (LNA) of a logistic growth SDE. After Bayesian inference we find that our fast LNA models, using Kalman filter recursion for computation of marginal likelihoods, give similar posterior distributions to slow, arbitrarily exact models. We also demonstrate that simulations from our LNA models better describe the characteristics of the stochastic logistic growth models than a related approach. Finally, we demonstrate that our LNA model with additive intrinsic noise and measurement error best describes an example set of longitudinal observations of microbial population size taken from a typical, genome-wide screening experiment.
+
+Keywords
+Kalman filterLinear noise approximationLogisticPopulation growthStochastic modelling
+==== Body
+1 Introduction
+Stochastic models simultaneously describe dynamics and noise or heterogeneity in real systems (Chen et al., 2010). For example, stochastic models are increasingly recognised as necessary tools for understanding the behaviour of complex biological systems (Wilkinson, 2011, 2009) and are also used to capture uncertainty in financial market behaviour (Kijima, 2013; Koller, 2012). Many such models are written as continuous stochastic differential equations (SDEs) which often do not have analytical solutions and are slow to evaluate numerically compared to their deterministic counterparts. Simulation speed is often a particularly critical issue when inferring model parameter values by comparing simulated output with observed data (Hurn et al., 2007).
+
+For SDE models where no explicit expression for the transition density is available, it is possible to infer parameter values by simulating a latent process using a data augmentation approach (Golightly and Wilkinson, 2005). However, this method is computationally intensive and not practical for all applications. When fast inference for SDEs is important, for example for real-time analysis as part of decision support systems or for big data inference problems where we simultaneously fit models to many thousands of datasets (e.g. Heydari et al. (2012)), we need an alternative approach. Here we demonstrate one such approach: developing an analytically tractable approximation to the original SDE, by making linear noise approximations (LNAs) (Kurtz, 1970, 1971; Van Kampen, 2011). We apply this approach to a SDE describing logistic population growth for the first time.
+
+The logistic model of population growth, an ordinary differential equation (ODE) describing the self-limiting growth of a population of size xt at time t, was developed by Verhulst (1845)
+
+ (1) dxtdt=rxt1−xtK. The ODE has the following analytic solution:
+
+ (2) xt=K1+Qe−rt,  (3) whereQ=KP−1ert0,P=xt0andt≥t0. 
+
+The model describes a population growing from an initial size P with an intrinsic growth rate r, undergoing approximately exponential growth which slows as the availability of some critical resource (e.g. nutrients or space) becomes limiting (Peleg et al., 2007). Ultimately, population density saturates at the carrying capacity (maximum achievable population density) K, once the critical resource is exhausted. Where further flexibility is required, generalized forms of the logistic growth process (Tsoularis and Wallace, 2002) may be used instead.
+
+To account for uncertainty about processes affecting population growth which are not explicitly described by the deterministic logistic model, we can include a term describing intrinsic noise and consider a SDE version of the model. By adding a term representing multiplicative intrinsic noise to the ODE in (1) we arrive at a model, first introduced by Capocelli and Ricciardi (1974), which we refer to as the stochastic logistic growth model (SLGM):
+
+ (4) dXt=rXt1−XtKdt+σXtdWt, where P=xt0 and is independent of Wiener process Wt, t ≥ t0.
+
+The Kolmogorov forward equation has not been solved for (4), therefore no explicit expression for the transition density is available.
+
+Alternative stochastic formulations of the logistic ODE can be generated (Campillo et al., 2013).
+
+While not equivalent to (4), SDEs derived from logistic growth Markov jump processes (MJPs) (Feller, 1939) are available within the literature (Ross et al., 2006, 2009). The intrinsic noise in MJPs tends to zero with larger population sizes, while (4) introduces an additional parameter σ that allows us to tune the amount of noise in the system that is not directly associated with the noise due to the discreteness of the process (demographic noise). For the yeast populations that we model during the analysis of high-throughput screens (see Section 5.2) we observe fluctuations much larger than those consistent with demographic noise, especially in the stationary phase. Consequently SDEs derived from MJPs do not adequately describe our data. Therefore, we find that the SLGM in (4) is the more appropriate model for estimating logistic growth parameters of large populations.
+
+Román-Román and Torres-Ruiz (2012) derive a diffusion process (which we label RRTR) from a reparameterisation of the logistic growth model. We use the RRTR as an approximation of the SLGM. Unlike the SLGM, the RRTR has a transition density that can be derived explicitly, enabling fast inference. The Bayesian approach can be applied in a natural way to carry out parameter inference for state space models with tractable transition densities (West and Harrison, 1997). The transition density is used to describe the Markovian evolution of the state process St. A state space model also describes the probabilistic dependence between an observation process variable Xt and state process St via a measurement error model.
+
+The Kalman filter (Kalman, 1960) is typically used to infer a hidden state process of interest St and is an optimal estimator, minimising the mean square error of estimated parameters when all noise in the system can be assumed to be Gaussian. The main assumptions of the Kalman filter are that the underlying system is a linear dynamical system and that the noise has known first and second moments. Here, we use the Kalman filter in a different way: to reduce computational time in a parameter inference algorithm by recursively computing the marginal likelihood (West and Harrison, 1997).
+
+The RRTR can be fit to data within an acceptable time frame by assuming multiplicative measurement error to give a linear Gaussian structure, allowing us to use a Kalman filter for inference.
+
+We introduce two new first order linear noise approximations (LNAs) (Wallace, 2010; Komorowski et al., 2009) of (4), one with multiplicative and one with additive intrinsic noise, which we label LNAM and LNAA respectively. The LNA reduces a SDE to a linear SDE with additive noise, which can be solved to give an explicit expression for the transition density. The LNA assumes the solution of a diffusion process Yt can be written as Yt=vt+Zt (a deterministic part vt and stochastic part Zt), where Zt remains small for all t∈ℝ≥0. The LNA is useful when a tractable solution to a SDE cannot be found. Typically the LNA is used to reduce an SDE to a Ornstein-Uhlenbeck process which can be solved explicitly. Ornstein–Uhlenbeck processes are linear Gaussian, so time-discretising the resulting LNA will therefore give a linear Gaussian state space model with an analytically tractable transition density. We derive transition densities for the two approximate models and construct a Kalman filter by choosing measurement noise to be either multiplicative or additive to retain linear Gaussian structure. Exact simulations from the SGLM are compared with each of the three approximate models. We compare the utility of each of the approximate models for parameter inference by comparing simulations with both synthetic and real datasets.
+
+2 The Román-Román and Torres-Ruiz (2012) diffusion process
+Román-Román and Torres-Ruiz (2012) present a logistic growth diffusion process (RRTR) which has a transition density that can be written explicitly, allowing inference of model parameter values from discrete sampling trajectories.
+
+The RRTR is derived from the following ODE:
+
+ (5) dxtdt=Qrert+Qxt. 
+
+The solution to (5) is given in (2) (it has the same solution as (1)). Román-Román and Torres-Ruiz (2012) derive the RRTR from a reparameterisation of the logistic growth model (2) for which the limit value depends on the initial one. Using the reparameterisation introduced by Román-Román and Torres-Ruiz (2012) it is also possible to carry out inference in situations where there are several observed trajectories of the same phenomenon, each of them showing logistic growth but with a different initial value.
+
+Román-Román and Torres-Ruiz (2012) see (5) as a generalisation of the Malthusian growth model with a deterministic, time-dependent fertility h(t) = Qr/(ert + Q), and replace this with Qr/(ert + Q) + σWt to obtain the following approximation to the SLGM:
+
+ (6) dXt=Qrert+QXtdt+σXtdWt, where Q and P are defined by (3). The process described in (6) is a particular case of the lognormal process with exogenous factors, therefore an exact transition density is available (Gutiérrez et al., 2006). The transition density for Yt, where Yt = log(Xt), can be written:
+
+ (7) (Yti|Yti−1=yti−1)∼Nμti,Ξti,wherea=r,b=rK,μti=log(yti−1)+log1+be−ati1+be−ati−1−σ22(ti−ti−1)andΞti=σ2(ti−ti−1). 
+
+We chose a lognormal (multiplicative) measurement error model in order to construct a linear Gaussian structure, enabling fast inference through the use of a Kalman filter for marginal likelihood computation.
+
+3 Linear noise approximation with multiplicative noise
+We now take a different approach to approximating the SLGM (4), which will turn out to be closer to the exact solution of the SLGM than the RRTR (6). Starting from the original model (4), we apply Itô's lemma with the transformation f(Xt) ≡ Yt = log Xt to obtain the following Itô drift-diffusion process:
+
+ (8) dYt=r−12σ2−rKeYtdt+σdWt. 
+
+The log transformation from multiplicative to additive noise gives a constant diffusion term which will allow the LNA to give a better approximation of the diffusion term than it could on the original scale.
+
+The LNA can be viewed as a first order Taylor expansion of an approximating SDE about a deterministic solution (Fearnhead et al., 2014). We now separate the process Yt into a deterministic part vt and a stochastic part Zt so that Yt=vt+Zt and consequently dYt = dvt + dZt. We choose vt to be the solution of the deterministic part
+
+ (9) dvt=r−12σ2−rKevtdt. 
+
+Without loss of generality we set t0 = 0. After redefining our notation as follows: a=r−σ22 and b=rK, we solve (9) for vt,
+
+ (10) vt=logaPeatbP(eat−1)+a. 
+
+We now write down an expression for dZt, where dZt = dYt − dvt: dZt=a−beYtdt+σdWt−a−bevtdt 
+
+We then substitute in Yt=vt+Zt and simplify the expression to give
+
+ dZt=bevt−evt+Ztdt+σdWt. dZt is a non-linear SDE that cannot be solved explicitly. We use the LNA to obtain a SDE that can be solved: we make a first-order approximation of eZt ≈ 1 + Zt and then simplify to give
+
+ (11) dZt=−bevtZtdt+σdWt. 
+
+This process is a particular case of the time-varying Ornstein–Uhlenbeck process, which can be solved explicitly. The transition density for Yt (derivation in Appendix A) is then:
+
+ (12) (Yti|Yti−1=yti−1)∼N(μti,Ξti),redefineyti−1=vti−1+zti−1,Q=a/bP−1,μti=yti−1+log1+Qe−ati−11+Qe−ati+e−a(ti−ti−1)1+Qe−ati−11+Qe−atizti−1andΞti=σ24Q(eati−eati−1)+e2ati−e2ati−1+2aQ2(ti−ti−1)2a(Q+eati)2. 
+
+The LNA of the SLGM with multiplicative intrinsic noise (LNAM) can then be written as
+
+ dYt=dvt+bevtvt−bevtYtdt+σdWt, or alternatively in terms of Xt,
+
+ dXt=Xtdvt+bevtvt−bevtlogXt+12σ2dt+σXtdWt, where Yt = log Xt, X0 = P is independent of Wt and t ≥ 0.
+
+Similar to the RRTR, we chose a lognormal (multiplicative) measurement error model in order to construct a linear Gaussian structure, enabling fast inference through the use of a Kalman filter for marginal likelihood computation.
+
+Note that the RRTR given in (6) can be similarly derived using a zero-order noise approximation (eZt ≈ 1) instead of the LNA.
+
+4 Linear noise approximation with additive noise
+As in Section 3, we start from the SLGM, given in (4). Without first log transforming the process, the LNA will lead to a worse approximation to the diffusion term of the SLGM, but we will see in the coming sections that there are nevertheless advantages. We separate the process Xt into a deterministic part vt and a stochastic part Zt so that dXt = dvt + dZt and consequently Xt=vt+Zt. We choose vt to be the solution of the deterministic part
+
+ dvt=rvt−rKvt2dt. 
+
+Without loss of generality we set t0 = 0. After redefining our previous notation as follows: a = r and b=rK, we solve dvt to give:
+
+ (13) vt=aPeatbP(eat−1)+a. 
+
+We now solve dZt, where dZt = dXt − dvt. Expressions for both dXt and dvt are known:
+
+ dZt=(aXt−bXt2)dt+σXtdWt−(avt−bvt2)dt. 
+
+We then substitute in Xt=vt+Zt and simplify the expression to give
+
+ dZt=(a−2bvt)Zt−bZt2dt+σvt+σZtdWt. dZt is a non-linear SDE that cannot be solved explicitly. We use the LNA to obtain a SDE that can be solved: we set second order term −bZt2dt=0 and σZtdWt = 0 such that the following SDE is linear in the narrow sense (Kloeden and Platen, 1992) (additive noise) to give
+
+ (14) dZt=(a−2bvt)Ztdt+σvtdWt. 
+
+This approximate process is a particular case of the Ornstein–Uhlenbeck process, which can be solved. The transition density for Xt (derivation in Appendix B) is then
+
+ (15) (Xti|Xti−1=xti−1)∼N(μti,Ξti),wherexti−1=vti−1+zti−1,μti=xti−1+aPeatibP(eati−1)+a−aPeati−1bP(eati−1−1)+a+ea(ti−ti−1)bP(eati−1−1)+abP(eati−1)+a2Zti−1andΞt=12σ2aP2e2ati1bP(eati−1)+a4×[b2P2(e2ati−e2ati−1)+4bP(a−bP)(eati−eati−1)+2a(ti−ti−1)(a−bP)2]. 
+
+The LNA of the SLGM, with additive intrinsic noise (LNAA) can then be written as
+
+ dXt=bvt2+a−2bvtXtdt+σvtdWt, where X0 = P independent of Wt and t ≥ 0. We chose a normal (additive) measurement error model in order to construct a linear Gaussian structure, enabling fast inference through the use of a Kalman filter for marginal likelihood computation.
+
+5 Simulation and Bayesian inference for the stochastic logistic growth equation and approximations
+To compare the accuracy of each of the three approximations for the SLGM, we first compare simulated forward trajectories from the RRTR, LNAM and LNAA with simulated forward trajectories from the SLGM (Fig. 1). We use the Euler-Maruyama (E-M) method (Kloeden and Platen, 1992) with very fine discretisation to give arbitrarily exact simulated trajectories from each SDE.
+
+The LNAA and LNAM trajectories are visually indistinguishable from the SLGM (Fig. 1A–D). On the other hand, population sizes simulated with the RRTR display large deviations from the mean as the population approaches its stationary phase when compared to the SLGM (Fig. 1A and B). The RRTR, see (6), which can be derived from a zero-order noise approximation of the SLGM, lacks a mean reverting property found in the LNAM and LNAA. Fig. 1E further highlights the increases in variation as the population approaches stationary phase for simulated trajectories of the RRTR, in contrast to the SLGM and our LNA models.
+
+To compare the approximate models across a large parameter space, in Table 1 we present mean squared errors (MSEs) for the mean growth and standard deviations, using forward simulations. Table 1 shows that, within the range of parameters considered, the LNAM and LNAA better approximate the mean curve of the SLGM than the RRTR, with ∼10 and ∼5 times lower MSE than the RRTR respectively. Similarly, Table 1 shows that the LNAM and LNAA better approximate the standard deviation of the SLGM than the RRTR, with ∼1000 and ∼1300 times less than the RRTR respectively. This observation is consistent with the RRTR lacking a mean reverting property. Both the LNAM and LNAA have good (low) MSE, with the LNAM slightly better overall, as expected.
+
+5.1 Bayesian parameter inference with approximate models
+To compare the quality of parameter inference using each of these approximations we simulated synthetic time-course data from the SLGM and combined this with either lognormal or normal measurement error. Carrying out Bayesian inference with broad priors (see (16) and (17)) we compared posterior parameter estimates using each approximation with values used to generate the synthetic dataset. The synthetic time-course datasets consist of 27 time points generated using the E-M method with a fine discretisation (Kloeden and Platen, 1992). Parameter values used to simulate time courses, see Table 2, were chosen to cover the range observed in growth curves of healthy yeast cultures considered in the next section.
+
+We formulate our inference problem as a dynamic linear state space model. To allow fast parameter inference we have chosen our measurement error models to give linear Gaussian structures and construct a Kalman filter recursion for marginal likelihood computation (Appendix D). We therefore assume lognormal (multiplicative) error for the RRTR and LNAM, and for the LNAA we assume normal (additive) measurement error. Dependent variable yti and independent variable {ti, i = 1, …, N} are data input to the model (where ti is the time at point i and N is the number of time points). Xt is the state process, describing the population size.
+
+The state space model for the RRTR and LNAM is as follows:
+
+ (16) log(yti)∼N(Xti,ν2),(Xti|Xti−1=xti−1)∼N(μti,Ξti),wherexti=vti+zti, μti and Ξti are given by (7) and (12) for the RRTR and LNAM respectively. Priors are as follows:
+
+ logX0≡log   P∼N(μP,τP−1),log   K∼N(μK,τK−1),log   r∼N(μr,τr−1),log   ν−2∼N(μν,τν−1),log   σ−2∼N(μσ,τσ−1)I[1,∞]. 
+
+Bayesian inference is carried out using relatively uninformative priors (see Table C.1 for prior hyper-parameter values). Lognormal prior distributions are chosen to ensure logistic growth and precision parameters are strictly positive. Ensuring that logistic growth parameters are positive disallows biologically unrealistic cultures, for example, a yeast population size cannot be negative so we do not expect the underlying process to have a negative carrying capacity K. In order to avoid unnecessary exploration of extremely low probability regions and to ensure that intrinsic noise does not dominate the process, we truncate our prior for log σ−2. We chose a lower limit of 1 after observing forward simulations from our processes, using logistic growth parameter values across a large parameter space (while covering representative parameter choices for microbial population growth curves, see Section 5.2) and increasing log σ−2 until intrinsic noise is so large that the deterministic part of the process is masked, rendering inference for the growth parameters impractical. An assumption of the LNA is that intrinsic noise is small and so it is natural to restrict large intrinsic noise.
+
+The state space model for the LNAA is as follows:
+
+ (17) yti∼N(Xti,ν2),(Xti|Xti−1=xti−1)∼N(μti,Ξti),wherexti=vti+zti, μti and Ξti are given by (15). Priors are as in (16). Measurement error for the observed values is modelled with a normal distribution so that we have a linear Gaussian structure. The state space models in (16) and (17) have different measurement error structures. To make a fair comparison between (16) and (17), we chose our priors so that the marginal moments for the measurement error of our models are similar by visual inspection of simulated growth curves, paying particular attention to the exponential growth phase, where growth is fastest.
+
+To see how the inference from our approximate models compares with slower “exact” models, we carry out inference using the approach of Golightly and Wilkinson (2005) with E-M simulations of (4) and of the log transformed process, using 15 evenly spaced intervals between simulated observations. We used a single site update algorithm to update model parameters and the E-M approximation of the latent process in turn. Given these simulations we can construct a state space model for an “exact” SLGM with lognormal measurement error (SLGM+L) and similarly for the SLGM with normal measurement error (SLGM+N), priors are as in (16).
+
+We use the approach of Komorowski et al. (2009) to carry out inference for our approximate SDEs with the Kalman filter. Our inference makes use of a Kalman filter to integrate out the state process. The Kalman filer allows for fast inference compared to slow numerical simulation approaches that impute all states. The algorithm for our approximate models is the Metropolis-within-Gibbs sampler with a symmetric proposal (Gamerman and Lopes, 2006). Full-conditionals are sampled in turn to give samples from the joint posterior distribution. Each update in our algorithm is a Metropolis-Hastings step using a Kalman filter. Proposals are tuned for each update during a burn-in period. Faster inference could potentially be achieved by carrying out joint parameter updates. Posterior means are used as point estimates of parameter values and standard deviations are used to describe variation of inferred parameters. The Heidelberger and Welch convergence diagnostic (Heidelberger and Welch, 1981) is used to determine whether convergence has been achieved for all parameters.
+
+To compare our ability to recover SLGM parameters (with lognormal measurement error) using inference with LNA models, we simulate data and carry out Bayesian inference. Fig. 2 shows that all three approximate models can capture the synthetic time-course data well, but that the RRTR model is the least representative with the largest amount of drift occurring at the saturation stage, a property not found in the SLGM or the two new LNA models. Comparing forwards trajectories with measurement error (Fig. 2), the “exact” model is visually similar to our new approximate models. Further, Table 2 demonstrates that parameter posterior means are close to the true values and that standard deviations are small for all models and each parameter set. By comparing posterior means and standard deviations to the true values, Table 2 shows that all our models are able to recover the three different parameter sets considered.
+
+To compare our ability to recover SLGM parameters (with normal measurement error) using inference with LNA models, we simulate data and carry out Bayesian inference. Fig. 3 shows that, of our approximate models, only the LNAA model can appropriately represent the simulated time-courses as both models with lognormal measurement error: the RRTR and LNAM do not closely match the data. Comparing forward trajectories with measurement error (Fig. 3), the “exact” model is most visually similar to the LNAA, which shares the same measurement error structure. Further, Table 2 demonstrates that only our models with normal measurement error have posterior means close to the true values and that standard deviations are larger in the models with lognormal measurement error. Observing the posterior means for K and each parameter set (Table 2), we can see that the RRTR has the largest standard deviations and that, of the approximate models, its posterior means are furthest from both the true values and the “exact” model posterior means. Comparing LNA models to the “exact” models with matching measurement error, we can see in Table 2 that they share similar posterior means and only slightly larger standard deviations. Example posterior diagnostics given in Fig. E.1, demonstrate that posteriors are distributed tightly around true values for our LNAA and data from the SLGM with normal measurement error. Density plots with overlaid curves for the SLGM, RRTR, LNAM and LNAA model parameter posteriors used in Fig. 3D are given in Fig. E.2. Fig. E.2 also shows that inference using the LNAA gives parameter posteriors that are most similar to the SLGM and that posteriors from the LNAA have greater density over the true parameter values than other approximations.
+
+5.2 Application to observed yeast data
+We now consider which diffusion equation model can best represent observed microbial population growth curves taken from a quantitative fitness analysis (QFA) experiment (Addinall et al., 2011; Banks et al., 2012), see Fig. 4. The observed data consist of scaled cell density estimates over time for a population, or culture of budding yeast Saccharomyces cerevisiae. Independent replicate cultures are inoculated on plates and photographed over a period of 5 days. Captured images are then converted into estimates of integrated optical density (IOD, which we assume are proportional to cell population size), by the software package Colonyzer (Lawless et al., 2010). The dataset chosen for model fitting is a representative set of time-courses for 10 independent populations, each with 27 time points.
+
+As in Fig. 3, we see that the LNAA model is the only approximation that can appropriately represent the time-course data. Both the RRTR and LNAM fail to bound the data as tightly as the LNAA (Fig. 4). Our two “exact” models are visually similar to our approximate models with the same measurement error. The SLGM+N is most similar to the LNAA and the SLGM+L is most similar to the RRTR and LNAM. This is as expected due to matching measurement error structures. Table 2 summarises parameter estimates for the observed yeast data using each model. The variation in the LNAA model parameter posteriors is much smaller than the RRTR and LNAM, indicating a more appropriate model fit. Comparing the LNA models and “exact” models with matching measurement error, we can see in Table 2 that they share similar posterior means and standard deviations for all parameters and in particular, they are very similar for both K and r, which are important phenotypes for calculating fitness (Addinall et al., 2011).
+
+In Table 3, we compare the quality of parameter inference for 10 observed yeast time-courses with each approximate model. MSEs for 1000 posterior sample forward simulations are calculated for each yeast time course and summed to give a Total MSE for each model. The RRTR has the highest total MSE and a much larger total MSE than the “exact” SLGM+L. It is interesting to see there is a very similar total MSE for the SLGM+L and LNAM, and similarly for the SLGM+N and LNAA, demonstrating that our approximations perform well.
+
+Computational times for convergence of our MCMC schemes (code is available at http://github.com/jhncl/LNA.git) can be compared using estimates for the minimum effective sample size per second (ESSmin/sec) (Plummer et al., 2006). Table F.1 shows the ESSmin/sec of the approximate models compared to the exact approaches. The average ESSmin/sec of our approximate model (coded in C) is ∼100 and “exact” model ∼1 (coded in JAGS (Plummer, 2010) with 15 imputed states between time points, chosen to maximise ESSmin/s). Our software for inference (coded in C) is about twice as fast as the simple MCMC scheme used by JAGS, indicating that our inference is ∼50× faster than an “exact” approach. A more efficient “exact” approach could speed up further, say by another factor of 5, but our approximate approach will remain at least an order of magnitude faster (and the approximate approach could also be speeded up with a little work). To ensure convergence of our Gibbs sampler we use a burn-in of 600,000 and a thinning of 4000 to obtain a final posterior sample size of 1000. Our approximate models describe the mean curve of the SLGM well, when carrying out inference for models of systems with more complicated underlying dynamics, the restarting method of Fearnhead et al. (2014) could be used to give improved approximation and increased numerical stability.
+
+6 Conclusion
+We have presented two new diffusion processes for modelling logistic growth data where fast inference is required: the linear noise approximation (LNA) of the stochastic logistic growth model (SLGM) with multiplicative noise and the LNA of the SLGM with additive intrinsic noise. Both the LNAM and LNAA are derived from the linear noise approximation of the stochastic logistic growth model (SLGM). The new diffusion processes approximate the SLGM more closely than an alternative approximation (RRTR) proposed by Román-Román and Torres-Ruiz (2012). The RRTR lacks a mean reverting property that is found in the SLGM, LNAM and LNAA, resulting in increasing variance during the stationary phase of population growth (see Fig. 1). The likelihood for a state space model with either the RRTR and LNAM is only tractable with lognormal measurement error. The LNAA differs as the likelihood is only tractable with normal measurement error. We are therefore able to cover two types of measurement error, with analytical solutions to the LNA and a tractable likelihood.
+
+We compared the ability of the LNAM, LNAA and RRTR to approximate the SLGM by recovering parameter values from simulated datasets using standard MCMC techniques. When modelling stochastic logistic growth with lognormal measurement error we find that our approximate models are able to represent data simulated from the original process.When modelling stochastic logistic growth with normal measurement error we find that only our models with normal measurement error can appropriately track data simulated from the original process (see Fig. 3). We also compared parameter posterior distribution summaries with parameter values used to generate simulated data after inference using both approximate and “exact” models (see Table 2). We find that, when using the RRTR model, posterior distributions for the carrying capacity parameter K are less precise than for the LNAM and LNAA approximations. We also note that it is not possible to model normal measurement error while maintaining a linear Gaussian structure (which allows fast inference with the Kalman filter) when carrying out inference with the RRTR. We conclude that for additive measurement error, the LNAA model is the most appropriate approximate model.
+
+To test model performance during inference with real population data, we fitted our approximate models and the “exact” SLGM to microbial population growth curves generated by quantitative fitness analysis (QFA) (see Fig. 4). We found that the LNAA model was the most appropriate for modelling experimental data. It seems likely that this is because a normal error structure best describes this particular dataset, placing the LNAM and RRTR models at a disadvantage. We demonstrate that arbitrarily exact methods and our fast approximations perform similarly during inference for 10 diverse, experimentally observed, microbial population growth curves (see Table 3) which shows that, in practise, our fast approximations are as good as “exact” methods.
+
+It is interesting to note that, although the LNAA is not a better approximation of the original SGLM process than the LNAM, it is still quite reasonable. Figs. 1A and D shows that the SLGM and LNAA processes are visually similar. Fig. 1E demonstrates that forward trajectories of the LNAA also share similar levels of variation over time with the SLGM and LNAM.
+
+Fast inference with the LNAA gives us the potential to develop large hierarchical Bayesian models which simultaneously describe thousands of independent time-courses from QFA with a diffusion equation, allowing us to infer the existence of genetic interactions on a genome-wide scale using realistic computational resources.
+
+Here, we have concentrated on a biological model of population growth. However, we expect that the approach we have demonstrated: generating linear noise approximations of stochastic processes to allow fast Bayesian inference with Kalman filtering for marginal likelihood computation, will be useful in a wide range of other applications where simulation is prohibitively slow.
+
+Appendix A LNAM solution
+First we look to solve dZt, given in Eq. (11). We define f(t)=−bevt=−baPeatibP(eati−1)+a to obtain the following,
+
+ dZt=f(t)Ztdt+σdWt. 
+
+Conditioning on Z0, the solution of Zt has the following form (Arnold, 2013):
+
+ Zt=ϕ(t)Z0+∫0tϕ(s)−1σdWs, where ϕ(t)=e∫0tf(s)ds=abP(eati−1)+a.
+
+Note that the solution to the above integral is given by
+
+ ∫0tf(s)ds=∫0t−baPeasbP(eas−1)+ads=logabP(eati−1)+a. 
+
+Finally, the distribution at time t is Zt|Z0 ∼ N(Mt, Et) (Arnold, 2013), where
+
+Mt = ϕ(t)Z0 and Et=ϕ(t)2∫0tϕ(s)−1σ2ds.
+
+Further, Mt=abP(eati−1)+aZ0 and Et=σ2[(a/bP(eati−1)+a)]2∫0t[(a/bP(eas−1)+a)]−2ds.
+
+As ∫0tabP(eas−1)+a−2ds=b2P2e2ati+4bP(a−bP)eati+2at(a−bP)22a3−b2P2+4bP(a−bP)2a3, Et=σ2abP(eati−1)+a2b2P2(e2ati−1)+4bP(a−bP)(eati−1)+2ati(a−bP)22a3=σ2b2P2(e2ati−1)+4bP(a−bP)(eati−1)+2ati(a−bP)22a(bP(eati−1)+a)2. Taking our solutions for vt
+(10) and Zt, we can now write our solution for the LNA to the log of the logistic growth process (8).
+
+As Yt=vt+Zt,
+
+ Yt|Y0∼NlogaPeatibP(eati−1)+a+Mt,Et. 
+
+Note: aPeatibP(eati−1)+a has the same functional form as the solution to the deterministic part of the logistic growth process (4) and is equivalent when σ = 0 (such that a=r−σ22=r).
+
+Further, as Yt is normally distributed, we know Xt = eYt will be log normally distributed and
+
+ Xt|X0∼logN(logaPeatibP(eati−1)+a+Mt,Et). 
+
+Alternatively set Q = (a/bP − 1),
+
+ Xt|X0∼logN(logab1+Qe−at+Mt,Et). 
+
+From our solution to the log process we can obtain the following transition density
+
+ (Yti|Yti−1=yti−1)∼Nμti,Ξti,whereyti−1=vti−1+zti−1,Q=abP−1eat0,μti=yti−1+log1+Qe−ati−11+Qe−ati+e−a(ti−ti−1)1+Qe−ati−11+Qe−atizti−1andΞti=σ24Q(eati−eati−1)+e2ati−e2ati−1+2aQ2(ti−ti−1)2a(Q+eati)2. In order to match our initial conditions correctly, we set Z0 = 0.
+
+Appendix B LNAA solution
+First we look to solve dZt, given in (14). We define f(t) = a − 2bvt to obtain the following,
+
+ dZt=f(t)Ztdt+σvtdWt. 
+
+Conditioning on Z0, the solution of Zt has the following form (Arnold, 2013):
+
+ Zt=ϕ(t)Z0+∫0tϕ(s)−1σdWs, where ϕ(t)=e∫0tf(s)ds=eatiabP(eati−1)+a2.
+
+Note that the solution to the above integral is given by
+
+ ∫0tf(s)ds=∫0t(a−2bVs)ds=ati−2logbP(eati−1)+aa, where ∫0tVsds=1blogbP(eati−1)+aa.
+
+Finally the distribution at time t is Zt|Z0 ∼ N(Mt, Et) (Arnold, 2013), where
+
+Mt = ϕ(t)Z0 and Et=ϕ(t)2∫0tϕ(s)−1σ2ds.
+
+ Mt=eatiabP(eati−1)+a2Z0 and
+
+ Et=eatiabP(eati−1)+a22∫0teasabP(eas−1)+a2−2σ2Vs2ds  =σ2eatiabP(eati−1)+a22∫0teasabP(eas−1)+a2−2aPeasbP(eas−1)+a2ds.  =σ2eatiabP(eati−1)+a22∫0te−2asabP(eas−1)+a−4aPeasbP(eas−1)+a2ds  =σ2eati1bP(eati−1)+a22∫0ta2P21bP(eas−1)+a−2ds, as ∫0t1bP(eas−1)+a−2ds=b2P2e2ati+4bP(a−bP)eati+2at(a−bP)22a−b2P2+4bP(a−bP)2a,
+
+ Et=12σ2aP2e2ati1bP(eati−1)+a4×b2P2(e2ati−1)+4bP(a−bP)(eati−1)+2ati(a−bP)2. 
+
+Taking our solutions for vt
+(13) and Zt, we can obtain the following transition density
+
+ (Xti|Xti−1=xti−1)∼N(μti,Ξti),wherexti−1=vti−1+zti−1,μti=xti−1+aPeatibP(eati−1)+a−aPeati−1bP(eati−1−1)+a+ea(ti−ti−1)bP(eati−1−1)+abP(eati−1)+a2Zti−1andΞti=12σ2aP2e2ati1bP(eati−1)+a4×[b2P2(e2ati−e2ati−1)+4bP(a−bP)(eati−eati−1)+2a(ti−ti−1)(a−bP)2]. 
+
+In order to match our initial conditions correctly, we set Z0 = 0.
+
+Appendix C Prior hyper-parameters for Bayesian state space models
+See Table C.1Table C.1 Prior hyper-parameters for Bayesian sate space models, Lognormal with mean (μ) and precision (τ)
+
+Parameter name	Value	
+μK	log(0.1)	
+τK	2	
+μr	log(3)	
+τr	5	
+μP	log(0.0001)	
+τP	0.1	
+μσ	log(100)	
+τσ	0.1	
+μν	log(10000)	
+τν	0.1	
+
+
+Appendix D Kalman filter
+To obtain π(yt1:N) for the LNAA with normal measurement error we can use the following Kalman Filter algorithm. θti and Yti are the state and measurement processes respectively. wt and ut is the state and measurement error respectively, where wt and ut are IID, E[wt]=0, E[ut] = 0, E[wtwtT]=Wt and E[ututT] = U (measurement error is not time dependent). The unobserved latent process is driven by
+
+ θti|θti−1∼N(Gtiθti−1,Wti) and the measurement error distribution, relating the latent variable to the observed is given by,
+
+ Yti|θti∼N(FtiTθti,U), where U and matrices Fti, Gti and Wti are all given. The Kalman filter consists of the recursion,
+
+ θti|y1:ti∼N(mti,Cti),mti=ati+RtiF(FTRtiF+U)−1[yti−FTati],Cti=Rti−RtiF(FTRtiF+U)−1FTRti initialized with m0 = P and C0 = 0, where
+
+ θti|y1:ti−1∼N(ati,Rti),ati=Gtimti−1andRti=GtiCti−1GtiT+Wti. 
+
+See (West and Harrison, 1997) for further details.
+
+The transition density distribution, see (15) is as follows:
+
+ θti|θti−1∼N(Gtiθti−1,Wti)orequivalently(Xti|Xti−1=xti−1)∼Nμti,Ξti,wherexti−1=vti−1+zti−1,θt=1Xti=10Hα,tiHβ,ti1Xti−1=Gtiθti−1,Gti=10Hα,tiHβ,ti,Wti=000ΞtiwhereHα,ti=Hα(ti,ti−1)=vt−Vt−1ea(ti−ti−1)bP(eaTi−1−1)+abP(eaTi−1)+a2andHβ,ti=Hβ(ti,ti−1)=ea(ti−ti−1)bP(eaTi−1−1)+abP(eaTi−1)+a2. The measurement error distribution is as follows:
+
+ yti|θti∼N(FTθti,U)or equivalentlyyti|θti∼N(Xti,σν2),whereF=01andU=σν2. Matrix Algebra: ati=Gtimti−1=10Hα,tiHβ,ti1mti−1=1Hα,ti+Hβ,timti−1  Rti=GtiCti−1GtiT+Wti=000Hβ,ti2cti−12+000Ξti=000Hβ,ti2cti−12+Ξti  Cti−1=000cti−12  RtiF(FTRtiF+U)−1=000Hβ,ti2cti−12+Ξti01×01000Hβ,ti2cti−12+Ξti01+σν2−1=Hβ,ti2cti−12+Ξti+σν2−10Hβ,ti2cti−12+Ξti  mti=ati+RtiF(FTRtiF+U)−1[yti−FTati]=1Hα,ti+Hβ,timti−1+Hβ,ti2cti−12+Ξti+σν2−10Hβ,ti2cti−12+Ξtiyti−011Hα,ti+Hβ,timti−1=0Hα,ti+Hβ,timti−1+Hβ,ti2cti−12+ΞtiHβ,ti2cti−12+Ξti+σν2yti−Hα,ti−Hβ,timti−1  Cti=Rti−RtiF(FTRtiF+U)−1FTRti=000Hβ,ti2cti−12+Ξti−Hβ,ti2cti−12+Ξti+σν2−10Hβ,ti2cti−12+Ξti01000Hβ,ti2cti−12+Ξti=000Hβ,ti2cti−12+Ξti−Hβ,ti2cti−12+Ξti2Hβ,ti2cti−12+Ξti+σν2 
+
+With mti and Cti for i = 1 : N, we can evaluate ati, Rti and π(xti|yt1:(i−1)) for i = 1 : N. We are interested in π(yt1:i)=∏i=1Nπ(yti|yt1:(i−1)), where π(yti|yt1:(i−1))=∫xπ(yti|xti)π(xti|yt1:(i−1))dxti gives a tractable Gaussian integral. Finally, logπ(yt1:N)=∑i=1Nlogπ(yti|yt1:(i−1))=∑i=1N−log2π(σf2+σg2)−(μf−μg)22(σf2+σg2),  whereμf−μg=yti−ati=yti−Hα,ti−Hβ,timti−1andσf2+σg2=σν2+Rti=σν2+Hβ,ti2cti−12+Ξti. 
+
+Procedure1 Set i = 1. Initialize m0 = P and C0 = 0.
+
+2 Evaluate and store the following log likelihood term: logπ(yti|yt1:(i−1))=−log2π(σf2+σg2)−(μf−μg)22(σf2+σg2),whereμf−μg=yti−Hα,ti−Hβ,timti−1andσf2+σg2=σν2+Hβ,ti2cti−12+Ξti. 
+
+3 Create and store both mti, and Cti, wheremti=Hα,ti+Hβ,timti−1+Hβ,ti2cti−12+ΞtiHβ,ti2cti−12+Ξti+σν2yti−Hα,ti−Hβ,timti−1andcti2=Hβ,ti2cti−12+Ξti−Hβ,ti2cti−12+Ξti2Hβ,ti2cti−12+Ξti+σν2. 
+
+4 Increment i, i = (i + 1) and repeat steps 2–3 till logπ(ytN|yt1:(N−1)) is evaluated.
+
+5 Calculate the sum: logπ(yt1:N)=∑i=1Nlogπ(yti|yt1:(i−1)). 
+
+
+
+Appendix E Parameter posterior diagnostic plots
+See Figs. E.1 and E.2Fig. E.1 Trace, auto-correlation and density plots for the LNAA model parameter posteriors (sample size = 1000, thinning interval = 4000), see Fig. 3D. Posterior density (black), prior density (dashed blue) and true parameter values (red) are shown in the right hand column. (For interpretation of the references to color in this figure legend, the reader is referred to the web version of the article.)
+
+Fig. E.2 Density plots with overlaid curves for the SLGM (orange), RRTR (red), LNAM (green) and LNAA (blue) model parameter posteriors (sample size = 1000, thinning interval = 4000), see Fig. 3D. True parameter values are given in black. (For interpretation of the references to color in this figure legend, the reader is referred to the web version of the article.)
+
+.
+
+Appendix F Computational speed statistics
+See Table F.1Table F.1 Average minimum effective sample size per second (ESSmin/sec) and average CPU time in seconds for the SLGM+N, SLGM+L, RRTR, LNAM and LNAA for 10 model applications to observed yeast data in Fig. 4 (excluding burn-in time). A sample size of 600,000 without thinning is obtained after a burn-in of 600,000.
+
+Model	SLGM+N	SLGM+L	RRTR	LNAM	LNAA	
+Average ESSmin/s	1.11	0.87	74.90	78.66	121.01	
+Average CPU time (s)	2397	2463	187	188	195	
+
+
+Acknowledgements
+This research was supported by grants from the Biotechnology and Biological Sciences Research Council, UK (BBSRC) and the Medical Research Council, UK (MRC) and the Wellcome Trust (075294, 093088).
+
+Fig. 1 Forward trajectories (no. of simulations=100) for a logistic SDE and approximations. See Table 2 for parameter values. (A) The stochastic logistic growth model (SLGM). (B) The Román-Román and Torres-Ruiz (2012) (RRTR) approximation. (C) The linear noise approximation with multiplicative intrinsic noise (LNAM). (D) The linear noise approximation with additive intrinsic noise (LNAA). (E) Standard deviations of simulated trajectories over time for the SLGM (black), RRTR (red), LNAM (green) and LNAA (blue). (For interpretation of the references to color in this figure legend, the reader is referred to the web version of the article.)
+
+Fig. 2 Forward trajectories with measurement error, simulated from parameter posterior samples (sample size = 1000). Model fitting is carried out on SLGM forward trajectories with lognormal measurement error (black), for three different sets of parameters (see Table 2). See (16) or (17) for model and Table C.1 for prior hyper-parameter values. Each row of figures corresponds to a different time course data set, simulated from a different set of parameter values, see Table 2. Each column of figures corresponds to a different model fit: (A), (E) and (I) SLGM+L (orange). (B), (F) and (J) RRTR model with lognormal error (red). (C), (G) and (K) LNAM model with lognormal error (green). (D), (H) and (L) LNAA model with normal error (blue). See Table 2 for parameter posterior means and true values. (For interpretation of the references to color in this figure legend, the reader is referred to the web version of the article.)
+
+Fig. 3 Forward trajectories with measurement error, simulated from inferred parameter posterior samples (sample size = 1000). Model fitting is carried out on SLGM forward trajectories with normal measurement error (black), for three different sets of parameters (see Table 2). See (16) or (17) for model and Table C.1 for prior hyper-parameter values. Each row of figures corresponds to a different time course data set, simulated from a different set of parameter values, see Table 2. Each column of figures corresponds to a different model fit: (A), (E) and (I) SLGM+N (pink). (B), (F) and (J) RRTR model with lognormal error (red). (C), (G) and (K) LNAM model with lognormal error (green). (D), (H) and (L) LNAA model with normal error (blue). See Table 2 for parameter posterior means and true values.(For interpretation of the references to color in this figure legend, the reader is referred to the web version of the article.)
+
+Fig. 4 Forward trajectories with measurement error, simulated from inferred parameter posterior samples (sample size = 1000). Model fitting is carried out on observed yeast time-course data (black). See (16) or (17) and Table C.1 for prior hyper-parameter values. See Table 2 for parameter posterior means. (A) SLGM+N (pink). (B) SLGM+L (orange). (A) RRTR model with lognormal error (red). (B) LNAM model with lognormal error (green). (C) LNAA model with normal error (blue). (For interpretation of the references to color in this figure legend, the reader is referred to the web version of the article.)
+
+Table 1 Mean squared errors (MSEs) between our approximate models and the SLGM are calculated for the mean growth of forward simulated trajectories over time (100 trajectories, each with 27 time points evenly spaced across t ∈ (0, 7)). MSEs are calculated across the following parameter space, K ∈ (0, 1), r ∈ (0, 8), P ∈ (0, 0.005) and σ ∈ (0, 0.6), evaluating at five evenly spaced values for each parameter range, giving a total of 54 = 625 combinations. An average MSE is then calculated across the 625 MSEs obtained. Similarly an average MSE is calculated for the standard deviations of forward simulated trajectories over time, evaluating at each of the 27 time points.
+
+Model	RRTR	LNAM	LNAA	
+Average MSE for mean growth	0.051	0.0043	0.010	
+Average MSE for standard deviation	2.024	0.0021	0.0016	
+Table 2 Bayesian state space model parameter posterior means, standard deviations and true values for Fig. 2, 3 and 4. True values for the simulated data used for Fig. 1–3 are also given.
+
+Panel	Model	Kˆ	rˆ	Pˆ	νˆ	σˆ	
+Fig. 2, SLGM with lognormal error	
+ A	SGLM+L	0.150	(0.001)	2.982	(0.014)	1.002 × 10−04	(1.112 × 10−06)	3.860 × 10−03	(2.127 × 10−03)	0.017	(0.005)	
+ B	RRTR	0.150	(0.003)	2.990	(0.011)	9.931 × 10−05	(1.069 × 10−06)	5.684 × 10−03	(2.360 × 10−03)	0.012	(0.006)	
+ C	LNAM	0.150	(0.001)	2.988	(0.013)	9.980 × 10−05	(1.124 × 10−06)	4.140 × 10−03	(2.180 × 10−03)	0.016	(0.005)	
+ D	LNAA	0.150	(0.001)	3.005	(0.020)	9.647 × 10−05	(2.946 × 10−06)	3.099 × 10−05	(2.534 × 10−05)	0.019	(0.003)	
+ E	SGLM+L	0.110	(0.001)	3.975	(0.047)	5.054 × 10−05	(1.568 × 10−06)	6.159 × 10−03	(5.527 × 10−03)	0.051	(0.014)	
+ F	RRTR	0.109	(0.007)	3.984	(0.035)	5.046 × 10−05	(1.137 × 10−06)	5.928 × 10−03	(4.596 × 10−03)	0.037	(0.009)	
+ G	LNAM	0.110	(0.001)	3.985	(0.046)	5.043 × 10−05	(1.580 × 10−06)	6.188 × 10−03	(5.191 × 10−03)	0.052	(0.013)	
+ H	LNAA	0.110	(0.001)	3.959	(0.067)	5.207 × 10−05	(4.310 × 10−06)	4.540 × 10−05	(4.395 × 10−05)	0.059	(0.010)	
+ I	SGLM+L	0.300	(0.001)	5.997	(0.029)	1.962 × 10−05	(4.041 × 10−07)	9.543 × 10−03	(4.035 × 10−03)	0.024	(0.015)	
+ J	RRTR	0.301	(0.004)	6.015	(0.017)	1.943 × 10−05	(2.835 × 10−07)	1.241 × 10−02	(2.307 × 10−03)	0.008	(0.006)	
+ K	LNAM	0.300	(0.001)	6.015	(0.031)	1.953 × 10−05	(4.202 × 10−07)	8.943 × 10−03	(4.252 × 10−03)	0.027	(0.016)	
+ L	LNAA	0.300	(0.001)	6.037	(0.067)	1.895 × 10−05	(1.502 × 10−06)	8.122 × 10−05	(1.596 × 10−04)	0.047	(0.008)	
+Fig. 3, SLGM with normal error	
+ A	SLGM+N	0.150	(0.002)	3.099	(0.085)	9.299 × 10−05	(7.305 × 10−06)	5.326 × 10−03	(1.009 × 10−03)	0.059	(0.030)	
+ B	RRTR	0.213	(0.123)	1.368	(0.263)	4.552 × 10−03	(2.118 × 10−03)	2.539 × 10−01	(1.097 × 10−01)	0.419	(0.129)	
+ C	LNAM	0.171	(0.033)	1.580	(0.271)	5.241 × 10−03	(2.048 × 10−03)	2.054 × 10−01	(7.805 × 10−02)	0.473	(0.051)	
+ D	LNAA	0.150	(0.002)	2.990	(0.262)	1.189 × 10−04	(7.099 × 10−05)	5.490 × 10−03	(1.060 × 10−03)	0.053	(0.033)	
+ E	SLGM+N	0.109	(0.001)	4.183	(0.074)	4.390 × 10−05	(4.129 × 10−06)	9.679 × 10−04	(2.806 × 10−04)	0.057	(0.012)	
+ F	RRTR	0.157	(0.087)	2.631	(0.337)	4.398 × 10−04	(1.678 × 10−04)	1.040 × 10−01	(1.009 × 10−01)	0.374	(0.162)	
+ G	LNAM	0.116	(0.009)	3.019	(0.374)	4.967 × 10−04	(1.397 × 10−04)	3.346 × 10−02	(4.309 × 10−02)	0.475	(0.044)	
+ H	LNAA	0.110	(0.001)	4.010	(0.158)	5.012 × 10−05	(1.443 × 10−05)	1.093 × 10−03	(3.638 × 10−04)	0.053	(0.013)	
+ I	SLGM+N	0.305	(0.003)	5.267	(0.125)	3.263 × 10−04	(3.407 × 10−05)	1.119 × 10−02	(1.974 × 10−03)	0.045	(0.031)	
+ J	RRTR	0.314	(0.057)	3.030	(0.233)	1.307 × 10−03	(2.897 × 10−04)	2.228 × 10−01	(3.708 × 10−02)	0.075	(0.086)	
+ K	LNAM	0.313	(0.020)	3.392	(0.430)	1.118 × 10−03	(3.269 × 10−04)	1.176 × 10−01	(8.435 × 10−02)	0.360	(0.165)	
+ L	LNAA	0.302	(0.002)	5.862	(0.523)	2.890 × 10−05	(2.599 × 10−05)	8.774 × 10−03	(1.466 × 10−03)	0.041	(0.028)	
+Fig. 4, observed yeast data	
+ A	SLGM+L	0.110	(0.007)	4.098	(0.299)	7.603 × 10−06	(3.206 × 10−06)	3.457 × 10−01	(5.319 × 10−02)	0.113	(0.109)	
+ B	SLGM+N	0.110	(0.003)	3.905	(0.173)	1.044 × 10−05	(3.086 × 10−06)	1.852 × 10−04	(7.460 × 10−05)	0.167	(0.028)	
+ C	RRTR	0.114	(0.026)	3.764	(0.201)	1.079 × 10−05	(3.155 × 10−06)	3.379 × 10−01	(4.840 × 10−02)	0.078	(0.077)	
+ D	LNAM	0.110	(0.011)	3.777	(0.216)	1.077 × 10−05	(3.277 × 10−06)	3.362 × 10−01	(5.137 × 10−02)	0.104	(0.108)	
+ E	LNAA	0.109	(0.003)	3.832	(0.198)	1.069 × 10−05	(3.680 × 10−06)	1.769 × 10−04	(6.607 × 10−05)	0.164	(0.033)	
+True values	K	r	P	ν	σ	
+Fig. 1, panels A–D	0.11	4	0.00005	N/A	0.05	
+Fig. 2 and 3, panels A–D	0.15	3	0.0001	0.005	0.01	
+Fig. 2 and 3, panels E–H	0.11	4	0.00005	0.001	0.05	
+Fig. 2 and 3, panels I–L	0.3	6	0.0002	0.01	0.02	
+Table 3 Total mean squared error (MSE) for 10 observed yeast growth time courses, each with 1000 forward simulated time-courses with measurement error. Parameter values are taken from posterior samples. Standard Deviations give the variation between the sub-total MSEs for each yeast time course fit.
+
+Model	SLGM+N	SLGM+L	RRTR	LNAM	LNAA	
+Total MSE	29.847	100.165	600.601	99.397	30.959	
+Standard deviation	1.689	8.391	55.720	9.263	2.030
+==== Refs
+References
+Addinall S.G.  Holstein E.-M.  Lawless C.  Yu M.  Chapman K.  Banks A.P.  Ngo H.-P.  Maringele L.  Taschuk M.  Young A.  Ciesiolka A.  Lister A.L.  Wipat A.  Wilkinson D.J.  Lydall D.   Quantitative fitness analysis shows that NMD proteins and many other protein complexes suppress or enhance distinct telomere cap defects PLoS Genet. 7 4 2011 e1001362 21490951 
+Arnold L.   Stochastic Differential Equations: Theory and Applications. Dover Books on Mathematics Series 2013 Dover Publications, Incorporated 
+Banks A.  Lawless C.  Lydall D.   A quantitative fitness analysis workflow J. Vis. Exp. 66 2012 e4018 
+Campillo, F., Joannides, M., Larramendy-Valverde, I. Estimation of the parameters of a stochastic logistic growth model. arXiv:1307.2217 [math.ST].
+Capocelli R.  Ricciardi L.   Growth with regulation in random environment Kybernetik 15 3 1974 147 157 4852193 
+Chen Y.  Lawless C.  Gillespie C.S.  Wu J.  Boys R.J.  Wilkinson D.J.   CaliBayes and BASIS: integrated tools for the calibration, simulation and storage of biological simulation models Brief. Bioinform. 11 3 2010 278 289 20056731 
+Fearnhead, P., Giagos, V., Sherlock, C. Inference for reaction networks using the linear noise approximation. arXiv:1205.6920v2 [stat.ME].
+Feller W.   Die Grundlagen der Volterraschen Theorie des Kampfes ums Dasein in wahrscheinlichkeitstheoretischer Behandlung Acta Biotheor. 5 1 1939 11 40 
+Gamerman D.  Lopes H.   Markov Chain Monte Carlo: stochastic simulation for Bayesian inference CRC Texts in Statistical Science Series 2006 Taylor & Francis/Chapman and Hall 
+Golightly A.  Wilkinson D.J.   Bayesian inference for stochastic kinetic models using a diffusion approximation Biometrics 61 3 2005 781 788 16135029 
+Gutiérrez R.  Rico N.  Román-Román P.  Torres-Ruiz F.   Approximate and generalized confidence bands for some parametric functions of the lognormal diffusion process with exogenous factors Sci. Math. Jpn. 64 2 2006 313 330 
+Heidelberger P.  Welch P.D.   A spectral method for confidence interval generation and run length control in simulations Commun. ACM 24 4 1981 233 245 
+Heydari, J.J., Lawless, C., Lydall, D.A., Wilkinson, D.J. Bayesian hierarchical modelling for inferring genetic interactions in yeast. arXiv:1405.7091v1 [stat.AP].
+Hurn A.S.  Jeisman J.I.  Lindsay K.A.   Seeing the wood for the trees: a critical evaluation of methods to estimate the parameters of stochastic differential equations J. Finan. Economet. 5 3 2007 390 455 
+Kalman R.E.   A new approach to linear filtering and prediction problems Trans. ASME J. Basic Eng. 82 Series D 1960 35 45 
+Kijima M.   Stochastic processes with applications to finance 2nd ed. Chapman & Hall/CRC Financial Mathematics Series 2013 CRC Press 
+Kloeden P.  Platen E.   Numerical Solution of Stochastic Differential Equations: Stochastic Modelling and Applied Probability, Applications of Mathematics 1992 Springer 
+Koller M.   Stochastic Models in Life Insurance EAA Series 2012 Springer 
+Komorowski M.  Finkenstadt B.  Harper C.V.  Rand D.A.   Bayesian inference of biochemical kinetic parameters using the linear noise approximation BMC Bioinform. 10 2009 343 
+Kurtz T.G.   Solutions of ordinary differential equations as limits of pure jump Markov processes J. Appl. Prob. 7 1 1970 49 58 
+Kurtz T.G.   Limit theorems for sequences of jump Markov processes approximating ordinary differential processes J. Appl. Prob. 8 2 1971 344 356 
+Lawless C.  Wilkinson D.J.  Young A.  Addinall S.G.  Lydall D.A.   Colonyzer: automated quantification of micro-organism growth characteristics on solid agar BMC Bioinform. 11 2010 287 
+Peleg M.  Corradini M.G.  Normand M.D.   The logistic (Verhulst) model for sigmoid microbial growth curves revisited Food Res. Int. 40 7 2007 808 818 
+Plummer M.   rjags: Bayesian Graphical Models Using MCMC. R package version 2.1. 0-10 2010 
+Plummer M.  Best N.  Cowles K.  Vines K.   CODA: convergence diagnosis and output analysis for MCMC R News 6 1 2006 7 11 
+Román-Román P.  Torres-Ruiz F.   Modelling logistic growth by a new diffusion process: application to biological systems Biosystems 110 1 2012 9 21 22750011 
+Ross J.  Pagendam D.  Pollett P.   On parameter estimation in population models ii: multi-dimensional processes and transient dynamics Theor. Popul. Biol. 75 2-3 2009 123 132 19136021 
+Ross J.  Taimre T.  Pollett P.   On parameter estimation in population models Theor. Popul. Biol. 70 4 2006 498 510 16984803 
+Tsoularis A.  Wallace J.   Analysis of logistic growth models Math. Biosci. 179 1 2002 21 55 12047920 
+Van Kampen N.   Stochastic Processes in Physics and Chemistry. North-Holland Personal Library 2011 Elsevier Science 
+Verhulst P.F.   Recherches mathématiques sur la loi d’accroissement de la population Nouveaux mémoires de l’Academie Royale des Science et Belles-Lettres de Bruxelles 18 1845 1 41 
+Wallace, E.W.J. A simplified derivation of the linear noise approximation. arXiv:1004.4280v4 [cond-mat.stat-mech].
+West M.  Harrison J.   Bayesian Forecasting and Dynamic Models second ed. Springer Series in Statistics 1997 Springer-Verlag New York 
+Wilkinson D.   Stochastic Modelling for Systems Biology 2nd ed. Chapman & Hall/CRC Mathematical & Computational Biology 2011 Taylor & Francis 
+Wilkinson D.J.   Stochastic modelling for quantitative description of heterogeneous biological systems Nat. Rev. Genet. 10 2 2009 122 133 19139763

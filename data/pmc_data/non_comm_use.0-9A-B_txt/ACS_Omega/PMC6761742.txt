@@ -1,0 +1,1189 @@
+
+==== Front
+ACS OmegaACS OmegaaoacsodfACS Omega2470-1343American Chemical Society 3157285910.1021/acsomega.9b01959ArticleHybrid Atomistic and Coarse-Grained Model for Surfactants
+in Apolar Solvents Vierros Sampsa †Sammalkorpi Maria *†‡†Department
+of Chemistry and Materials Science and ‡Department of Biomaterials and
+Bioproducts, Aalto University, P. O. Box 16100, 00076 Aalto, Finland* E-mail: maria.sammalkorpi@aalto.fi.13 09 2019 24 09 2019 4 13 15581 15592 29 06 2019 03 09 2019 Copyright © 2019 American Chemical Society2019American Chemical SocietyThis is an open access article published under a Creative Commons Attribution (CC-BY) License, which permits unrestricted use, distribution and reproduction in any medium, provided the author and source are cited.
+
+Here,
+we develop and verify the performance of a hybrid molecular
+modeling approach that combines coarse-grained apolar solvent and
+atomistic solute or polar solvent description, for example, for description
+of reverse micellar systems. The coarse-grained solvent model is directly
+applicable to organic solvents encompassing alkane, alkene, and fatty
+acid ester functional groups and connects directly to both standard
+united-atom GROMOS 53A6 and all-atom CHARMM27 force fields, as well
+as the atomistic detail water models compatible with these force fields.
+The different levels of description are coupled via explicit, unscaled
+electrostatics, and scaled mixing rules for dispersive interactions.
+The hybrid model is in near-quantitative agreement with fully atomistic
+simulations when combined with the CHARMM27 model but underestimates
+modestly surfactant aggregation when using GROMOS 53A6 united-atom
+description. The use of truncated electrostatics affords up to a 9-fold
+increase in computational speed without significant loss of accuracy.
+However, long-range electrostatic calculations and load imbalance
+at high core counts can significantly degrade the performance. We
+demonstrate the usability of the hybrid model by assessing the reverse
+micelle formation of a homologous series of nonionic glycerolipids
+via large-scale self-assembly simulations. The presented model is
+demonstrated here for accurate description of surfactant systems in
+apolar solvents, with and without also polar solvent (water) in the
+system. The formulation can be expected to describe well also other
+solute species or interfaces with an apolar solvent in an apolar environment.
+
+document-id-old-9ao9b01959document-id-new-14ao-2019-01959gccc-price
+==== Body
+Introduction
+Surfactants in apolar
+solvents form reverse micellar and emulsion
+systems that are both technologically and fundamentally significant.
+They are commonly used as highly tunable and dynamic platforms for
+drug delivery,1 protein separation,2 and templates for inorganic nanoparticle synthesis.3 Additionally, surfactant–apolar solvent
+systems are present and have an important role in cosmetics, paints,
+biobased oils, and alimentation.4 At the
+same time, the often significant sensitivity to microscopic, localized
+detail level interactions, for example, solvent quality and hydrogen
+bonding,5−7 makes them interesting from a theoretical standpoint.
+
+The modeling of apolar surfactant systems using current atomistic
+molecular models is limited in the attainable size and timescales
+by the computationally taxing nature of atomistic force fields, as
+well as by the special characteristics of apolar systems, for example,
+long relaxation times resulting from high solvent viscosity. Coarse-grained
+modeling approaches, which group neighboring atoms into single interaction
+sites, provide access to longer characteristic relaxation times and
+larger system sizes. Coarse-grained approaches have enabled, for example,
+large-scale simulations of lipid membranes,8,9 protein
+systems,10 and predicting structures of
+polymer systems.11,12 However, localized specific interactions,
+charge correlations, and sensitivity to, for example, hydrogen bonding,
+which are all often observed in apolar surfactant systems, are challenging
+for coarse-grained interaction models to capture. This results from
+the concept relying on employing effective, delocalized interactions
+to capture molecular system performance.
+
+A computationally efficient,
+accurate simulation model for apolar
+systems is needed because the soft, noncrystalline nature of the aggregates
+formed by surfactants in apolar solvents, in particular reverse micelles,
+makes them difficult to study experimentally. While the structure
+of the aggregates can be studied using, for example, scattering techniques13,14 and various probe-based and spectroscopic methods exist to characterize
+the dynamics and structuring inside the polar cores,15,16 the resulting data often paints out a smeared picture of the underlying
+molecular-level structure and dynamics.
+
+Here, we develop a hybrid
+model that is particularly aimed at bridging
+the gap between atomistic and coarse-grained modeling to provide accurate,
+enhanced computational efficiency description of surfactants in apolar
+solvents. The model uses supra-atomic coarse-grained detail for the
+apolar solvent environment yet retains atomistic detail for those
+molecular species that bear the features leading to the microscopic
+detail sensitivity in the structure and dynamics of these systems.
+The supra-atomic coarse-graining approach is similar to most coarse-grained
+models with the exception that water is usually coarse-grained supramolecularly.
+
+The key challenge in hybrid molecular modeling is how to couple
+the atomistic and coarse-grained species together. The approaches
+taken in the literature vary and mostly concentrate on aqueous systems.
+For instance, for their PACE protein model, Han and co-workers17−20 opted to explicitly parametrize the all-atom/coarse-grained (AA/CG)
+cross-interactions against small-molecule hydration data. The approach
+enabled affordable aqueous folding simulations of several small proteins.
+Rzepiela et al.21 and later Wassenaar et
+al.22 coupled the coarse-grained MARTINI23 model with the atomistic GROMOS force field24 by embedding atomistic solutes inside a virtual
+coarse-grained representation of the said solute, while another approach
+was utilized by Riniker et al.25,26 and the developers
+of the ELBA model,27,28 who derived parameters for the
+AA/CG interactions using standard mixing rules. However, the authors
+found that scaling the resulting parameters was necessary for accuracy.
+Notably, Orsi et al. have presented a hybrid approach for coarse-grained
+water solvating atomistic detail solutes where the accuracy persists
+without scaling.29,30 Finally, perhaps the most complicated
+and ambitious approach taken is the so called adaptive resolution
+methods. The above examples all utilize a static, molecule-based division
+between coarse-grained and fine-grained components, but in the so
+called AdResS approach, solvent molecules are allowed to change dynamically
+between different representations based on, for example, whether or
+not the molecule is considered bulk-like or interfacial. With this
+approach, any challenges in coupling a coarse-grained model to fine-grained
+features of the system are largely avoided (see, for example, refs (31−33)).
+
+Also, for surfactants in apolar solvents,
+namely, reverse micelles,
+hybrid modeling approaches have been employed a handful of times.
+Brodskaya and Mudzhikova34−36 coarse-grained both the surfactant
+and the solvent but retained atomistic representation of water and
+counterions to model the aqueous core of AOT reverse micelles. The
+coupling between atomistic and coarse-grained parts of the system
+was achieved through combination rules. This approach was also taken
+by Brown and Clarke,37 although at a considerably
+coarser scale and a separately parametrized coupling scheme. Nevidimov
+and Razumov38,39 chose to apply coarse-graining
+only to the apolar solvent, while the surfactant, water, and ions
+were represented in full atomistic detail. This enabled them to undertake
+large-scale self-assembly simulations of AOT reverse micelles.39 Furthermore, even though the approach can still
+be considered fully atomistic modeling, Braun et al.40 and Schmollngruber et al.41 have
+successfully combined united-atom and all-atom descriptions to model
+AOT reverse micellar systems.
+
+The model we develop here is a
+general apolar solvent coarse-grained
+model that encompasses hydrocarbon and ester group containing species
+as a solvent environment. In particular, the coarse-grained model
+focuses on description of biologically relevant compounds, such as
+triglycerides and fatty acid esters, because of the increasing interest
+in using biobased compounds in formulations. The model can be combined
+with existing all-atom detail models for surfactants or other solutes
+including atomistic detail water and ions, which gives it a very wide
+usability range. Furthermore, the proposed coarse-grained model reproduces
+to a large part the energetics and characteristics of fully atomistic
+models for the solvent species by explicitly accounting for hydrogen
+bonding via the use of dipolar sites. We test the coupling of the
+coarse-grained model to atomistic models with two commonly used force
+fields of different levels of description, namely, united-atom GROMOS
+56A624 and explicit-hydrogen CHARMM27,42 and benchmark the resulting hybrid model for
+computational performance. Finally, we demonstrate the use and usability
+of the new hybrid description via examining the dependence of the
+aggregation mechanism on the surfactant structure for a homologous,
+systematic series of nonionic glycerolipids in an apolar triglyceride
+solvent. The current work exceeds the prior efforts in (1) generality,
+that is, it covers a wider range of apolar solvents than only model
+hydrocarbon solvents and covers also complex biological apolar solvents,
+(2) the usability range, as it is fully compatible with existing major
+atomistic detail force fields including water models, and (3) also
+the extent of model verification, which covers both molecular characteristics
+and self-assembly response of a set of surfactants.
+
+Methods
+Parametrization
+The supra-atomic coarse-grained (CG)
+solvent model follows roughly a 3-to-1 mapping: on average, 3 connected
+heavy atoms and the associated hydrogens are represented by a single
+CG interaction site (bead). To account for the strong dipoles of ester
+groups, these additionally carry an off-center charged particle. To
+reduce the overall complexity of the model, a minimal number of beads
+is used. Except for the number of mapped hydrogens, each CG bead corresponds
+to a well-defined target structure at the atomistic detail level.
+This means that, for example, three methylene groups, two methylene
+groups terminated by a methyl group, and the propyl backbone of triglycerides
+are all represented by the same bead type. The adopted approach is
+similar to, for example, the MARTINI model23 but different from the SDK43 or the GROMOS
+alkane CG44 models, which differentiate
+between chain middle and terminal alkane beads. The here adopted approach
+attempts to retain the simplicity of the MARTINI model while aspiring
+for the chemical accuracy of the more complicated models. The mapping
+choice is illustrated in Figure 1.
+
+Figure 1 On the left, the beads of the coarse-grained model and
+their mapping
+to atomistic structure of tripalmitolein as an example. On the right,
+the hierarchy of model compounds (bold) and interactions (in parentheses)
+on which the parametrization is based.
+
+For compatibility with common empirical biomolecular force fields
+and simulation packages, the potential energy function of the coarse-grained
+model consists of harmonic bond potentials combined with the Lennard-Jones
+and Coulomb potentials for the nonbonded interactions. Bonded interactions
+are modeled using harmonic bond stretching and angle bending terms 1  where kb and kθ are force constants
+and b0 and θ0 are the
+equilibrium values for the bond stretching and angle bending terms,
+respectively. Bonded parameters are obtained via matching the resulting
+equilibrium distance and angle distributions with reference distributions
+obtained via center of mass based coarse-graining of fine-grained,
+atomistic detail trajectories calculated for target molecules. The
+CG model does not contain a specific term for torsions as a good match
+with atomistic distributions for the parametrized species is obtained
+even with only bond streching and bending terms (see the Supporting
+Information for data). We point out that for molecular species containing
+strong intramolecular interactions, torsions may be necessary in the
+CG representation.
+
+Nonbonded interactions are given by 2  where ϵij and σij are the
+potential well-depth and zero distance of the Lennard-Jones potential
+and q is the charge of the particle. Nonbonded interactions
+between 1−2 bonded pairs are excluded in the model. The Lennard-Jones
+parameters were fitted to reproduce the liquid density and heat of
+vaporization of the model compounds, while the Coulomb interactions
+of hydrogen bonding species were fitted to match the binding energy
+defined based on atomistic simulation PMFs. Liquid density was evaluated
+directly from a bulk NPT simulation, while the heat of vaporization
+ΔHm was calculated according to 3  where Epot(g) and Epot(l) are the
+potential
+energies per molecule in the gas phase and liquid phase, respectively,
+and RT corresponds to thermal energy. The gas-phase
+potential energy Epot(g) was evaluated
+from a separate gas-phase simulation.
+
+The parametrization of
+the nonbonded LJ interactions was conducted
+manually against a homologous series of model compounds. The parameter
+adjustment was conducted in a hierarchical manner; that is the simpler
+compounds such as alkanes were parameterized first after which the
+obtained alkane parameters were used without further adjustment in
+the more complex molecules (see Figure 1). All cross-interactions were not explicitly parametrized;
+for example, the CCO-CC interaction had relatively little impact on
+the properties of unsaturated esters and glycerides, and because of
+this, its magnitude was determined via Lorentz–Berthelot combination
+rules. Although the parametrization here was done manually, the findings
+point that this tuning process could be automated, as, for example,
+Reith et al. have demonstrated.45 However,
+some level of manual assessment of the system is advisable to prevent
+overfitting the model. The parametrization hierarchy and an explicit
+listing of the beads and corresponding all-atom chemical structures
+are presented in Figure 1.
+
+Prior to general nonbonded parametrization, the structure
+and electrostatic
+properties of the coarse-grained ester group were devised. To ease
+the task, parametrization effort focused on the carbonyl dipole: the
+off-center charged particle, named O, was set to correspond to the
+carbonyl oxygen. The position of the particle was determined based
+on the distance from the carbonyl oxygen to the group center of mass
+in atomistic simulations (0.132 nm). The mass of the particle was
+set as 16u, the mass of oxygen. The rest of the ester group mass was
+partitioned to the parent bead. The geometry of the ester off-center
+charge at O is kept in place by a distance constraint to the ester
+bead CCO-O and two angle bending terms to the adjacent beads CCC-CCO-O
+and O-CCO-CCC. The strength of the carbonyl dipole and the Lennard-Jones
+parameters of the particle O were initially borrowed from the GROMOS
+53A6 model. Subsequently, these were periodically adjusted during
+the nonbonded parametrization to reproduce the ΔG and equilibrium distance of the ester-alcohol free energy profile
+at hybrid modeling resolution. As the hybrid scheme uses direct electrostatic
+coupling (ϵrAA/CG = 1) between atomistic and coarse-grained species, the
+parametrization of the ester bead effectively fixes the CG/AA electrostatic
+coupling.
+
+The CG/AA Lennard-Jones parameters were calculated
+using the Lorentz–Berthelot
+mixing rules with additional scaling applied to the well-depth ϵ.
+The scaling factor was applied to all CG/AA interaction uniformly,
+but the value of it was determined separately for the coupling of
+C27 and 53A6 models. The optimal value of the scaling factor was obtained
+by matching the free energy profile of pulling two atomistic dodecane
+molecules apart in coarse-grained bulk dodecane to a fully atomistic
+reference energy profile.
+
+Fine-Grained Simulations
+United-atom
+GROMOS 53A624 and all-atom CHARMM C2742 force fields were used for the fine-grained
+part of the hybrid model.
+These versions of the respective
+models (as opposed to, for example, C36 or 53A6) were chosen based
+on prior experience with CHARMM force fields46 and preliminary benchmarking of binding energies against the CHARMM
+Drude polarizable force field.47 van der
+Waals interactions were smoothly switched to zero between 1.0 and
+1.2 nm (C27) or cut at 1.4 nm (53A6). Tail correction was applied
+for C27. Electrostatics were handled either by the smooth particle
+mesh Ewald (PME) method48 (fourth-order
+interpolation, 0.1 nm grid spacing) or reaction-field electrostatics
+(ϵr = 1, ϵRF = ∞). Infinite
+screening is used so that the atomistic and hybrid simulations can
+employ the same parameters; notably, the chosen cutoff scheme reproduces
+nearly exactly atomistic PMFs calculated using PME electrostatics
+for polar compounds. All bulk simulations employed PME, while the
+self-assembly simulations made use of reaction-field electrostatics
+and PME in separate simulations. LINCS49 was used for all non-water distance constraints for all bonds (53A6)
+or bonds containing hydrogen (C27). SETTLE50 was used to keep the water molecules rigid. These constraint approaches
+allow using an integration timestep of 2 fs. The stochastic velocity
+rescaling thermostat of Bussi et al.51 (τT = 0.5 ps and Tref = 298.15 K) and Parinello–Rahman barostat52 (τP = 2 ps and Pref = 1 bar) were used to implement constant
+pressure and temperature conditions. The above parameters were used
+in the umbrella simulations as well. In gas-phase simulations, all
+interactions were included, pressure coupling was turned off, and
+the stochastic dynamics thermostat was used. See Section S1 of the Supporting Information for detailed information
+on the fine-grained system setup and compositions.
+
+Coarse-Grained
+and Hybrid Simulations
+Parametrization
+of the coarse-grained model employed 53A6 fine-grain simulation parameters
+with the following exceptions: an analytical tail correction was applied
+to the Lennard-Jones potential to ensure a cutoff independent density
+and heat of vaporization, and with the exception of bonds connecting
+off-center charges to ester groups, all coarse-grained bonds were
+flexible. In the hybrid simulations, simulation parameters of the
+associated fine-grained model were used with the above listed exceptions.
+
+Umbrella Sampling Simulations
+Umbrella sampling was
+used to determine the potential of mean force (PMF) to estimate the
+free energy profiles between various species. Starting configurations
+for the umbrella sampling windows were generated by pulling two binding
+species apart at a rate of 0.002 nm/ps. Approximately 5–10
+windows were created at ∼0.2 nm intervals. Each window was
+simulated for 40 ns (500 ns for the dodecane in dodecane PMF), and
+the PMF was extracted using the weighted histogram analysis method.53,54 A force constant of 500 kJ mol–1 nm–2 was used for the harmonic umbrella potential. The PMF estimates
+presented in this work include the 2RT ln (z) Jacobian entropy correction.55
+
+Benchmarks
+The step-to-step performances of atomistic
+and hybrid resolution simulations were measured using monopalmitolein/dodecane
+systems. Final configurations of 200 ns atomistic self-assembly simulations
+were used as initial configurations and subsequently converted to
+hybrid resolution to eliminate any bias from differing starting configurations.
+Benchmarks were run on full nodes of the CSC Sisu supercomputer with
+each node consisting of 24 Intel Haswell cores (E5-2690v3, 2.6 GHz).
+Each simulation was run for at least 10000 steps, and cycle counters
+were reset halfway.
+
+Results and Discussion
+Coarse-Grained Solvent
+Model
+Table 1 lists the coarse-grained model parameters,
+while Figure 2 compares
+the density and heat of vaporization of the employed parametrization
+target molecules to experimental and simulated reference data (see Table S1 in the Supporting Information for reference
+data and Table S2 for numerical data on
+properties of coarse-grained model compounds). The data shows that
+the presented coarse-grained model parameters lead to target properties
+of pure hydrocarbons being well reproduced. However, for esters, a
+set of parameters, which would perfectly capture the entire target
+data set, could not be found, and the presented parameters are a compromise.
+Specifically, perfectly matching the properties of monoesters resulted
+in overestimation of triglyceride Hm.
+Hence, the cross-interaction between hydrocarbon and ester beads was
+scaled down, which leads to the coarse-grained model systematically
+underestimating monoester densities but resulting in an improved fit
+for the triglycerides. This challenge in ester parametrization could
+result from the simplicity of the model, which may prevent reproducing
+both triglyceride and monoester properties using the same parameters.
+This could very likely be resolved with separate parametrization;
+however, here, we have settled on the aforementioned compromise in
+the interest of simplicity and since experimental triglyceride Hm values suffer from discrepancies. These discrepancies
+could not be resolved with atomistic reference data either due to
+differing predictions made by C27 and 53A6. More detailed data about
+the parametrization is provided in the Supporting Information. In particular, Figure S1 compares bonded bead distances and angles in atomistic data with
+those resulting from the coarse-grained model parameters presented
+in Table 1.
+
+Figure 2 Comparison
+of liquid density and enthalpy of vaporization Hm calculated using the coarse-grained model
+and parametrization reference data. The symbols correspond to the
+coarse-grained model, and the solid lines correspond to experimental
+target data or, when unavailable, data computed in this work using
+the GROMOS 53A6 atomistic model. Target data points have been derived
+based on refs (56−62); see Table S1 in the Supporting Information
+for details.
+
+Table 1 Summary of the Coarse-Grained
+Parametersa
+bond type	
+i	j	 	b0 (nm)	kb (kJ mol–1 nm–2)	
+CCC	CCO	 	0.344	6000	
+CCO	CCC	 	0.344	5000	
+CCC	CCC	 	0.365	5000	
+CCC	CC	 	0.300	8000	
+CCC	CCO	(sn-2)	0.283	35000	
+CCO	O	 	0.132	constraint	
+angle type	
+i	j	k	θ0 ( ◦)	kθ (kJ · mol–1 · rad–2)	
+CCC	CCO	CCC	180	4.0	
+CCO	CCC	CCC	180	8.0	
+CCC	CCC	CCC	180	8.0	
+CCC	CCC	CC	180	8.0	
+CCC	CC	CCC	112	60.0	
+CCC	CCO	O	90	75.0	
+O	CCO	CCC	90	4.0	
+CCO	CCC	CCO	120	8.0	
+vdW type	
+i	j	σij (nm)	εij (kJ ·
+mol–1)	
+CCO	CCO	0.438	1.40	
+CC	CC	0.414	1.60	
+CCC	CCC	0.464	2.30	
+O	O	0.289	0.50	
+CC	CCC	0.440	1.75	
+CCO	CCC	0.446	1.41	
+CCO	O	0.415	1.02	
+a Figure 1 presents the bead types.
+
+Dispersive CG/AA Interactions
+Next, the compatibility
+of the coarse-grained model with all-atom species is examined. In
+this, we take surfactants in apolar hydrocarbon solvents, that is,
+reverse micellar systems, as the target parametrization system. A
+common feature for many surfactant–apolar solvent systems,
+that is, reverse micellar systems, is that both the surfactants and
+the solvents are quite often based on aliphatic carbon chains. Specifically,
+most surfactants feature one or two hydrocarbon tails, while many
+common apolar solvents range from plain alkanes to hydrocarbons decorated
+with polar groups, for example, alcohols and esters. Even for complex
+solvents such as triglycerides, the main interaction between surfactant-like
+solute species and the solvent usually is via the hydrocarbon parts
+of the surfactant and the solvent. This leads to the paramount importance
+of accurate reproduction of the mixing between all-atom hydrocarbons
+(surfactant) and coarse-grained hydrocarbons (solvent).
+
+To calibrate
+the coupling between atomistic and coarse-grained species, we calculated
+the free energy difference associated with separating two atomistic
+dodecane molecules dissolved in atomistic and coarse-grained dodecane
+(see Figure 3). The
+data shows that utilizing standard Lorentz–Berthelot mixing
+rules leads to the atomistic dodecane molecules preferentially dissolving
+in the coarse-grained solvent. While in the case of the united-atom
+53A6 model combined with the coarse-grained solvent, the free energy
+difference of the first minima and complete separation is only slightly
+overestimated in comparison to atomistic simulations by 0.4–0.5
+kJ/mol, and the association energy is substantially overestimated
+with the all-atom C27 model (4.7 kJ/mol). However, scaling the ϵ
+parameter with a model dependent factor β appears to largely
+recover the atomistic free energy landscape in both cases. We conclude
+that an optimal performance is obtained if factors β = 0.975
+and 0.847 for 53A6 and C27 are used, respectively. To cut down the
+number of parametrized interactions, these scaling values based on
+pure alkanes are utilized for all atomistic/coarse-grained cross-interactions.
+
+Figure 3 Potential
+of mean force (PMF) calculated for the center of mass
+separation distance of two dodecane molecules described in atomistic
+detail and dissolved in atomistic and coarse-grained dodecane. Results
+for both unscaled and scaled mixing rules are shown. On the left is
+data for CHARMM C27, and on the right is data for GROMOS 53A6 models.
+
+To test the quality and performance of the scaling
+scheme, the
+self-aggregation of monopalmitin in coarse-grained dodecane and in
+atomistic C27 or 53A6 dodecane was compared. Figure 4 shows the resulting aggregate sizes and
+their time evolution. The simulations were carried out at 70 °C
+due to the observed high aggregation propensity of 53A6 monopalmitin.
+The figure shows reverse micelles in the system at each time by their
+aggregation numbers. The hybrid simulations produce reverse micelles
+with aggregation numbers consistent with the atomistic simulations,
+as shown by the overlap of the distributions. The reverse micelles
+are predicted to be prolate (C27) or worm-like (53A6). Experimentally,
+Shrestha et al.5 have observed elongated
+monoglyceride reverse micelles suggesting that the simulation-predicted
+microstructure is qualitatively correct. The higher aggregation propensity
+predicted by the 53A6 model appears to result from the larger dipole
+moments in that model in comparison to C27 (see Figure 5 for energetics). Indeed, the partial charges
+of GROMOS 53A6 were parametrized to capture aqueous solvation energetics.24 The finding demonstrates that the implicit polarization
+of the underlying atomistic model is an important factor in reverse
+micellar simulations, at least in conditions corresponding to low
+hydration of the surfactant head groups.
+
+Figure 4 Time evolution of aggregate
+size distributions in 12 wt % monopalmitin
+in dodecane solvent system using particle mesh Ewald (PME) and reaction-field
+electrostatics (RF). At the top is data for CHARMM C27, and at the
+bottom is data for GROMOS 53A6 atomistic models.
+
+Figure 5 Comparison
+of potentials of mean force (PMFs) calculated using
+the atomistic CHARMM C27 or GROMOS 53A6 model and the hybrid coarse-grained
+CG/atomistic model. The presented PMFs are calculated between the
+distance of propyl myristate ester group and hexanol hydroxyl group
+(top row), water molecule (middle row), or tetramethylammonium ion
+in dodecane (bottom row). Short distance deviation can be explained
+by the CG bead size.
+
+The relatively good match
+between the atomistic and hybrid simulations
+is undoubtedly partially fortuitous, considering the higher temperature
+and small differences in the free energy profiles of Figure 3. To chart the hybrid model
+sensitivity to the scaling factor β, the size distribution dependency
+on β was investigated for the C27 force field (see Figure S2 in the Supporting Information). The
+data shows that systematically higher aggregation numbers are favored
+when β is smaller. A significant change occurs with only a 2%
+change in the coupling parameter. This suggests that the shape of
+the reverse micellar aggregate is very sensitive toward the tail-solvent
+mixing energy, both in all-atom and in the hybrid model; the finding
+is in qualitative agreement with the observations of Shrestha et al.5,63 and also our previous findings on phospholipid reverse micelles
+in cyclohexane.64,65 Given, however, that β
+was fitted against the dodecane chain and still reproduces aggregate
+sizes of the longer-chain monopalmitin for both 53A6 and C27, we suggest
+that the presented β parameters are balanced and that the β
+parameter approach has a degree of transferability. Furthermore, application
+of the adaptive resolution technique in the form of a fine-grained
+solvent skin region could remove the sensitivity to the β parameter.
+However, it is unclear how a large computational overhead maintaining
+such skin regions would introduce into the relatively packed reverse
+micellar system. Such an approach was not used here.
+
+Electrostatic
+Coupling
+Figure 5 shows the free energy profiles of propyl
+myristate (PM) binding with hexanol (HxOH), water (H2O),
+and tetramethylammonium ion (TMA+). The propyl myristate–hexanol
+binding energy was used in the parametrization of the coarse-grained
+ester group, while the latter two binding species were used to investigate
+the transferability of the parameters. In the potential of mean force
+profiles, the depth of the minimum corresponds to the binding free
+energy of the two species, that is, free energy difference corresponding
+to binding of the two compounds in the solvent. The data shows that,
+for charge neutral species, the hydrogen bonding energy in the hybrid
+simulations is reasonably well reproduced in comparison to the fully
+atomistic reference systems (within 1.6 kJ/mol in all cases). However,
+the ion–dipole interaction energy of the PM/TMA+ complex is overestimated by 5 kJ/mol for C27 and underestimated
+by 3 kJ/mol for 53A6. The loci of the PMF minima are in similar acceptable
+agreement between the atomistic and hybrid simulations for both atomistic
+models. However, at close distances, the PMF rises too steeply in
+the hybrid simulations, which likely results from the inaccurate description
+of the shape anisotropy of the ester group at very short distances
+by the CG model. This could partly be remedied by manually adjusting
+the Lennard-Jones parameters between the coarse-grained ester group
+and the atomistic binding species. However, as the coarse-grained
+ester group lacks secondary dipoles, that is, additional charged particles,
+which would form weaker dipoles with the central charged bead, we
+did not pursue this here as it could lead to overfitting of the model.
+
+To further validate the electrostatic coupling between atomistic
+and the coarse-grained descriptions in the hybrid model, a system
+of 21 wt % monopalmitin in bulk propyl decenoate at 25 °C was
+characterized in terms of aggregate size distributions. This solvent/surfactant
+pair has sufficiently fast dynamics even at room temperature for the
+system to reach a converged size distribution within the simulation
+duration. The resulting size distributions are shown in Figure 6. The data shows that the aggregate
+size distribution is qualitatively reproduced for both C27 and 53A6
+force fields. However, the free surfactant concentration is overestimated
+for both force fields. Furthermore, the hybrid 53A6 simulations underestimate
+the aggregation propensity producing too steeply decaying aggregate
+size distribution in comparison to fully fine-grained reference data.
+This is rather curious since the free energy profiles presented in Figures 3 and 5 are generally better reproduced by the 53A6 model than by
+the C27 model. We speculate that the self-interaction energy of 53A6
+propyl decenoate differs somewhat from that of the coarse-grained
+one leading to the observed deviations. This suggests that, for balanced
+interactions, hybrid models should use the target atomistic energetics
+rather than experimental data as the reference data.
+
+Figure 6 Aggregate size distributions
+in 21 wt % monopalmitolein/propyl
+decenoate system calculated using particle mesh Ewald (PME) and reaction-field
+(RF) electrostatics.
+
+Effect of Long-Range Electrostatics
+It is well known
+that truncation of Coulomb interactions can lead to various simulation
+artifacts.66−69 However, for computational efficiency, coarse-grained models commonly
+incorporate interactions that have electrostatic origin, that is,
+dipole–dipole and even charged interactions, into short-ranged
+effective potentials, which are then truncated at a suitable distance.
+The truncation is somewhat justified by the fast r–6 decay of thermally averaged dipolar interactions
+and the strong charge screening in the aqueous environment. However,
+the low dielectric permittivity of apolar solvents and the coexistence
+of coarse-grained and atomistic species in the present hybrid simulations
+make it unclear how much long-range electrostatics contribute to the
+structural and dynamical characteristics of the simulated systems.
+The presented model will describe charged species well, as long as
+the charges are in a molecular environment enabling properly their
+screening. The selected reaction-field electrostatic scheme, with
+infinite screening at the cutoff, will cause deviations in the description
+of charged species interactions in the dominantly apolar surroundings
+where the Debye screening length is long.
+
+The effect of neglecting
+long-range electrostatics was tested by recalculating the size distributions
+in Figures 4 and 6 using also truncated electrostatics in addition
+to the PME electrostatics. We chose reaction-field electrostatics
+(RF) with infinite screening beyond the cutoff as the truncation scheme
+due to its ability to reproduce hydrogen bonding PMFs calculated using
+PME almost exactly (present work, data not shown) and the energy conservation
+it affords over straight cutoff schemes in prior simulations.70Figures 4 and 6 show that, in the test systems,
+PME and truncated electrostatics yield size distributions and aggregation
+kinetics in close agreement with one another—both for fine-grained
+and hybrid simulations. This suggests that truncated electrostatics
+can be used for neutral reverse micellar systems without compromising
+the accuracy of the system description. We note, however, that simulations
+of systems containing mobile ions such as Aerosol OT reverse micelles
+or charged lipids should probably employ PME electrostatics.
+
+Performance
+Next, the speedup over standard atomistic
+methodology, as well as the scaling characteristics of the hybrid
+resolution model, is assessed by comparing representative model systems
+at different levels of resolution. Additionally, the effect of truncating
+electrostatic interactions on computational performance is assessed.
+
+To probe the maximum achievable speedup between atomistic and coarse-grained
+representations, a system of pure propyl myristate in its bulk state
+(3200 molecules) was simulated both in the coarse-grained and atomistic
+details. With PME electrostatics, the speedup varies in the range
+of 1.3–2.8 and 4.2–13.3 in comparison to united-atom
+53A6 and all-atom C27 force fields, respectively. The use of truncated
+electrostatics increases the speedup factors to 4.1–4.8 and
+21.3–31.6. The same electrostatics parameters are used when
+comparing models of different description levels; that is, also truncated
+electrostatic performance is compared between atomistic simulations
+using truncated electrostatics and hybrid CG-atomistic simulations
+using truncated electrostatics and correspondingly for PME performance
+comparison. In both cases, the performance advantage of the coarse-grained
+model decreases as more CPU cores are utilized. For truncated electrostatics,
+this effect appears to result from the natural scaling characteristics
+of the underlying simulation software; that is, the number of atoms
+per core slowly approaches the scaling limit. For PME, however, the
+coarse-grained simulations suffer from the mesh part of the PME algorithm
+becoming a bottleneck. This suggests that the best value for the CPU
+time for simulations using this hybrid model is obtained with low
+core counts and truncated electrostatics.
+
+As a more realistic
+test case, the 12 wt % monopalmitin/dodecane
+self-assembly simulations presented in Figure 4 were also benchmarked (see Figure 7). With PME electrostatics,
+the relative performance varies between 0.7 and 1.5 and 2.3 and 5.9
+for 53A6 and C27, respectively. With truncation of electrostatics,
+these numbers increase to 1.0–2.8 and 3.6–8.7, respectively.
+While the scaling characteristics mirror those obtained from the pure
+solvents, it is interesting to note that the hybrid simulations suffer
+at high node counts from severe load imbalance due to domain decomposition.
+This results from the heterogeneous particle density present in the
+system, that is, relatively sparse solvent, which atomistic reverse
+micelles of high particle density traverse randomly. Dealing with
+such a setup appears very difficult for the present load balancing
+algorithms.
+
+Figure 7 Benchmarking data for C27 (left) and 53A6 (right). In the figure,
+black corresponds to hybrid resolution, green to united-atom GROMOS
+53A6 force field, and blue to all-atom C27 force field. Filled symbols
+and solid lines correspond to simulations with PME electrostatics,
+and empty symbols and dashed lines correspond to reaction-field electrostatics.
+Each node consists of 24 Intel Haswell cores (E5-2690v3, 2.6 GHz).
+
+The benchmarking data here corresponds to a formal
+step-to-step
+speedup factor, which neglects the artificial acceleration of diffusion
+processes resulting from coarse-graining. To investigate the significance
+of such acceleration in the hybrid simulations, we calculated the
+surfactant diffusion coefficients from the monopalmitolein/propyl
+decenoate simulations (the dodecane simulations yielded poor statistics
+due to the slowly diffusing aggregates). For the 53A6 model, surfactant
+diffusion was 1.7–1.8 times faster in the coarse-grained solvent,
+and for C27, the numbers were 3.7–5.2. For truncated electrostatics,
+the diffusion increase was less than for PME electrostatics. For C27,
+additionally, the diffusion of diglycerol monopalmitolein in tripalmitolein
+was assessed; surfactant diffusion was found to be 9 times faster
+than in atomistic detail simulations (see Figure S5 in the Supporting Information for size distribution comparison).
+This rather significant speedup suggest that, for triglycerides at
+least, switching to the coarse-grained solvent representation may
+be worthwhile even if there would not be other computational advantage.
+
+Application: Self-Assembly of Glycerolipids in Apolar Solvents
+Prior computational46 and experimental63,71−74 studies have suggested that the aggregation mechanism and aggregate
+morphology of nonionic surfactants in apolar media can be tuned by
+adjusting the polarities of the surfactant headgroup and solvent.
+Here, we apply the present hybrid model to a homologous series of
+glycerolipid surfactants containing 1–3 hydroxyl groups per
+headgroup and 1–2 hydrocarbon tails (see Figure 8 for the structures and abbreviations). The
+simulations are performed in both dodecane and tripalmitolein solvents
+in the presence and absence of moisture (water-to-surfactant molar
+ratio w0 = 1 – 2). With this mapping,
+we aim to establish the conditions at which reverse micellization
+becomes favored over oligomerization.
+
+Figure 8 Examined single- and double-tailed glycerolipids
+(top) and their
+self-assembly size distributions in dodecane and tripalmitolein with
+(right panels) and without (left panels) residual moisture. Surfactant
+concentration varies in the ranges of 106–111 and 286–323
+mM in dodecane and tripalmitolein, respectively. The corresponding
+water-to-surfactant ratios are w0 = 1
+and w0 = 2. See Table S3 in the Supporting Information for detailed composition of
+each system. Solid lines correspond to smoothed size distributions;
+see Section S5 in the Supporting Information
+for description of the procedure.
+
+Figure 8 presents
+the size distributions resulting from the simulations. Figures S3 and S4 in the Supporting Information
+show the corresponding time series. The prevalent association mechanism
+can be inferred from the shape of the size distribution: a straight
+line indicates classical indefinite, stepwise association, while curviness
+and the existence of a local minimum indicate cooperativity and a
+separate micellar population of preferred size (see ref (46) for more detailed discussion).
+The data shows that, in dodecane, the aggregation mode smoothly switches
+from stepwise association to cooperative reverse micellization as
+the headgroup polarity increases. The crossover from one mechanism
+to another appears for surfactants with two hydroxyl groups per headgroup
+with less polar surfactants following stepwise association and more
+polar surfactant cooperative association. For diglycerol monopalmitolein,
+the cooperativity of the aggregation was comparable to aqueous systems,
+and a reliable estimate for the size distribution could not be obtained.
+Contrary to this, in a tripalmitolein environment, all studied surfactants
+associate via the oligomerization mechanism. This is due to the hydrogen
+bonding ability of the solvent, which attenuates intersurfactant bonding.
+The data reveals both the significance of the hydrogen bonding capability
+of the surfactants in the formation of the reverse micelles but also
+the competing influence of the solvent hydrogen bonding ability. Similarly,
+solution additives with the hydrogen bonding ability can be expected
+to influence aggregation (see, for example, ref (75)).
+
+In dodecane, an
+increase in tail count decreases the size of the
+aggregates provided that the aggregation propensity is high enough
+for the formation of large reverse micelles. This behavior suggests
+that the increased steric repulsion due to two tails contributes significantly
+to aggregation only if a certain minimum level of crowdedness is met
+at the solvent/tail shell. Contrary to this hypothesis, in tripalmitolein,
+the double-tailed variants show a slightly higher overall aggregation
+propensity in comparison to single-tailed surfactants. This effect,
+however, appears to result from differences in headgroup size: at
+the relatively high surfactant concentration employed in the simulations,
+the elongated headgroups of diglycerol dipalmitolein (DGDP) and triglycerol
+dipalmitolein (TGDP) are more likely to reach an existing aggregate
+(and therefore be counted as a member) than their single-tailed variants
+(MGMP, DGMP). A preliminary set of simulations at approximately 120
+mM concentration showed the same trends, but much smaller differences
+between single- and double-tailed surfactants support this explanation.
+
+Addition of water substantially increases the aggregation propensity
+in dodecane shifting all surfactants to favor cooperative reverse
+micellization over oligomerization (a separate population of reverse
+micelles emerges). The effect is, however, much more attenuated for
+double-tailed surfactants suggesting that the tail structure is an
+important control factor in reverse micellar systems. Visually, at
+these low hydration levels, water molecules are dispersed throughout
+the polar core region and only occasionally coalesce into a separate
+central water droplet. In tripalmitolein, addition of water increased
+the aggregation propensity slightly, but the aggregation mechanism
+remains essentially as oligomerization.
+
+Shrestha et al. have
+conducted numerous X-ray scattering studies
+on the reverse micellization of nonionic glycerolipids.63,71,76 While quantitative comparison
+cannot be made due to slight variations in tail structure, temperature,
+solvent chain length, and lack of moisture control, qualitatively,
+their observations are in agreement with the simulation results here.
+Namely, they report that the size of the reverse micelles increases
+with the headgroup size of the surfactant,71 while the increase in tail length76 or
+in the number of tails63 decreases the
+overall aggregate size. Addition of water was reported to increase
+the average aggregate size.71
+
+Conclusions
+In summary, we have developed a coarse-grained hydrocarbon solvent
+model that can be combined with existing atomistic detail models for
+both solutes and, for example, polar solvent species. We coupled the
+models with two atomistic force fields, namely, GROMOS 53A6 and CHARMM27,
+and verified the performance. The presented work encompasses both
+evaluation of the model construction and parametrization but also
+an assessment of the benefits and pitfalls of hybrid simulations in
+a reverse micellar setting. The findings suggest that, while good
+agreement between hybrid and atomistic simulations is achievable with
+relatively simple means, the direct coupling scheme employed in this
+paper also has some drawbacks. In particular, even though the hybrid
+scheme offers an increase in computational performance, scaling issues
+due to long-scale electrostatics and inhomogeneous particle density
+result in significant load imbalance at high core counts. This prevents
+the hybrid simulations from reaching substantially longer timescales
+than feasible with atomistic detail approaches. This problem is likely
+to affect all simulations using a similar coupling approach to this
+work.
+
+We also report the aggregation responses of a homologous
+series
+of single- and double-tailed glycerolipids under various solvents
+and hydration conditions. The findings indicate that the headgroup
+polarity, particularly the hydrogen bonding donor capabilities of
+the headgroup, has a key role in determining the aggregation propensity
+of the surfactant. Further, water increases and surfactant hydrogen
+bonding with the solvent significantly decreases the cooperativity
+of the aggregation process. Finally, surfactant reverse micelles formed
+with single-tailed surfactants are significantly larger than those
+formed by surfactants with two tails. The presence of the second tail
+also promotes oligomerization as the aggregation mechanism. Altogether,
+the modeling work shows that, besides the usual oligomerization and
+cooperative association mechanisms, the reverse micellar systems also
+often bear characteristics of both of these; that is, the aggregation
+mechanism is mixed. This study is, to our knowledge, the first detailed
+computational investigation in which the mechanism of apolar aggregation
+is systematically evaluated. The work also presents for the first
+time with reasonable accuracy the shapes of the aggregate size distributions
+of reverse micelles of such glycerolipids or similar species. The
+results show that molecular dynamics simulations are able to provide
+detailed information on the aggregation response of surfactants also
+in these complex, dynamic apolar systems and to generate understanding
+of the nature of apolar solution surfactant aggregation. As the examined
+systems are of high chemical engineering importance, the findings
+could aid in tuning process solutions via engineering aggregate size
+distributions or enabling enhanced control of aggregation.
+
+Supporting Information Available
+The Supporting Information is
+available free of charge on the ACS Publications website at DOI: 10.1021/acsomega.9b01959.Description of
+bulk simulations, list of self-assembly
+simulations and their compositions, sensitivity analysis of aggregate
+size on tail/solvent mixing energy, time-dependent size distributions
+of glycerolipids, description of the aggregate size distribution smoothing
+scheme, and additional validation data (PDF)
+
+
+
+Supplementary Material
+ao9b01959_si_001.pdf
+
+ The authors declare no
+competing financial interest.
+
+Acknowledgments
+Funding from Aalto University School
+of Chemical
+Engineering Doctoral Programme is gratefully acknowledged (S.V.).
+The authors acknowledge the financial support of the Academy of Finland
+Grant No. 309324 (M.S.). We are grateful for the support by the FinnCERES
+Materials Bioeconomy Ecosystem. Computational resources by CSC IT
+Centre for Science, Finland, and RAMI – RawMatTERS Finland
+Infrastructure are also gratefully acknowledged.
+==== Refs
+References
+Vintiloiu A. ; Leroux J.-C. 
+Organogels and their
+use in drug delivery —
+A review . J. Controlled Release 
+2008 , 125 , 179 –192 . 10.1016/j.jconrel.2007.09.014 .
+Krishna S. H. ; Srinivas N. D. ; Raghavarao K. S. M. S. ; Karanth N. G. 
+Reverse Micellar
+Extraction for Downstream Processing of Proteins/Enzymes . Hist. Trends Bioprocess. Biotransform. 
+2002 , 75 , 119 –183 . 10.1007/3-540-44604-4_5 .
+Chaurasiya R. S. ; Hebbar H. U.  Reverse Micelles for Nanoparticle Synthesis and Biomolecule Separation . In Nanoscience in Food and Agriculture 4  ; Ranjan S. , Dasgupta N. , Lichtfouse E.  , Eds.; Springer
+International Publishing : Cham, Switzerland , 2017 ; pp 181 –211 .
+Svensson M.  Surfactants Based
+on Natural Fatty Acids . In Surfactants from
+Renewable Resources ; Kjellin M. , Johansson I.  , Eds.; Wiley-Blackwell : Chichester, West Sussex, UK , 2010 ; Chapter
+1, pp 1 –19 .
+Shrestha L. K. ; Glatter O. ; Aramaki K. 
+Structure of Nonionic Surfactant
+(Glycerol α-Monomyristate) Micelles in Organic Solvents: A SAXS
+Study . J. Phys. Chem. B 
+2009 , 113 , 6290 –6298 . 10.1021/jp900102e .19358555 
+Shchipunov Y. A. ; Shumilina E. V. 
+Lecithin bridging by hydrogen bonds in the organogel . Mater. Sci. Eng. C 
+1995 , 3 , 43 –50 . 10.1016/0928-4931(95)00102-6 .
+Palazzo G. 
+Wormlike reverse
+micelles . Soft Matter 
+2013 , 9 , 10668 –10677 . 10.1039/c3sm52193a .
+Wong-Ekkabut J. ; Baoukina S. ; Triampo W. ; Tang I.-M. ; Tieleman D. P. ; Monticelli L. 
+Computer simulation study of fullerene translocation
+through lipid membranes . Nat. Nanotechnol. 
+2008 , 3 , 363 –368 . 10.1038/nnano.2008.130 .18654548 
+Periole X. ; Knepp A. M. ; Sakmar T. P. ; Marrink S. J. ; Huber T. 
+Structural
+Determinants of the Supramolecular Organization of G Protein-Coupled
+Receptors in Bilayers . J. Am. Chem. Soc. 
+2012 , 134 , 10959 –10965 . 10.1021/ja303286e .22679925 
+Kmiecik S. ; Gront D. ; Kolinski M. ; Wieteska L. ; Dawid A. E. ; Kolinski A. 
+Coarse-Grained Protein Models and Their Applications . Chem. Rev. 
+2016 , 116 , 7898 –7936 . 10.1021/acs.chemrev.6b00163 .27333362 
+Kuo A.-T. ; Takeuchi K. ; Tanaka A. ; Urata S. ; Okazaki S. ; Shinoda W. 
+Exploring the effect
+of pendent side chain length on
+the structural and mechanical properties of hydrated perfluorosulfonic
+acid polymer membranes by molecular dynamics simulation . Polymer 
+2018 , 146 , 53 –62 . 10.1016/j.polymer.2018.05.033 .
+Srinivas G. ; Cheng X. ; Smith J. C. 
+A Solvent-Free
+Coarse Grain Model
+for Crystalline and Amorphous Cellulose Fibrils . J. Chem. Theory Comput. 
+2011 , 7 , 2539 –2548 . 10.1021/ct200181t .26606627 
+Schurtenberger P. ; Jerke G. ; Cavaco C. ; Pedersen J. S. 
+Cross-Section Structure
+of Cylindrical and Polymer-like Micelles from Small-Angle Scattering
+Data. 2. Experimental Results . Langmuir 
+1996 , 12 , 2433 –2440 . 10.1021/la9507444 .
+Schurtenberger P. ; Cavaco C. 
+Polymer-like lecithin reverse micelles. 1. A light
+scattering study . Langmuir 
+1994 , 10 , 100 –108 . 10.1021/la00013a015 .
+Willard D. M. ; Riter R. E. ; Levinger N. E. 
+Dynamics of Polar Solvation in Lecithin/Water/Cyclohexane
+Reverse Micelles . J. Am. Chem. Soc. 
+1998 , 120 , 4151 –4160 . 10.1021/ja980086k .
+Bakulin A. A. ; Cringus D. ; Pieniazek P. A. ; Skinner J. L. ; Jansen T. L. C. ; Pshenichnikov M. S. 
+Dynamics of Water Confined in Reversed
+Micelles: Multidimensional Vibrational Spectroscopy Study . J. Phys. Chem. B 
+2013 , 117 , 15545 –15558 . 10.1021/jp405853j .23980543 
+Han W. ; Wan C.-K. ; Jiang F. ; Wu Y.-D. 
+PACE Force Field
+for Protein Simulations. 1. Full Parameterization of Version 1 and
+Verification . J. Chem. Theory Comput. 
+2010 , 6 , 3373 –3389 . 10.1021/ct1003127 .26617092 
+Han W. ; Wan C.-K. ; Wu Y.-D. 
+PACE Force Field for Protein Simulations.
+2. Folding Simulations of Peptides . J. Chem.
+Theory Comput. 
+2010 , 6 , 3390 –3402 . 10.1021/ct100313a .26617093 
+Wan C.-K. ; Han W. ; Wu Y.-D. 
+Parameterization
+of PACE Force Field for Membrane Environment
+and Simulation of Helical Peptides and Helix–Helix Association . J. Chem. Theory Comput. 
+2012 , 8 , 300 –313 . 10.1021/ct2004275 .26592891 
+Han W. ; Schulten K. 
+Further Optimization
+of a Hybrid United-Atom and Coarse-Grained
+Force Field for Folding Simulations: Improved Backbone Hydration and
+Interactions between Charged Side Chains . J.
+Chem. Theory Comput. 
+2012 , 8 , 4413 –4424 . 10.1021/ct300696c .23204949 
+Rzepiela A. J. ; Louhivuori M. ; Peter C. ; Marrink S. J. 
+Hybrid simulations:
+combining atomistic and coarse-grained force fields using virtual
+sites . Phys. Chem. Chem. Phys. 
+2011 , 13 , 10437 –10448 . 10.1039/c0cp02981e .21494747 
+Wassenaar T. A. ; Ingólfsson H. I. ; Prieß M. ; Marrink S. J. ; Schäfer L. V. 
+Mixing
+MARTINI: Electrostatic Coupling in Hybrid Atomistic–Coarse-Grained
+Biomolecular Simulations . J. Phys. Chem. B 
+2013 , 117 , 3516 –3530 . 10.1021/jp311533p .23406326 
+Marrink S. J. ; Risselada H. J. ; Yefimov S. ; Tieleman D. P. ; de Vries A. H. 
+The MARTINI
+Force Field: Coarse Grained Model for Biomolecular Simulations . J. Phys. Chem. B 
+2007 , 111 , 7812 –7824 . 10.1021/jp071097f .17569554 
+Oostenbrink C. ; Villa A. ; Mark A. E. ; van Gunsteren W. F. 
+A biomolecular
+force field based on the free enthalpy of hydration and solvation:
+The GROMOS force-field parameter sets 53A5 and 53A6 . J. Comput. Chem. 
+2004 , 25 , 1656 –1676 . 10.1002/jcc.20090 .15264259 
+Riniker S. ; van Gunsteren W. F. 
+Mixing
+coarse-grained and fine-grained water in molecular
+dynamics simulations of a single system . J.
+Chem. Phys. 
+2012 , 137 , 04412010.1063/1.4739068 .22852610 
+Riniker S. ; Eichenberger A. P. ; van Gunsteren W. F. 
+Solvating atomic level fine-grained
+proteins in supra-molecular level coarse-grained water for molecular
+dynamics simulations . Eur. Biophys. J. 
+2012 , 41 , 647 –661 . 10.1007/s00249-012-0837-1 .22797564 
+Orsi M. ; Sanderson W. E. ; Essex J. W. 
+Permeability of Small Molecules through
+a Lipid Bilayer: A Multiscale Simulation Study . J. Phys. Chem. B 
+2009 , 113 , 12019 –12029 . 10.1021/jp903248s .19663489 
+Michel J. ; Orsi M. ; Essex J. W. 
+Prediction
+of Partition Coefficients
+by Multiscale Hybrid Atomic-Level/Coarse-Grain Simulations . J. Phys. Chem. B 
+2008 , 112 , 657 –660 . 10.1021/jp076142y .18163606 
+Orsi M. ; Ding W. ; Palaiokostas M. 
+Direct Mixing
+of Atomistic Solutes
+and Coarse-Grained Water . J. Chem. Theory Comput. 
+2014 , 10 , 4684 –4693 . 10.1021/ct500065k .26588159 
+Orsi M. 
+Comparative
+assessment of the ELBA coarse-grained model for water . Mol. Phys. 
+2014 , 112 , 1566 –1576 . 10.1080/00268976.2013.844373 .
+Delle
+Site L. ; Praprotnik M. 
+Molecular systems with open boundaries: Theory and
+simulation . Phys. Rep. 
+2017 , 693 , 1 –56 . 10.1016/j.physrep.2017.05.007 .
+Zavadlav J. ; Marrink S. J. ; Praprotnik M. 
+Multiscale
+Simulation of Protein
+Hydration Using the SWINGER Dynamical Clustering Algorithm . J. Chem. Theory Comput. 
+2018 , 14 , 1754 –1761 . 10.1021/acs.jctc.7b01129 .29439560 
+Shadrack
+Jabes B. ; Klein R. ; Delle Site L. 
+Structural
+Locality and Early Stage of Aggregation of Micelles in Water: An Adaptive
+Resolution Molecular Dynamics Study . Adv. Theory
+Simul. 
+2018 , 1 , 1800025 10.1002/adts.201800025 .
+Brodskaya E. N. ; Mudzhikova G. V. 
+Molecular dynamics simulation of
+AOT reverse micelles . Mol. Phys. 
+2006 , 104 , 3635 –3643 . 10.1080/00268970601012728 .
+Mudzhikova G. V. ; Brodskaya E. N. 
+Molecular
+simulation of an Aerosol OT reverse micelle:
+1. The shape and structure of a micelle . Colloid
+J. 
+2006 , 68 , 729 –737 . 10.1134/S1061933X06060093 .
+Mudzhikova G. V. ; Brodskaya E. N. 
+Molecular
+simulation of an Aerosol OT reverse micelle:
+2. Energy and kinetic characteristics . Colloid
+J. 
+2006 , 68 , 738 –742 . 10.1134/S1061933X0606010X .
+Brown D. ; Clarke J. H. R. 
+Molecular dynamics
+simulation of a model reverse micelle . J. Phys.
+Chem. 
+1988 , 92 , 2881 –2888 . 10.1021/j100321a036 .
+Nevidimov A. V. ; Razumov V. F. 
+The monoatomic solvent
+model in molecular dynamics
+study of reverse micelles . High Energy Chem. 
+2014 , 48 , 202 –205 . 10.1134/S0018143914030084 .
+Nevidimov A. V. ; Razumov V. F. 
+Molecular dynamics
+simulations of AOT reverse micelles
+self-assembly . Mol. Phys. 
+2009 , 107 , 2169 –2180 . 10.1080/00268970903203736 .
+Braun D. ; Schmollngruber M. ; Steinhauser O. 
+Rotational
+dynamics of water molecules
+near biological surfaces with implications for nuclear quadrupole
+relaxation . Phys. Chem. Chem. Phys. 
+2016 , 18 , 24620 –24630 . 10.1039/C6CP04000D .27546227 
+Schmollngruber M. ; Braun D. ; Oser D. ; Steinhauser O. 
+Dielectric
+depolarisation and concerted collective dynamics in AOT reverse micelles
+with and without ubiquitin . Phys. Chem. Chem.
+Phys. 
+2016 , 18 , 3606 –3617 . 10.1039/C5CP07112G .26751837 
+Feller S. E. ; MacKerell A. D. 
+An Improved
+Empirical Potential Energy Function for
+Molecular Simulations of Phospholipids . J. Phys.
+Chem. B 
+2000 , 104 , 7510 –7515 . 10.1021/jp0007843 .
+Shinoda W. ; DeVane R. ; Klein M. L. 
+Multi-property
+fitting and parameterization
+of a coarse grained model for aqueous surfactants . Mol. Simul. 
+2007 , 33 , 27 –36 . 10.1080/08927020601054050 .
+Eichenberger A. P. ; Huang W. ; Riniker S. ; van Gunsteren W. F. 
+Supra-Atomic
+Coarse-Grained GROMOS Force Field for Aliphatic Hydrocarbons in the
+Liquid Phase . J. Chem. Theory Comput. 
+2015 , 11 , 2925 –2937 . 10.1021/acs.jctc.5b00295 .26575730 
+Reith D. ; Meyer H. ; Müller-Plathe F. 
+Mapping Atomistic
+to
+Coarse-Grained Polymer Models Using Automatic Simplex Optimization
+To Fit Structural Properties . Macromolecules 
+2001 , 34 , 2335 –2345 . 10.1021/ma001499k .
+Vierros S. ; Österberg M. ; Sammalkorpi M. 
+Aggregation response of triglyceride
+hydrolysis products in cyclohexane and triolein . Phys. Chem. Chem. Phys. 
+2018 , 20 , 27192 –27204 . 10.1039/C8CP05104F .30345444 
+Li H. ; Chowdhary J. ; Huang L. ; He X. ; MacKerell A. D. Jr.; Roux B. 
+Drude Polarizable Force Field for
+Molecular Dynamics Simulations of Saturated and Unsaturated Zwitterionic
+Lipids . J. Chem. Theory Comput. 
+2017 , 13 , 4535 –4552 . 10.1021/acs.jctc.7b00262 .28731702 
+Essmann U. ; Perera L. ; Berkowitz M. L. ; Darden T. ; Lee H. ; Pedersen L. G. 
+A smooth particle
+mesh Ewald method . J. Chem. Phys. 
+1995 , 103 , 8577 –8593 . 10.1063/1.470117 .
+Hess B. ; Bekker H. ; Berendsen H. J. C. ; Fraaije J. G. E. M. 
+LINCS: A linear
+constraint solver for molecular simulations . J. Comput. Chem. 
+1997 , 18 , 1463 –1472 . 10.1002/(SICI)1096-987X(199709)18:12<1463::AID-JCC4>3.0.CO;2-H .
+Miyamoto S. ; Kollman P. A. 
+Settle: An analytical
+version of the SHAKE and RATTLE
+algorithm for rigid water models . J. Comput.
+Chem. 
+1992 , 13 , 952 –962 . 10.1002/jcc.540130805 .
+Bussi G. ; Donadio D. ; Parrinello M. 
+Canonical
+sampling through velocity
+rescaling . J. Chem. Phys. 
+2007 , 126 , 01410110.1063/1.2408420 .17212484 
+Parrinello M. ; Rahman A. 
+Polymorphic transitions in single crystals: A new molecular
+dynamics method . J. Appl. Phys. 
+1981 , 52 , 7182 –7190 . 10.1063/1.328693 .
+Hub J. S. ; de Groot B. L. ; van der Spoel D. 
+g_wham—A Free Weighted Histogram
+Analysis Implementation Including Robust Error and Autocorrelation
+Estimates . J. Chem. Theory Comput. 
+2010 , 6 , 3713 –3720 . 10.1021/ct100494z .
+Kumar S. ; Rosenberg J. M. ; Bouzida D. ; Swendsen R. H. ; Kollman P. A. 
+THE weighted
+histogram analysis method for free-energy calculations on biomolecules.
+I. The method . J. Comput. Chem. 
+1992 , 13 , 1011 –1021 . 10.1002/jcc.540130812 .
+Trzesniak D. ; Kunz A.-P. ; van Gunsteren W. F. 
+A Comparison
+of Methods to Compute
+the Potential of Mean Force . ChemPhysChem 
+2006 , 8 , 162 –169 . 10.1002/cphc.200600527 .
+Aucejo A. ; Burguet M. C. ; Munoz R. ; Marques J. L. 
+Densities,
+Viscosities,
+and Refractive Indices of Some n-Alkane Binary Liquid Systems at 298.15
+K . J. Chem. Eng. Data 
+1995 , 40 , 141 –147 . 10.1021/je00017a032 .
+Ortega J. ; González C. ; Galván S. 
+Vapor-Liquid Equilibria for Binary
+Systems Composed of a Propyl Ester (Ethanoate, Propanoate, Butanoate)
++ an n-Alkane (C7, C9) . J. Chem. Eng. Data 
+2001 , 46 , 904 –912 . 10.1021/je000358a .
+Bonhorst C. W. ; Althouse P. M. ; Triebold H. O. 
+Esters of Naturally Occurring Fatty
+Acids - Physical Properties of Methyl, Propyl, and Isopropyl Esters
+of C6 to C18 Saturated Fatty Acids . Ind. Eng.
+Chem. 
+1948 , 40 , 2379 –2384 . 10.1021/ie50468a031 .
+Morawetz E. 
+Enthalpies
+of vaporization of n-alkanes from C12 to C20 . J. Chem. Thermodyn. 
+1972 , 4 , 139 –144 . 10.1016/S0021-9614(72)80018-1 .
+Hossenlopp I. ; Scott D. 
+Vapor heat capacities
+and enthalpies of vaporization of five alkane
+hydrocarbons . J. Chem. Thermodyn. 
+1981 , 13 , 415 –421 . 10.1016/0021-9614(81)90047-1 .
+Baev A. K.  Specific Intermolecular
+Interactions of Organic Compounds ; Springer
+Berlin Heidelberg , 2012 ; p 294 .
+Lide D. R.  ,
+Ed.; Physical
+Constants of Organic Compounds . In CRC Handbook
+of Chemistry and Physics ; 85 th Ed.; CRC Press : Boca Raton, Florida, US , 2004 .
+Shrestha L.
+K. ; Shrestha R. G. ; Oyama K. ; Matsuzawa M. ; Aramaki K. 
+Structural Investigation
+of Diglycerol Polyisostearate
+Reverse Micelles in Organic Solvents . J. Phys.
+Chem. B 
+2009 , 113 , 12669 –12679 . 10.1021/jp903382y .19722515 
+Vierros S. ; Sammalkorpi M. 
+Phosphatidylcholine
+reverse micelles on the wrong track
+in molecular dynamics simulations of phospholipids in an organic solvent . J. Chem. Phys. 
+2015 , 142 , 09490210.1063/1.4914022 .25747101 
+Vierros S. ; Sammalkorpi M. 
+Role of hydration
+in phosphatidylcholine reverse micelle
+structure and gelation in cyclohexane: a molecular dynamics study . Phys. Chem. Chem. Phys. 
+2015 , 17 , 14951 –14960 . 10.1039/C5CP01799H .25982225 
+Patra M. ; Karttunen M. ; Hyvönen M. T. ; Falck E. ; Lindqvist P. ; Vattulainen I. 
+Molecular Dynamics Simulations of Lipid Bilayers: Major
+Artifacts Due to Truncating Electrostatic Interactions . Biophys. J. 
+2003 , 84 , 3636 –3645 . 10.1016/S0006-3495(03)75094-2 .12770872 
+Feller S. E. ; Pastor R. W. ; Rojnuckarin A. ; Bogusz S. ; Brooks B. R. 
+Effect
+of Electrostatic Force Truncation on Interfacial and Transport Properties
+of Water . J. Phys. Chem. 
+1996 , 100 , 17011 –17020 . 10.1021/jp9614658 .
+Alper H. E. ; Bassolino D. ; Stouch T. R. 
+Computer simulation of a phospholipid
+monolayer-water system: The influence of long range forces on water
+structure and dynamics . J. Chem. Phys. 
+1993 , 98 , 9798 –9807 . 10.1063/1.464358 .
+Schreiber H. ; Steinhauser O. 
+Cutoff size does strongly influence molecular dynamics
+results on solvated polypeptides . Biochemistry 
+1992 , 31 , 5856 –5860 . 10.1021/bi00140a022 .1610828 
+de
+Jong D. H. ; Baoukina S. ; Ingólfsson H. I. ; Marrink S. J. 
+Martini straight: Boosting performance using a shorter
+cutoff and GPUs . Comput. Phys. Commun. 
+2016 , 199 , 1 –7 . 10.1016/j.cpc.2015.09.014 .
+Shrestha L. K. ; Dulle M. ; Glatter O. ; Aramaki K. 
+Structure of Polyglycerol
+Oleic Acid Ester Nonionic Surfactant Reverse Micelles in Decane: Growth
+Control by Headgroup Size . Langmuir 
+2010 , 26 , 7015 –7024 . 10.1021/la904231t .20180589 
+Debye P. ; Prins W. 
+Micellar dispersion of α-monoglycerides in benzene and chlorobenzene . J. Colloid Sci. 
+1958 , 13 , 86 –98 .
+Debye P. ; Coll H. 
+The association of α-monoglycerides in nonaqueous solvents . J. Colloid Sci. 
+1962 , 17 , 220 –230 .
+Penttilä P. ; Vierros S. ; Utriainen K. ; Carl N. ; Rautkari L. ; Sammalkorpi M. ; Österberg M. 
+Phospholipid-based reverse micelle
+structures in vegetable oil modified by water content, free fatty
+acid and temperature . Langmuir 
+2019 , 35 , 8373 –8382 .31141381 
+Lehtinen O.-P. ; Nugroho R. W. N. ; Lehtimaa T. ; Vierros S. ; Hiekkataipale P. ; Ruokolainen J. ; Sammalkorpi M. ; Österberg M. 
+Effect of
+temperature, water content and free fatty acid on reverse micelle
+formation of phospholipids in vegetable oil . Colloids Surf., B 
+2017 , 160 , 355 –363 .
+Shrestha R. G. ; Shrestha L. K. ; Ariga K. ; Abe M. 
+Reverse Micelle Microstructural
+Transformations Induced by Surfactant Molecular Structure, Concentration,
+and Temperature . J. Nanosci. Nanotechnol. 
+2011 , 11 , 7665 –7675 .22097471
+

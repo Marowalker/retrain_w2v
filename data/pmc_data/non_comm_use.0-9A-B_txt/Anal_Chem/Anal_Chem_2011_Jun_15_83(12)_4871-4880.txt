@@ -1,0 +1,246 @@
+
+==== Front
+Anal ChemacanchamAnalytical Chemistry0003-27001520-6882American Chemical Society 10.1021/ac200536bArticleDeconvolution of Two-Dimensional NMR Spectra by Fast Maximum Likelihood Reconstruction: Application to Quantitative Metabolomics Chylla Roger A. *†Hu Kaifeng †Ellinger James J. ‡Markley John L. †‡†National Magnetic Resonance Facility at Madison and ‡Department of Biochemistry, University of Wisconsin-Madison, 433 Babcock Drive, Madison, Wisconsin 53706, United States* To whom correspondence should be addressed. Tel:(608) 262-0459. E-mail: rchylla@wisc.edu.28 04 2011 15 06 2011 83 12 4871 4880 03 03 2011 28 04 2011 26 05 2011 15 06 2011 28 04 2011 Copyright © 2011 American Chemical Society2011American Chemical SocietyThis is an open-access article distributed under the ACS AuthorChoice Terms & Conditions.  Any use of this article, must conform to the terms of that license which are available at http://pubs.acs.org.
+
+We have developed an algorithm called fast maximum likelihood reconstruction (FMLR) that performs spectral deconvolution of 1D–2D NMR spectra for the purpose of accurate signal quantification. FMLR constructs the simplest time-domain model (e.g., the model with the fewest number of signals and parameters) whose frequency spectrum matches the visible regions of the spectrum obtained from identical Fourier processing of the acquired data. We describe the application of FMLR to quantitative metabolomics and demonstrate the accuracy of the method by analysis of complex, synthetic mixtures of metabolites and liver extracts. The algorithm demonstrates greater accuracy (0.5–5.0% error) than peak height analysis and peak integral analysis with greatly reduced operator intervention. FMLR has been implemented in a Java-based framework that is available for download on multiple platforms and is interoperable with popular NMR display and processing software. Two-dimensional 1H–13C spectra of mixtures can be acquired with acquisition times of 15 min and analyzed by FMLR in the range of 2–5 min per spectrum to identify and quantify constituents present at concentrations of 0.2 mM or greater.
+
+National Institutes of Health, United Statesdocument-id-old-9ac200536bdocument-id-new-14ac-2011-00536bccc-price
+==== Body
+For decades, one-dimensional 1H NMR spectroscopy has been a powerful technique for quantitative analysis of simple mixtures of small molecules. Part of its suitability as an analytical tool derives from the linear relationship between the area of a well dispersed peak in the absorption spectrum and the concentration of the associated species. A validation study of 1D 1H quantitative NMR has established a maximum measurement uncertainty of 1.5% with respect to the determination of molar concentration when a precise protocol is present to control relevant aspects of measurement procedure, data collection, and signal processing.(1)
+
+Substantial interest exists in extending analytical NMR methods to the challenging task of performing reliable identification and quantification of metabolites in biological fluids (e.g., blood and urine) and cell extracts (see references for reviews).2,3 Quantitative analysis of most biologically relevant samples by 1D 1H NMR, however, is severely complicated by the high degree of spectral overlap. A common experimental strategy for reducing such overlap has been to employ proton–carbon correlated two-dimensional experiments (2D 1H–13C HSQC) to achieve greater spectral dispersion by exploiting the wide chemical shift range of carbon. Use of 2D heteronuclear and homonuclear NMR in metabolomics has risen considerably over the past decade.4−7 When using 2D NMR experiments for quantification, one must account for the fact that the cross-peak intensity of each peak is dependent upon a range of factors not correlated with species concentration such as resonance-specific signal attenuation during the coherence transfer periods. Lewis et al.(8) reported a “fast metabolite quantification” (FMQ) protocol to address this complication that uses rapidly acquired (12 min) 2D 1H–13C HSQC experiments to estimate the molar concentration of metabolites in complex solutions from standards at known concentrations.
+
+A very recent approach by Hu et al.(9) directly measures 2D 1H–13C HSQC signal intensities that are linearly proportional to sample concentration by analysis of a series of such experiments acquired consecutively with incremented repetition times. The attenuation factor associated with each cross-peak can be measured from a log–linear regression of the integrated cross-peak intensities and used to calculate the unattenuated intensity at time zero. Both the FMQ(8) and extrapolated time-zero(9) approaches share the common approach of deriving sample concentration from regression analysis of related 2D NMR spectra.
+
+Regardless of whether one is using 1D and/or 2D experiments for quantification, methods of data processing and analysis in both play a vital role in implementing a reproducible and high-throughput strategy for quantitative analysis. Lack of controls in NMR data processing has been shown to be a key factor in the disparity of measured results between different operators analyzing identical samples.(1) A review of quantitative metabolomics concludes that “user skills to perform spectral deconvolution are a serious bottleneck in the field”.(2)
+
+For performing high throughput, reproducible analysis of both 1D and 2D NMR spectra, a parametric model fitting approach to spectral deconvolution10−14 would seem promising, as it can account for spectral overlap when estimating intensities and can also make effective use of a priori information, e.g., the assumption of approximately uniform chemical shifts and line widths for corresponding signals within related spectra acquired on the same sample. With respect to quantitative metabolomics, a parametric approach, such as spectral deconvolution, is particularly suited to model the essential characteristics of compounds contained in publicly available databases of metabolite standards.15,16
+
+First applications of maximum likelihood in multiple dimensions focused on pure time-domain modeling of an FID for purposes of accurate NOESY cross-peak modeling.(11) Our earlier work in a protein biomolecular context(13) demonstrated the practicality of using hybrid time-domain, frequency-domain maximum likelihood (HTFD-ML) fitting methods in a series of 2D 1H–15N HSQC relaxation experiments. Recently, a hybrid approach has also been applied in 1D to spectral fitting of high resolution 1H NMR spectra in rat brain extracts given a prior basis set of 29 compounds.(14) The focus of our work here is to enable reproducible, larger scale quantitative analysis of complex samples by NMR through implementation and evaluation of an algorithm for performing spectral deconvolution of related n-dimensional NMR spectra, more specifically, natural abundance 2D 1H–13C spectra. The algorithm described here to perform spectral deconvolution is named “fast maximum likelihood reconstruction” (FMLR) not to be confused with the same name used in a different spectroscopic context.(17) As explained in more detail in the Supporting Information, the algorithm represents an evolution of the hybrid time-frequency domain maximum likelihood (HTFD-ML) algorithm previously reported.12,13
+
+FMLR has been implemented in a Java-based program dubbed “Newton” with the following design objectives:
+
+i  Robust treatment of spectral overlap: The program deals appropriately with spectra under all three conditions of well-dispersed, partially dispersed, or overlapped peaks.
+
+ii  Accurate modeling of line shapes: A number of common experimental conditions (e.g., suboptimal shimming) and processing artifacts (e.g., phase problems) can introduce peak shapes in the frequency domain that are non-Lorentzian.(14) A robust model fitting technique relevant to quantitative metabolomics must accurately model these non-Lorentzian profiles.
+
+iii Robust signal recognition: As is frequently the case in many NMR studies such as metabolomics, pH titrations, and kinetic experiments, the frequency positions of corresponding signals in related data sets may “drift”. The program recognizes corresponding peaks (including hyperfine patterns) in spectra with these characteristics for the purposes of both species identification and accurate quantification.
+
+iv High throughput capability: The program supports batch analysis on large numbers of related data sets.
+
+v  Interoperability: The program supports multiple output file formats that are standards-based and interoperable between popular NMR analysis programs and spreadsheet applications.
+
+vi Ease of deployment: The executable requires minimal effort to install and run on multiple different operating systems.
+
+We demonstrate here the application of the FMLR algorithm implemented by Newton to the concerted analysis of related natural abundance 2D 1H–13C experiments collected for the purposes of metabolite quantification. Despite this focus, the FMLR algorithm and the Newton application are broadly applicable to many experiments used in metabolomics, such as high-resolution 1D 1H and 2D homonuclear 1H-TOCSY. FMLR can be used to analyze any NMR experiment in which the frequency domain response can be adequately modeled by Fourier processing of an analytical time-domain model.
+
+We compare the results of amplitude analysis by spectral deconvolution to both peak height and peak volume analysis and discuss situations where one may be preferable to the other. We also discuss how the FMLR approach fits into the context of a broader goal of metabolite quantification and identification in complex biological mixtures.
+
+Methods
+NMR Spectroscopy
+All NMR experiments were collected on Varian VNMRS 600 MHz and Bruker Avance 700 MHz spectrometers at the National Magnetic Resonance Facility at Madison (www.nmrfam.wisc.edu) (see Supporting Information Table 1 for details).
+
+Preparation of Synthetic Metabolite Mixtures
+Mixtures of synthetic compounds, including relevant metabolites, were prepared as described in the Supporting Information.
+
+NMR Data Processing
+The NMRPipe processing package(18) was used to perform the initial steps of NMR data processing consisting of (i) data conversion, (ii) apozidation, (iii) zero-filling, (iv) Fourier transformation, (v) phase correction, and (optionally) (vi) polynomial baseline correction. The apozidation and zero-filling parameters in steps ii–iv partially define a vector operator F͡ that can be applied identically to both the acquired FID and a model FID. In the FMLR algorithm, the F͡ operator converts discrete basis functions in the time domain to discrete basis functions in the frequency domain. The Newton software determines the F͡ operator along each dimension (F͡1 and F͡2) by parsing the input NMRPipe processing scripts (see FMLR section).
+
+Matrix Formation and Data Formats
+To facilitate concerted analysis of multiple data sets, all of the 2D spectra were appended together to form a pseudo 3D matrix where one of the matrix dimensions is a pseudodimension that encodes the index of the data set. The script that performs this operation, along with all other processing scripts, is available for download (see Supporting Information Table 2).
+
+Data and Software Availability
+All time-domain data, processed spectra, processing, and analysis scripts referenced in this work are freely downloadable from the sites identified in Supporting Information Table 2. To run the program, the only external software required is an installed version of the Java Runtime Environment (JRE) v1.6+ on the host machine.
+
+General Fast Maximum Likelihood Reconstruction (FMLR)
+The detailed theory and equations for applying the maximum likelihood method to analysis of NMR data has been reported previously.(12) This section provides an overview of fast maximum likelihood reconstruction, an adaption of this earlier work implemented in a modern Java-based framework, and addresses practical issues pertinent to quantitative metabolomics. Although the examples presented here involve two-dimensional spectra, the algorithm has been implemented such that experiments of any dimensionality can be modeled.
+
+Fast maximum likelihood reconstruction (FMLR) is an iterative, spectral deconvolution approach as illustrated in Figure 1. The method involves construction of a “Data Ensemble” consisting of three distinct spectra:
+
+Figure 1 Overview of fast maximum likelihood reconstruction (FMLR). FMLR is an iterative spectral deconvolution approach. Steps A–H form the main outer loop of the algorithm. Steps D–F form the inner loop (see Supporting Information for details).
+
+i  Data spectrum: The data spectrum is calculated from conventional Fourier processing of the acquired FID. The processing operations define a digital transform operator along each dimension, F͡1 and F͡2, respectively. This spectrum is calculated from sequential application of F͡1 and F͡2 prior to FMLR analysis.
+
+ii  Model spectrum: The model spectrum is obtained from a sum of “cropped” signals constructed from applying the F͡1 and F͡2 operators to a synthetic time-domain model (see Table 1) along each dimension. The resulting frequency-domain signal is truncated when its profile (moving away from the peak center) drops below a noise threshold.Table 1 Basis Functions and Parameters Used in FMLR
+Basis Functionsa	
+name	type	expression	derivative	usage	
+sinusoid	complex	eiωt	iteiωt	always	
+damping function	real	e–αtη	–tηe–αtη	used except along indirect dimensions of constant time experiments	
+phasor	complex	eiθ	ieiθ	not generally used unless spectra have persistent phase artifacts	
+Parameters	
+parameter	symbol	variable	basis function	initial value	constrained	
+frequency	ω	yes	sinusoid	from peak position	no	
+decay rate	α	yes	damping function	from project configuration or similar signal	yes	
+decay power	η	no	damping function	assigned based on profiling of data sets. fixed per analysis on single data set.	no (fixed)	
+phase angle	θ	yes	phasor	zero	yes	
+a The corresponding frequency domain functions are the time domain functions subjected to Fourier processing identical to the processed data. Multidimensional basis functions are derived from the product of the orthogonal component basis functions along each dimension. For gradient-based (nonlinear) optimization of the parameters, the derivative basis functions are used. The exponent η appearing in the decay rate term is a value that modulates the signal between a Lorentzian (η = 1) and Gaussian (η = 2) decay profile. This value is adjusted to fit a similar class of peak shapes and is left constant throughout the optimization of any given data set.
+
+
+
+iii Residual spectrum: The residual spectrum is the simple difference between the data and model spectrum. The residual contains evidence for signals that have yet to be modeled. The FMLR algorithm uses the residual for two purposes: (1) to estimate the noise variance and (2) to locate new signals to add to the current model by peak picking at a given threshold.
+
+For the case of multiple, related n-dimensional data sets, the data ensemble consists of a set of three pseudo (n+1)-dimensional data, model, and residual spectra. The extra dimension is an index that encodes a data set within the data ensemble.
+
+The overall algorithm consists of sequential steps Steps A–G (see Figure 1) that form the main, “outer-loop” of the algorithm. The algorithm iteratively builds the model by addition of signals from analysis of the residual. Steps D–F form an “inner loop”, which represents optimization of the parameters for a fixed set of signals derived from signals identified in Steps B and C. Details of these steps are provided in Supporting Information.
+
+Results
+Analysis of a Time-Zero 1H–13C HSQC Series on a Simple Synthetic Metabolite Mixture
+The primary motivation for development and application of the Newton FMLR algorithm to spectral analysis is to obtain reproducible and accurate quantitative information upon a set of related NMR experiments. As an initial test case to demonstrate this capability, we chose a time-zero 1H–13C HSQC series of a simple synthetic mixture of metabolites at known high concentrations. Although it is not representative of biologically relevant conditions (too few compounds and concentrations greater than biological concentrations), this test case yields a number of correlations that provide strong metrics for evaluating the precision and accuracy of the results obtained from FMLR.
+
+A synthetic metabolite mixture was prepared with concentrations as given in Supporting Information Table 3. Glucose and alanine were selected because they represent extremes with respect to their T1 relaxation times. Glucose also exists as an equilibrium between two anomers, whose relative concentrations can potentially be measured from accurate quantification of the spectra.
+
+A set of three 1H–13C HSQC experiments were consecutively acquired with incremented repetition times using the extrapolated time-zero HSQC protocol.(9) The experiment is expected to produce a set of identical cross-peaks in each of the three spectra that differ only in their amplitudes. The signal amplitudes (volumes) are expected to decrease geometrically with each repetition time according to a cross-peak attenuation factor.
+
+The spectra were processed and analyzed using the following sequence of steps.
+
+1 Data conversion and processing: Data conversion, apozidation, Fourier transformation, and baseline correction (if necessary) of the data set using NMRPipe software.
+
+2 Pseudo-3D matrix creation: Appending the three data sets to create a pseudo 3D matrix converted to UCSF format.
+
+3 Project creation: Importing the data set into Newton using a template project and data model for a series of related 2D H-(NC) heteronuclear correlation experiments.
+
+4 Project configuration: Specification of contour thresholds that determine the termination condition of the algorithm, i.e. the peak picking threshold below which it will “stop” looking for new signals in the residual.
+
+5 Analysis: Spectral deconvolution using Newton:
+
+a Deconvolution is performed using t1 as a reference data set.
+
+b The model is propagated to t2 and t3 with shared frequency and decay rate parameters. The optimization of the shared parameters for all three data sets is performed globally.
+
+The spectrum resulting from the first repetition time (t1) is displayed in Figure 2. The set of 28 expected 1H–13C correlations are shown as regions of interest (boxes) in the figure. These regions of interest were constructed from assignment of a cluster of reconstructed signals around “seed” peaks from an input assignment table.
+
+Figure 2 1H–13C HSQC spectrum of synthetic metabolite mixture I. The contours are bounded by regions of interest (ROIs) corresponding to the 28 expected 1H–13C correlations in the mixture. The spectrum shown is the one acquired after the first time increment t = 1 of the time-zero HSQC protocol. Two more subsequent spectra were acquired at t = 2, 3. To obtain better spectral resolution in the carbon dimension, the two low-frequency peaks of α,β-C1 glucose were folded and appear in the spectrum at high frequency (R17 and R24). The regions of interest (ROI) were exported from Newton based on the results from FMLR and an input peak assignment table. The ROIs were imported into the rNMR metabolomics software program,(20) which was used to create the figure.
+
+Figure 3A,B displays contour and surface plots of the model and residual for selected regions of the spectra. For the case of the methylene signals of 3-hydroxybutyrate (HB), the doublet is fully resolved, but the hyperfine splitting of each doublet peak is only partially visible. To accurately model the shape of each doublet, however, Newton constructed a model containing these hyperfine splittings.
+
+Figure 3 Spectral deconvolution of extrapolated time-zero HSQC 1H–13C series. The figures display contour and surface plots (Gnuplot) of the results of spectral deconvolution of (A) the methylene regions of 3–hydroxybutryate (BH) and (B) a region containing resonances from BH, MES, and glucose. The doublet is fully resolved, but hyperfine splitting within the doublet is not. The Newton model reconstructions are displayed both as contour plots and as surface plots so that the magnitudes of the residuals can be compared. In Frame A, the three sets of spectra show the concerted analysis of the three extrapolated time-zero HSQC series. All three plots in the frame display the identical spectral region (units on axes omitted to allow greater digital resolution for plots). A log–linear regression of the amplitudes (see Supporting Information Figure 1) is used to extrapolate the cross-peak intensity. The frequency and decay rate parameters reflect the global minimization of the maximum likelihood of all three data sets.
+
+The small size of the residual peaks relative to the original signals is evident in the surface plots (linear scale). A histogram of that distribution is shown in Figure 4. The error analysis shows the desired behavior of an overall distribution that is symmetric about zero and has a small standard deviation (1.9%) relative to the average signal height.
+
+Figure 4 Histogram of residual peak heights for synthetic mixture I. Shown are the ratios of the residual peak height relative to the average peak height for the 84 = (28 × 3) regions of interest in the time-zero 1H–13C HSQC series of synthetic mixture I. The average residual height of the series was −0.3% (expected value of 0.0%). The average deviation was 1.9%.
+
+The deconvolution was performed with limited prior information. The prior information used for spectral fitting consisted mainly of constraints on the line widths of the signals along the acquisition dimension (see Supporting Information for explanation of parameter constraints). An additional configuration parameter related to line shapes is the “power” of the decay rate function. A value of 1 corresponds to a Lorentzian decay, and a value of 2 corresponds to a Gaussian decay. We have found that the application of decay powers between 1 and 2 is required for accurate line shape prediction to account for shimming and other experimental artifacts. A decay power of 1.2 was used to fit this data set. In general, relative amplitudes of peaks within the same data set are not sensitive to the decay power used for the experiment.
+
+Peak assignment tables were used to group signals obtained from the analysis into “regions of interest” (ROIs). The quantitative amplitudes reported in this section represent the sum of signal amplitudes (peak volumes) within those regions of interest. The nature of the experiment provides a number of specific quantitative predictions which are summarized in the ensuing sections.
+
+Logarithmic Decrease of Amplitudes in Time-Zero HSQC Series
+The time-zero HSQC experiment is designed to produce identical sets of spectra differing only in the ROI amplitudes that decrease logarithmically by a cross-peak attenuation factor. The log of the amplitude should thus produce a linear relationship against the index of the repetition time. This expected correlation is indeed observed with a very strong correlation (see Supporting Information Figures 1A,B). These plots represent regression curves for the regions of interest displayed in Figures 3A,B.
+
+Predicted Molar Ratios and Relative Molar Concentrations of Metabolites
+The extrapolated time-zero HSQC protocol is designed to produce unattenuated amplitudes that are linearly proportional to the concentration of the underlying species. This relationship allows one to predict both the molar ratio of peaks from the same metabolite and the relative molar concentrations of each metabolite (convertible to concentration ratios and ultimately to absolute concentrations with an internal standard).
+
+The molar ratio of peaks was calculated from the “ROI volume” normalized to the number of atoms assigned to the ROI. The “ROI volume” is the sum of the unattenuated amplitudes obtained from analysis of all signals belonging to that ROI. The variances in these normalized volumes are displayed per metabolite in Figure 5A. The variances are generally in the range of 3–5%. Larger variances are seen (data not shown) if the spectra are analyzed independently versus the use of the t1 data set as a reference spectrum. The figure shows the variances obtained both from spectral deconvolution and integration of peaks where the footprint was specified manually for each peak. With peak integral bounds chosen manually, the variances seen in concentration estimates for peaks of the same metabolite (2.8%) were roughly equivalent to the same variances measured for spectral deconvolution (2.3%). The trend of similar variances between spectral deconvolution and peak integration held for a range of experimental conditions (data not shown), such as changes in the gradients or nongradient selected versions of the experiment.
+
+Figure 5 Variance and accuracy of amplitude and peak integral estimates for the extrapolated time-zero HSQC series. The figures display (A) the percent variance per metabolite for the relative molar concentration and (B) the percent accuracy of the molar concentration estimates vs known concentrations. The results are shown both for deconvolution (light bars) and manual peak integration (dark bars). Relative molar concentrations were obtained by normalizing the “ROI volume” by the number of assigned atoms. The “ROI volume” is the sum of the unattenuated amplitudes (obtained from deconvolution) for all signals assigned to that ROI. The variances in these predictions among signals of the same molecule are displayed in the bar charts (A). The variances averaged across the metabolites were 2.3% and 2.8%, respectively, for deconvolution and peak integration. The mean predicted molar concentration of each species was calculated from the average of all cross-peaks of the same molecule. The percent difference in these predictions vs the known molar concentrations (determined by using MES as the internal standard) are displayed in the bar charts (B). The mean accuracy across the metabolites in the figure was 1.6% versus 4.6%, respectively, for deconvolution and peak integration.
+
+Each of the separate ROIs provides an independent measure of the relative concentration of the compound associated with that ROI. The sum of these predictions should yield an overall relative concentration that is more accurate (provided that the ROI is at least partially resolved) than the estimate measured from any individual ROI. That result is shown in the light bars of Figure 5B, which report percent error estimates for each of the metabolites as measured by spectral deconvolution. A further independent confirmation of the accuracy of the glucose quantification is that the ratio of α species to all glucose species was measured to be 37%, which agrees closely with the known fraction (36.4%) of α-glucose at equilibrium in aqueous solutions.(19) A caveat to the concentration estimates for glucose is that its anomeric nature and signal overlap in peaks from C3, C5, and C6 make quantification from these signals less accurate than that from C1, C2, and C4. We used the latter group of peaks exclusively in calculating glucose concentration.
+
+Comparison of FMLR to Peak-Based Methods of Quantification
+The application of FMLR to metabolomics seeks to avoid excessive operator input and achieve greater throughput and consistency of results. Another goal is to obtain greater quantitative accuracy. To test this claim, the results of the FMLR analysis were compared to the similar results obtained from peak height and peak integral analysis.
+
+Peak height analysis yielded the same strong correlation for the logarithmic attenuation of amplitudes in the HSQC series as did FMLR. Both analyses produced correlation coefficients ≥0.999. The peak height analysis failed in this context, however, to provide any kind of concentration measure either relative or absolute. Alanine was grossly underestimated (−40%) and glucose was overestimated (+13%). These results are easily explained by considerations of line width. Peak intensity measurements in the HSQC series fail to take line width differences into account and, hence, yield much less accurate correlation with concentrations.
+
+As expected, peak integral analysis, either by manual integration or FMLR deconvolution (Figure 5A and 5B), performed better than peak height analysis. The two approaches yielded similar variances in concentrations based on individual peaks; however, spectral deconvolution yielded a lower percent error in accuracy averaged over all compounds (1.6%) than manual peak integration (4.6%). Repetitions of the experiment showed this as a general trend, with manual integration yielding 2–3 times higher errors than FMLR deconvolution for metabolite concentrations determined from the average of all peaks from the compound. This result can be explained in part by the methodology of peak integration, which involves operator decisions as to where the limits of the footprints should be established when comparing relative peak volumes. Although FMLR also limits the boundary of amplitude estimation to the footprint of the region of interest (see details in the legend to Supporting Information Figure 2), it differs from peak integration in the following respects:
+
+• The calculated amplitude from deconvolution reflects an extrapolation of the basis function to infinity (rather than just the sum of points in a defined region). In the limit of zero noise, there is thus no resultant loss of estimated signal amplitude (amplitude underestimation) as exists with attenuated peak integral calculations.
+
+• Overlapping boundaries are handled more robustly with deconvolution because the intensities in the overlapped region are “not counted twice” (amplitude overestimation) as is the case with peak integration. In any deconvolution approach like FMLR, the overlapped regions are modeled as the sum of separate signal components estimated from the solution to a set of linear equations.
+
+FMQ Analysis of a Biologically Representative Synthetic Mixture
+To apply the method to data sets more representative of conditions encountered in biological fluids, but still with definitive quantitative predictions to test, we applied the FMLR method to the analysis of data from our earlier study using fast metabolite quantification (FMQ).(8) These data consisted of rapidly collected (∼12 min) 2D 1H–13C spectra of a set of 27 synthetic mixtures containing a basis set of 25 metabolites and 1 buffer (HEPES). Three of the mixtures served as “reference mixtures”; they contained equimolar mixtures of all of the metabolites at 10 mM, 5 mM, and 2 mM. The other 24 data sets, referred to as “test mixtures”, contained a fixed concentration of 19 metabolites at 5 mM and varying concentrations of 7 other metabolites ranging from 5.5 mM to 29.1 mM. Although each test mixture had a unique metabolite profile, the samples were designed to group into six classes with biologically relevant concentrations and standard deviations (see Supporting Information Table 2 in ref (6)). All concentrations were determined gravimetrically from pure standards.
+
+A spectrum of the 10 mM reference mixture is displayed in Supporting Information Figure 2A. Data from the 24 test mixtures and 3 reference mixtures were processed conventionally and assembled into a pseudo 3D spectrum of dimensions 2048 × 512 × 27 for global spectral analysis by FMLR. The overall spectral reconstruction detected over 16 000 signals consisting of 662 species (a species is a resonance detected in one or more data sets). The average deviation of the residual peak height across all signals was about 4% of the average peak height of the spectra. The time required to perform the deconvolution on an off-the-shelf AMD Athlon Dual Core Processor (1 GHz) was 40 min. (A single HSQC spectrum of size 1025 × 512 consisting of 100–200 peaks required less than 30 s.)
+
+From a manual assignment table consisting of peak centers of ROIs for the 25 metabolites, the algorithm identified the set of 145 ROIs (a fraction of them are shown overlaid on the reference spectra in Supporting Information Figure 2B). The experiment poses a number of realistic challenges for signal recognition. The pattern of resonances for a given region of interest tends to “drift” from one data set to another. The analysis of this series was configured to allow as much as 0.1 ppm drift in 1H and 1.0 ppm drift in 13C in attempting to identify species (peaks of the same resonance in different data sets). For this analysis, the peak recognition was carried out without prior information (i.e., without knowledge of the shift pattern of a particular metabolite). The peak recognition algorithm made use of a grid correlation metric (see Methods) to locate corresponding peaks in the related data sets.
+
+For each ROI, the sum of the signals amplitudes assigned to that region was used to estimate the molar concentration in each of the twenty four “test mixtures” based on a linear regression of the known molar concentration from the three reference data sets. The percent accuracy was calculated from the difference between the predicted concentration and the known concentration normalized by the known concentration. A fair amount of redundancy exists in the analysis in that each metabolite has more than one ROI from which to estimate a concentration. The regions of interest producing the best accuracy for each metabolite are displayed in Table 2 and graphically in Figure 6. The dominant contribution to inaccuracy in other ROIs arose from inconsistent assignment of species to that ROI rather than any intrinsic error in individual signal quantifications.
+
+Table 2 Accuracy of Molar Concentration Estimates in FMLR Analysis of FMQ dataa
+ 	by deconvolution	by peak height	
+compound	% mean	% SD	R2	% mean	% SD	R2	
+alanine	–0.48	2.6	0.9985	–2.93	5.0	0.9999	
+arginine	–1.64	1.9	0.9989	2.17	4.4	0.9998	
+asparagine	1.81	2.6	1.0000	0.82	2.3	1.0000	
+aspartate	0.53	2.4	0.9978	–0.69	2.5	0.9994	
+citrulline	–1.06	3.0	0.9938	–2.08	3.1	0.9999	
+fructose	–1.76	2.7	0.9999	–0.92	2.6	0.9999	
+GABA	–1.46	2.6	0.9959	2.67	4.6	1.0000	
+glucose	–0.98	1.7	0.9980	–2.18	3.7	0.9981	
+glutamate	–0.40	2.3	0.9991	0.34	2.1	0.9986	
+glutamine	–4.49	5.8	0.9989	–6.51	8.0	0.9990	
+HEPES	–3.43	3.7	0.9990	–4.21	4.9	0.9997	
+histidine	1.74	5.7	0.9988	4.75	17.1	0.9999	
+isoleucine	0.32	1.0	0.9983	–1.06	2.8	0.9990	
+lactate	1.83	3.0	0.9978	0.56	3.0	1.0000	
+leucine	–0.29	1.9	1.0000	–0.18	2.3	0.9995	
+malate	–1.04	3.0	0.9990	–1.27	4.0	0.9996	
+maltose	2.28	4.6	0.9990	–5.95	7.0	0.9999	
+ornithine	3.26	4.8	0.9980	–7.51	8.3	0.9978	
+proline	0.40	4.2	0.9888	1.05	3.2	1.0000	
+putrescine	0.83	2.3	0.9957	–3.90	4.9	0.9961	
+serine	–1.84	2.3	0.9982	–0.28	2.4	0.9969	
+sorbitol	–1.99	3.7	0.9902	0.63	1.8	0.9984	
+succinate	2.96	4.8	0.9997	–0.38	6.1	0.9986	
+sucrose	–0.89	2.6	0.9984	–0.25	2.8	0.9998	
+threonine	–0.78	1.1	0.9982	–0.47	1.4	0.9992	
+valine	–1.90	3.1	0.9990	–0.66	3.2	0.9981	
+overall	–0.33	3.0	0.9977	–1.1	4.4	0.9991	
+a A set of 24 synthetic metabolite mixtures was used with relative metabolite concentrations prepared to represent physiological conditions. Details of the mixture preparation are described in the FMQ(6) publication. The mixtures were analyzed along with 3 reference data sets using the FMQ protocol to measure molar concentration from linear regression. The 27 data sets were analyzed in concerted fashion by Newton deconvolution. An overall ROI amplitude was measured by two means: (i) (left) sum of the amplitudes within an ROI obtained from deconvolution and (ii) (right) height of the maximum peak in the ROI. The mean accuracy and standard error as a percentage of the known concentration are shown for the two metrics. The values for both metrics correspond to regions of interest for per metabolite that yielded the maximum accuracy (minimum error).
+
+Figure 6 Percent deviation of predicted vs known concentration for FMQ series. The bar chart graphically compares the standard percent deviation of predicted vs known concentrations for the data described in Table 2. The series of darker gray bars (smaller deviation) correspond to amplitude analysis from FMLR. The series of lighter gray bars (larger deviation) correspond to peak height analysis.
+
+It is interesting to note that, although the results from spectral deconvolution were on average about 38% more accurate (3% versus 4.4%) than those from peak height measurements, this trend is not predicted from the linear correlations in the standards curves, which yielded small, but consistently higher, R2 correlation coefficients (0.999) for peak heights than for deconvolution (0.997). A similar trend was seen with respect to manual peak integration and deconvolution (Figure 5) in which variance comparisons did not show the same trends as accuracy comparisons. The evidence presented here illustrates that greater accuracy of species quantification should not be generally inferred from observation of greater precision. One rationalization for this observation is that organic and biomolecules frequently produce NMR signals with complex line shapes even when multiplets are not expected. In essence, a signal from a molecular species can be viewed as an ensemble of resonances (in some treatments a signal is modeled as a Gaussian distribution of Lorentzian profiles(14)). The modulation of any resonance with respect to a perturbation (change in concentration, pH, temperature, etc.) may not be uniform over the ensemble.
+
+FMLR Analysis of Liver Extracts
+We used 2D 1H–13C HSQC data collected from a series of liver extracts to evaluate the ability of FMLR to model the line shapes of compounds present in biological mixtures. Figure 7 displays the spectrum and corresponding FMLR reconstructions obtained for a complex region of the 2D 1H–13C HSQC spectrum from a liver extract. This region illustrates the modeling of signals from glucose present at high concentration (∼100 mM) adjacent to signals from fructose present at much lower concentration. The overall visible characteristics of the residual spectra are similar to those obtained from synthetic mixtures.
+
+Figure 7 FMLR reconstruction of a 2D 1H–13C spectrum of liver extract. (Left) Contour plot of a region of the 1H–13C HSQC spectrum. (Middle) The FMLR reconstruction of the region. (Right) The corresponding residual. Annotations on the spectrum denote the centers of signals that were identified by FMLR. Signals from glucose (A) are much higher than those nearby from proline (B), and fructose (C, D, E). The volume of the observable residual in region A is less than 3% of the volume of the peaks.
+
+We used FMLR to analyze the relative concentrations of metabolites from several replicate extractions from aliquots of liver. The concentrations of about 20 compounds represented by 92 regions of interest were determined by the FMQ method. The distribution of variances of those concentration estimates among the 6 sample preparations are shown in Figure 8. The variances in the measured amplitudes (95% of the measurements are in the 3–10% error range) reflect the same range of variances observed in the synthetic mixtures preparations for signals in the millimolar concentration range.
+
+Figure 8 Histogram of variance in ROI quantification. Extracts were prepared from each of 6 pieces of tissue excised from a beef liver. 2D 1H–13C HSQC data from each extract were analyzed by FMLR. Ninety two regions of interest involving over 20 metabolites were identified and quantified in the 2D spectrum from each of the 6 sample preparations. A histogram of the percentage variance of the ROI volumes shows a mode of 6% variance with a 95% range between 3 and 10%. The outlier variances are primarily due to errors in peak correspondences (species misassignment) rather than true variance in quantification of signals. The variances in these volumes are all within the range of variances observed in the synthetic mixtures of metabolites in the millimolar concentration range.
+
+Conclusions
+The results show that the FMLR approach of using the Fourier transform of a time-domain basis function as a model for spectral deconvolution is practical for modeling line shapes in 2D 1H–13C correlation spectra of solutions containing compound mixtures. The approach yields relative concentrations of compounds present in complex mixtures with errors in the 0.1–5% range for millimolar concentrations. Errors by the automated FMLR approach are lower than those achieved by manual integration, which requires much more operator intervention. The method is suitable for automated analysis of the recently developed extrapolated time-zero HSQC protocol which enables quantification of metabolites without the need for preparation of standards.(9)
+
+The FMLR approach has been implemented in a Java application named Newton (see Supporting Information Table 2 for download availability) that possesses a number of characteristics required for high throughput quantification of multidimensional NMR spectra: (i) ability to analyze multiple spectra in a concerted fashion; (ii) minimal input of prior information other than processing information; (iii) interoperability with the popular NMRPipe(18) processing package and support of the UCSF matrix format used by SPARKY and rNMR.(20) These characteristics make the program also suitable for analysis of NMR data from titrations, pressure and temperature studies, kinetics studies, and other applications where one seeks to use a 2D heteronuclear (e.g., 1H–13C HSQC) or homonuclear (e.g., 1H–1H TOCSY) correlation experiment to probe the change in a system with respect to a perturbation.
+
+Results from this study obtained from spectral deconvolution by Newton have greater accuracy than similar results from peak height and/or peak volume measurements (Table 2, Figure 5, and Figure 6). Although peak-based measurements in many contexts produce equivalent (e.g., Figure 5a) or even greater precision and linearity with respect to changes in concentration of a species, accuracy cannot be generally estimated from this higher precision. The disparity between precision and accuracy is particularly true when measuring relative amounts of different molecular species but may even be true for the same molecular species as a consequence of the heterogeneous line shape of NMR signals. This study provides evidence that “region-based” identifications and quantifications of metabolites are superior to “peak-based” analysis.
+
+A limitation of the FMLR implementation is that the algorithm is “spectrum-directed” rather than “metabolite-directed”. The spectral deconvolution is currently performed without knowledge of a specific metabolite splitting pattern. The grouping of spectral species into ROIs and assignment to a molecular species is performed after the spectral deconvolution is completed. Errors in estimating the relative concentrations of metabolites without operator intervention can arise from misidentification of signals belonging to a given metabolite. We anticipate that the approach can be improved by incorporating known splitting patterns into the starting parameters used in fitting the spectra.
+
+The automated approach described here to the analysis of 2D 1H–13C spectra is applicable to situations in which two overall conditions can be met: (i) the time required to perform a “rapid” 2D experiment (15 min) is consistent with the protocol, and (ii) the concentrations of the compounds of interest are above a limiting concentration. At natural abundance 13C with data collection times of 15 min, the limiting concentrations that can be measured to within 10% error are 0.2 mM for compounds containing at least one resolved methyl group and 0.5 mM for compounds containing carbon atoms with only one attached proton.
+
+The automated analysis of natural abundance 2D 1H–13C spectra also may play a potential indirect role in “targeted profiling” carried out by high-resolution 1H NMR.(21) The reported algorithms for spectral deconvolution using 1H spectra rely on some means of detection and choice of metabolites to form a so-called “basis set” of compounds. Conventionally, the excessive overlap present in 1H NMR spectra of complex mixtures requires that one spike a mixture with external standards to confirm the presence of a given metabolite and its ability to be estimated from peak-based or spectral deconvolution methods. We suggest that the automated 2D NMR approach described here can be used to determine the basis set to be used for subsequent “targeted profiling”(21) by more rapid high-resolution 1H NMR methods.
+
+Acknowledgments
+We thank Ian Lewis for providing the raw time domain data sets associated with the published FMQ study and Seth Schommer for modifying rNMR to support the display of pseudo 3D matrices. This work was supported by the NIH National Center for Research Resources (grant P41 RR02301) and by the DOE Great Lakes Bioenergy Research Center (DOE Office of Science BER DE-FC02-07ER64494).
+
+Supporting Information Available
+Additional information as noted in the text. This material is available free of charge via the Internet at http://pubs.acs.org.
+
+Supplementary Material
+ac200536b_si_001.pdf
+==== Refs
+References
+Malz F. ; Jancke H.  J. Pharm. Biomed. Anal.  2005 , 38 , 812–823.
+Wishart D. S.  TrAC, Trends Anal. Chem.  2008 , 27 , 228–237.
+Lindon J. ; Nicholson J. ; Holmes E. ; Everett J.  Concepts Magn. Reson.  2000 , 12 , 289–320.
+Fan T. W. M.  Prog. Nucl. Magn. Reson. Spectrosc.  1996 , 28 , 161–219.
+Viant M. R.  Biochem. Biophys. Res. Commun.  2003 , 310 , 943–948.14550295 
+Kikuchi J. ; Shinozaki K. ; Hirayama T.  Plant Cell. Physiol.  2004 , 45 , 1099–1104.15356336 
+Ludwig C. ; Viant. M. R.  Phytochem. Anal.  2010 , 21 , 22–32.19904730 
+Lewis I. A. ; Schommer S. C. ; Hodis B. ; Robb K. A. ; Tonelli M. ; Westler W. M. ; Sussman M. R. ; Markley J. L.  Anal. Chem.  2007 , 79 , 9385–9390.17985927 
+Hu K. ; Westler W. M. ; Markley J. L.  J. Am. Chem. Soc.  2011 , 133 , 1662–1665.
+Miller M. I. ; Greene A. S.  J. Magn. Reson.  1989 , 83 , 525–548.
+Jeong G. W. ; Borer P. N. ; Wang S. S. ; Levy G. C.  J. Magn. Reson.  1993 , A103 , 123–134.
+Chylla R. A. ; Markley J. L.  J. Biomol. NMR  1995 , 5 , 245–258.7787422 
+Chylla R. A. ; Volkman B. F. ; Markley J. L.  J. Biomol. NMR  1998 , 12 , 277–297.9751999 
+de Graaf R. A. ; Chowdhury G. M. ; Behar K. L.  Anal. Chem.  2011 , 83 , 216–224.21142125 
+Markley J. L. ; Anderson M. E. ; Cui Q. ; Eghbalnia H. R. ; Lewis I. A. ; Hegeman A. D. ; Li J. ; Schulte C. F. ; Sussman M. R. ; Westler W. M. ; Ulrich E. L. ; Zolnai Z.  Pac. Symp. Biocomput.  2007 , 157–169.17990489 
+Wishart D. S. ; Tzur D. ; Knox C. ; Eisner R. ; Guo A. C. ; Young N. ; Cheng D. ; Jewell K. ; Arndt D. ; Sawhney S. ; Fung C. ; Nikolai L. ; Lewis M. ; Coutouly M. A. ; Forsythe I. ; Tang P. ; Shrivastava S. ; Jeroncic K. ; Stothard P. ; Amegbey G. ; Block D. ; Hau D. D. ; Wagner J. ; Miniaci J. ; Clements M. ; Gebremedhin M. ; Guo N. ; Zhang Y. ; Duggan G. E. ; Macinnis G. D. ; Weljie A. M. ; Dowlatabadi R. ; Bamforth F. ; Clive D. ; Greiner R. ; Li L. ; Marrie T. ; Sykes B. D. ; Vogel H. J. ; Querengesser L.  Nucleic Acids Res.  2007 , 35 , D521–D526.17202168 
+Miller T. R. ; Wallis J. W.  J. Nucl. Med.  1992 , 33 , 1778–1684.
+Delaglio F. ; Grzesiek S. ; Vuister G. W. ; Zhu G. ; Pfeifer J. ; Bax A.  J. Biomol. NMR  1995 , 6 , 277–293.8520220 
+Rowley H. H.  J. Am. Chem. Soc.  1940 , 62 , 2563–2565.
+Lewis I. A. ; Schommer S. C. ; Markley J. L.  Magn. Reson. Chem.  2009 , 47 , s123–s126.19821464 
+Weljie A. M. ; Newton J. ; Mercier P. ; Carlson E. ; Slupsky C. M.  Anal. Chem.  2006 , 78 , 4430–4442.16808451

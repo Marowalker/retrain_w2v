@@ -1,0 +1,516 @@
+
+==== Front
+ACS OmegaACS OmegaaoacsodfACS Omega2470-1343American Chemical Society 3002389310.1021/acsomega.8b00277ArticleCAPLIB: A New Program Library for the
+Modeling and Analysis of Icosahedrally Symmetric Viral Capsids Yoneda Shigetaka *Hara-Yamada Yukina Kosugi Aya Nanao Maiko Saito Takami Sato Shunsuke Yamada Nozomu Watanabe Go School of Science, Kitasato University, 1-15-1 Kitasato, Minami-Ku, Sagamihara-Shi, Kanagawa 252-0373, Japan* E-mail: syoneda@kitasato-u.ac.jp.24 04 2018 30 04 2018 3 4 4458 4465 15 02 2018 13 04 2018 Copyright © 2018 American Chemical Society2018American Chemical SocietyThis is an open access article published under an ACS AuthorChoice License, which permits copying and redistribution of the article or any adaptations for non-commercial purposes.
+
+A new program library
+named “CAPLIB” was developed for the modeling and analysis
+of icosahedrally symmetric virus capsids. CAPLIB is equipped with
+the mathematical data of 60 rotation matrices of icosahedral symmetry,
+15 planes bisecting the entire capsid structure, and a table summarizing
+how the 60 asymmetric units (cells) are partitioned by the planes.
+CAPLIB contains the function to determine the cell numbers of atoms
+from the atomic positions and the function to determine the rotation
+axes and angles from the rotation matrices. Using CAPLIB, it is possible
+to generate the structure of any selected protein unit within the
+entire capsid by rotating a single protein unit structure. CAPLIB
+can classify Protein Data Bank files of capsids with the directions
+of rotation axes, rotate the protein structure onto the standard position,
+and perform various deformations of the entire capsid. The interface
+to the molecular graphics software, PyMOL, was also developed for
+efficient modeling of capsids.
+
+document-id-old-9ao8b00277document-id-new-14ao-2018-00277wccc-price
+==== Body
+Introduction
+Viral capsids are symmetric assemblies
+of identical protein units in icosahedral symmetry or helical symmetry.1 Especially, icosahedral symmetry of capsids has
+intrigued many mathematical and computational studies because against
+the straightforward prediction, an icosahedrally symmetric capsid
+is not necessarily composed of 60 identical proteins: several identical
+proteins can make a protein unit; the number of the composing proteins
+of a capsid is generally 60 multiplied by T, where T is the integer named “triangulation number”.2 By considering embeddings of the surface of an
+icosahedron into a hexagonal lattice, Casper and Klug have proposed
+the principle of quasi equivalence to explain the mathematics of this
+structural feature. Although their theory is widely used to classify
+virus species, the experimental structures of papovavirus capsids
+have been reported to be deviating from the theory and the more general
+viral tiling theory has been proposed.3 Many mathematical and theoretical studies including the tiling theory
+have thus been performed for the interests in the structure and energetics
+of icosahedrally symmetric viral capsids.4−7 In the field
+of crystallography, symmetry has been used to reduce the degree of
+freedom8 and many X-ray structures have
+been determined. Recently, some large viral capsids, including that
+of HIV-I, have been shown to be not perfectly symmetric9 but the structures of other small icosahedrally
+symmetric capsids are a mine of information for viral research, including
+the development of effective antiviral compounds.10 In the field of simulation, the rotational symmetry boundary
+condition (RSBC) has been proposed to accelerate molecular dynamics
+(MD) simulations of symmetric protein assemblies.11,12 The
+calculation of the energy of an entire capsid can be restricted by
+the RSBC to a single asymmetric unit (a computational cell or cell),
+and the calculation can be accelerated by 2 orders of magnitude. The
+RSBC has been implemented in the MD program APRICOT13 and used for studies of the icosahedrally symmetric capsids
+of rhinovirus,12 poliovirus,14 foot-and-mouse disease virus,15 and hepatitis B virus.16 An
+MD simulation has also been performed for a glycogen phosphorylase
+crystal in P43212 symmetry
+using RSBC.17 Furthermore, the elaborate
+simulation in RSBC using a pentamer of the icosahedron for the computational
+cell has been performed and the effects of nonphysical microscopic
+symmetry imposed by RSBC near the axes have been deeply analyzed to
+estimate the validity and limitation of RSBC.18
+
+On the above background, the authors present a new software
+library, CAPLIB, for the modeling and analysis on the structure of
+the icosahedrally symmetric capsid. Although this study is not directly
+related with simulation methods, the basis of RSBC is briefly described
+as follows because the concept of RSBC is used. Because a capsid is
+composed of 60 identical protein units, an atom is denoted by the
+combination of the atom number k and the protein
+unit number p shown as a subscript (i.e., kp). Each atom is also specified by k and the cell number c shown as a superscript (i.e., kc). k ranges from 1 to N, where N is the number of atoms in a
+protein unit. N is also equal to the number of atoms
+within a cell. p and c take values
+from 0 to 59. Figure 1 shows the shape of the cell and the standard coordinate axes adopted
+in this study. The rotation matrix of icosahedral symmetry is written
+as R[c]. The position of an atom
+within cell 0 can be rotated with R[c] onto the position of the then equivalent atom in cell c, as follows 1  where x denotes the atomic coordinates. Similarly, the position
+of an atom of protein unit 0 is rotated with R[p] onto the position of the equivalent atom of protein unit p as follows 2  The 60 rotation
+matrices, R[p], make an algebraic
+group named the “icosahedral group”, or, more precisely,
+“pure rotation subgroup of icosahedral group, I”. The group I is also written as “alternating
+group, A5”. The multiplication
+of two rotation matrices, R[q] and R[r], is equal to another rotation matrix,
+as follows 3  Equation 3 can be expressed in an algebraic form as
+follows 4  where ≡ and ⊗ denote
+equality and multiplication, respectively. The multiplication can
+be performed using the “group table”.12,19 The
+neutral element is written as 0 in the present study. The inverse
+matrix can be written as follows, using a negative number for the
+rotation matrix index 5  Because
+the cell numbers and the rotation matrices are related by a one-to-one
+correspondence, the set of all cell numbers makes the group that is
+isomorphous to the group of rotation matrices, i.e., the group I. Similarly, the set of all protein unit numbers forms
+the group I. Thus, eq 5 is not only applicable to the rotation matrices but
+also to both the cell numbers and protein unit numbers. As shown in Figure 1, each cell is partitioned
+from the surrounding by four partition planes. It should be noted
+that the normal vector of each partition plane is equal to the rotation
+axis of one of the 2-fold rotation matrices. As there are 15 2-fold
+rotation matrices, there are 15 partition planes. Each partition plane
+passes through the center of the capsid to bisect the entire capsid
+into upper and lower regions. Thus, cells are defined by the partition
+planes, as shown in Table 1 (partition table) of a previous article.12 The cell number for atom kp is written cl(kp), where cl() is referred
+to as the “cell number function”. Similarly, the “protomer
+number function”, pr(kc), returns the protein unit number of atom kc. If the coordinates of atom kp are known, the coordinates
+of atom k0 are determined according to
+the following “packing operation” 6  Applying the rotation matrix R[c] to both sides, the coordinates of kc are determined as follows 7  Thus 8  If p is zero 9  The protein unit number can be determined by eq 8 or 9 from the cell numbers, cl(kp) or cl(k0). Furthermore, to calculate intercell interactions,
+the “relative protomer number” for an atom pair (ic, jd) is defined as pr(jd)⊗(−pr(ic)). If ic and jd are connected with a bond, c and d should be equal; i.e., pr(jd)⊗(−pr(ic)) should be 0 (interprotein
+unit bonds are neglected for simplicity). From eq 9, the following is obtained 10  Letting c be 0 11  If the left-hand side of the above is equal to 0 12  Equation 12 presents a necessary and sufficient condition for atom pair
+(i0, jd) to be an intraprotein unit pair. Equations 8–12, known as
+“protomer number equations”, are necessary for the accelerated
+RSBC calculations using the packing operation.
+
+Figure 1 Asymmetric unit (cell)
+for icosahedral symmetry. (a) A regular icosahedron surface is seen
+from a 2-fold rotation axis (Z-axis). The surface
+of the icosahedron is composed of 20 regular triangles, each of which
+is divided into the three identical oblique quadrangles. The black
+oblique quadrangle denotes the cell labeled 0. The integers denote
+the numbers of other cells. (b) A cell is surrounded by the four partition
+planes. The edges of the cell are a 5-fold axis, 3-fold axis, and
+two 2-fold axes. The apex of the cell is the center of the capsid.
+The volume of a cell is infinitely large, but we sketched only the
+bottom of the pyramid for clarity. In particular, a cross section
+of the cell with the icosahedron surface is shown.
+
+Table 1 Rotation Matrices
+A, B, C, and D
+matrix	definition	
+A	  	
+B	  	
+C	  	
+D	  	
+The above mathematical
+devices have been implemented in the program APRICOT.12 However, our previous studies have been restricted to nine
+cells, including cell 0. The complete mathematical and programing
+devices concerning all 60 cells are determined and implemented to
+CAPLIB, as shown in the following sections.
+
+Theoretical Basis
+The coordinate system adopted for
+APRICOT and CAPLIB is shown in Figure 1a. This is equal to the “Z(2)-3-5-X(2)”
+system of VIPERdb20,21 and is used for many Protein
+Data Bank (PDB) files,22,23 including the 2PLV file of poliovirus.
+It should be noted that the method for labeling the 60 cells is arbitrary,
+but the authors adopted a black-filled quadrangle (Figure 1a) for “cell 0”,
+as in the 2PLV file. The other 59 cells were labeled using eq 1, where the rotation matrices R[m] were defined as follows 13  where A, B,
+C, and D are, respectively, the 2-fold rotation matrix, the 2-fold
+rotation matrix, the 3-fold rotation matrix, and the 5-fold rotation
+matrix, as shown in Table 1. The integers, J, K, L, and M range from 0 to 1, 0 to 1, 0 to
+2, and 0 to 4, respectively, and m is equal to M + 5L + 15K + 30J. This labeling method for the rotation matrices (and thus
+the cells and rotation matrices) using eq 13 is not adopted in the present 2PLV file. Table S1 shows the group table for the rotation
+matrices. Figure 2 shows
+the development of the icosahedron surface depicting the cell labels.
+All partition planes are defined in Table 2 and are depicted in Figures S1 and S2. Table 3 shows the complete partition table.
+
+Figure 2 Development of the icosahedron
+surface. The 20 regular triangles are drawn with red lines. A three-dimensional
+icosahedron can be folded using the red lines for mountain creases.
+Each regular triangle is divided into three identical small quadrangles,
+of which the shape is shown in the inset. The quadrangle is an asymmetric
+unit of icosahedral symmetry and is used for the cell in this study.
+The intersection points of the red lines depict the 5-fold axes, those
+of the black lines depict the 3-fold axes, and those of the red lines
+and black lines depict the 2-fold axes. The small filled black rectangles
+are added only to indicate the orientations of the cells. The symbols X, Y, and Z in blue denote
+the X-, Y-, and Z-axes, respectively, and the underlined X, Y, and Z denote their inverse directions.
+The cell numbers (from 0 to 59) are denoted in light blue, and the
+5-fold axis numbers (from 0 to 11) are denoted in black. Each of the
+green lines connects the same position in the three-dimensional space.
+
+Table 2 Normal Vectors of Partition Planesa
+plane	normal vector	
+0	t(−(1+√5)/4, 0, 0)	
+1	t(−(1+√5)/8, 1/4, (3+√5)/8)	
+2	t(1/4, (3+√5)/8, (1+√5)/8)	
+3	t(1/4, (3+√5)/8, −(1+√5)/8)	
+4	t(−(1+√5)/8, 1/4, −(3+√5)/8)	
+5	t((3+√5)/8, (1+√5)/8, −1/4)	
+6	t(0, 0, −(1+√5)/4)	
+7	t(−(3+√5)/8, −(1+√5)/8, −1/4)	
+8	t(−(1+√5)/8, −1/4, (3+√5)/8)	
+9	t((1+√5)/8, 1/4, (3+√5)/8)	
+10	t(−1/4, (3+√5)/8, (1+√5)/8)	
+11	t(−(3+√5)/8, (1+√5)/8, −1/4)	
+12	t(0, (1+√5)/4, 0)	
+13	t(−(3+√5)/8, (1+√5)/8, 1/4)	
+14	t(−1/4, (3+√5)/8, −(1+√5)/8)	
+a Transposition of a vector is denoted by a superscript
+t.
+
+Table 3 Complete Partition
+Tablea
+ 	partition planes	
+cell	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	
+0	–1	1	1	–1	–1	0	–1	–1	1	1	1	–1	1	1	–1	
+1	–1	1	1	1	–1	1	–1	–1	1	1	1	–1	1	1	0	
+2	0	1	1	1	–1	1	–1	–1	1	1	1	1	1	1	1	
+3	1	1	1	0	–1	–1	–1	–1	1	1	1	1	1	1	1	
+4	1	1	1	–1	–1	–1	–1	–1	1	1	1	0	1	1	–1	
+5	–1	1	1	–1	–1	–1	–1	–1	1	1	1	–1	–1	0	–1	
+6	1	1	1	–1	–1	–1	–1	0	1	1	1	–1	–1	1	–1	
+7	1	1	–1	–1	–1	–1	–1	1	1	1	0	–1	–1	1	–1	
+8	0	1	–1	–1	–1	–1	–1	1	1	1	–1	–1	–1	–1	–1	
+9	–1	1	0	–1	–1	–1	–1	–1	1	1	–1	–1	–1	–1	–1	
+10	–1	1	1	–1	–1	1	–1	–1	1	1	1	–1	0	–1	–1	
+11	–1	0	1	–1	–1	1	–1	–1	1	1	–1	–1	–1	–1	–1	
+12	–1	–1	1	0	–1	1	–1	–1	–1	1	–1	–1	–1	–1	–1	
+13	–1	–1	1	1	–1	1	–1	–1	–1	1	0	–1	1	–1	–1	
+14	–1	1	1	1	–1	1	–1	–1	0	1	1	–1	1	–1	–1	
+15	1	1	0	–1	1	–1	–1	1	1	–1	1	1	1	1	1	
+16	1	1	–1	–1	1	–1	–1	1	1	–1	1	1	–1	1	0	
+17	1	1	–1	–1	–1	–1	–1	1	1	0	1	1	–1	1	–1	
+18	1	1	1	–1	–1	–1	–1	1	1	1	1	1	0	1	–1	
+19	1	1	1	–1	0	–1	–1	1	1	1	1	1	1	1	1	
+20	1	1	1	1	1	–1	0	1	1	–1	1	1	1	1	1	
+21	1	1	1	1	1	–1	–1	0	1	1	1	1	1	1	1	
+22	1	1	1	1	1	1	–1	–1	0	1	1	1	1	1	1	
+23	1	1	1	1	1	1	1	–1	–1	0	1	1	1	1	1	
+24	1	1	1	1	1	0	1	1	–1	–1	1	1	1	1	1	
+25	1	1	–1	0	1	–1	1	1	1	–1	1	1	1	1	1	
+26	1	0	–1	1	1	–1	1	1	–1	–1	1	1	1	1	1	
+27	1	–1	–1	1	1	–1	1	1	–1	–1	–1	1	0	1	1	
+28	1	–1	–1	–1	1	–1	1	1	0	–1	–1	1	–1	1	1	
+29	1	1	–1	–1	1	–1	1	1	1	–1	0	1	–1	1	1	
+30	0	–1	–1	–1	1	–1	1	1	–1	–1	–1	–1	–1	–1	–1	
+31	1	–1	–1	–1	1	–1	1	1	–1	–1	–1	1	–1	–1	0	
+32	1	–1	–1	1	1	0	1	1	–1	–1	–1	1	–1	–1	1	
+33	–1	–1	–1	1	1	1	1	1	–1	–1	–1	0	–1	–1	1	
+34	–1	–1	–1	0	1	1	1	1	–1	–1	–1	–1	–1	–1	–1	
+35	–1	–1	–1	–1	–1	–1	1	1	0	–1	–1	–1	–1	–1	–1	
+36	–1	–1	–1	–1	–1	1	1	0	–1	–1	–1	–1	–1	–1	–1	
+37	–1	–1	–1	–1	–1	1	0	–1	–1	1	–1	–1	–1	–1	–1	
+38	–1	–1	–1	–1	–1	0	–1	–1	1	1	–1	–1	–1	–1	–1	
+39	–1	–1	–1	–1	–1	–1	–1	1	1	0	–1	–1	–1	–1	–1	
+40	1	–1	–1	–1	0	–1	1	1	1	–1	–1	–1	–1	–1	–1	
+41	1	0	–1	–1	–1	–1	–1	1	1	–1	–1	–1	–1	–1	–1	
+42	1	1	–1	–1	–1	–1	–1	1	1	–1	–1	0	–1	1	–1	
+43	1	1	–1	–1	1	–1	0	1	1	–1	–1	1	–1	1	–1	
+44	1	–1	–1	–1	1	–1	1	1	1	–1	–1	1	–1	0	–1	
+45	–1	–1	1	1	1	1	1	–1	–1	0	–1	–1	1	–1	1	
+46	–1	–1	1	1	–1	1	1	–1	–1	1	–1	–1	1	–1	0	
+47	–1	–1	0	1	–1	1	1	–1	–1	1	–1	–1	–1	–1	–1	
+48	–1	–1	–1	1	0	1	1	–1	–1	–1	–1	–1	–1	–1	–1	
+49	–1	–1	–1	1	1	1	1	–1	–1	–1	–1	–1	0	–1	1	
+50	–1	–1	1	1	1	1	1	–1	–1	–1	0	1	1	–1	1	
+51	–1	–1	–1	1	1	1	1	0	–1	–1	–1	1	1	–1	1	
+52	1	–1	–1	1	1	1	1	1	–1	–1	–1	1	1	0	1	
+53	1	–1	0	1	1	1	1	1	–1	–1	1	1	1	1	1	
+54	0	–1	1	1	1	1	1	–1	–1	–1	1	1	1	1	1	
+55	–1	–1	1	1	1	1	1	–1	–1	1	1	0	1	–1	1	
+56	–1	0	1	1	1	1	1	–1	–1	1	1	1	1	1	1	
+57	–1	1	1	1	0	1	–1	–1	–1	1	1	1	1	1	1	
+58	–1	1	1	1	–1	1	–1	–1	–1	1	1	–1	1	0	1	
+59	–1	–1	1	1	–1	1	0	–1	–1	1	1	–1	1	–1	1	
+a The numbers 1 and −1 denote the upward and downward directions
+of the planes, respectively. The number 0 denotes both directions.
+The direction of the normal vectors in Table 1 is defined to indicate the upward direction.
+
+Results and Discussion
+As described in the
+preceding section, we developed the software library CAPLIB. Most
+of the CAPLIB programs were written in C language for use on Linux
+and MacOS machines. The main modules of CAPLIB are CAPGEN, CAPROT,
+CAPAXIS, and CAPPACK. The interface scripts to the graphics software
+PyMOL24,25 were also developed in Python language.
+
+CAPGEN reads a PDB file and outputs the file after the B factors
+of atoms are replaced with the cell numbers. CAPGEN runs by the Linux
+or MacOS command “capgen -c0 -v -tp file1 > file2”,
+where “capgen” is the name of the executable file of
+CAPGEN, “-c0” indicates that no rotations are applied,
+“-v” denotes that cell numbers should be printed, “-tp”
+denotes that the cell numbers are defined by eq 13, “>” denotes the output
+redirection of Linux, and file1 and file2 are the input and output
+PDB files, respectively. CAPGEN can also generate the entire capsid
+structure by the command “capgen -c 0-59 -tp file1 > file2”,
+where “-c 0-59” indicates that the entire capsid structure
+should be generated. Furthermore, CAPGEN can be used to generate any
+protein units selected by users. For example, the structure of the
+protein units 0, 2, 5, 6, and 7 can be generated by the command “capgen
+-c 0, 2, 5–7 -tp file1 > file2”, as shown in Figure 3. The atomic coordinates
+in file1 are rotated with R[0], R[2], R[5], R[6], and R[7] and stored in file2. When the option -tp is omitted, the labels
+of rotation matrices adopted in the BIOMT lines of “file1”
+are used. The option “-m fileR” indicates that the matrices
+written in “fileR” are used for the rotation by CAPGEN.
+
+Figure 3 Structures of the protein
+units 0, 2, 5, 6, and 7 of the 2PLV of the poliovirus capsid generated by
+“capgen -c 0, 2, 5–7 -tp pdb2plv.ent”, where
+heteroatoms are not shown. The direction of visualization is the same
+as that in Figure 1a.
+
+CAPAXIS reads a PDB file of icosahedrally symmetric capsids, which
+contain 60 rotation matrices in the “BIOMT” lines, and
+prints the rotation axes and angles adopted. Some PDB files of icosahedrally
+symmetric capsids have more than 60 matrices, but those files are
+not supported by CAPAXIS. If many PDB files are given to CAPAXIS,
+as “capaxis file1a file1b file1c ...”, the files are
+classified using the rotation axes. A sample of the results by CAPAXIS
+is shown in Figure S3. If option “-l”
+is added (i.e., “capaxis -l file1 > file2”), CAPAXIS
+treats file1 as a list of PDB file names. A sample of the classification
+of 458 PDB files is shown in Figure S4,
+where the PDB files were classified into 120 groups. The largest group
+was composed of the 229 PDB files, including the 4RHV file of rhinovirus,
+and the second largest group was composed of 123 PDB files, including
+the 2PLV file
+of poliovirus. The third and fourth groups were composed of 47 and
+21 PDB files, respectively. Other groups were composed of fewer than
+seven PDB files.
+
+CAPROT reads two PDB files and analyzes their
+rotation axes. Thus, CAPAXIS moves the atoms in the first PDB file
+onto those of the second PDB file. For example, Figure 4 shows the results of “caprot pdb4rhv.ent
+pdb2plv.ent > output.pdb”, in which the 4RHV structure was moved
+onto the 2PLV structure and the coordinate axes of the two proteins are identical.
+The translation vectors written in the PDB files are also considered.
+If the second PDB file is omitted and option -tp is added, the atoms
+are rotated onto the standard axes of the present study (Figure 1a). CAPROT is necessary
+for the comparison of capsid structures and for setting and analyzing
+RSBC MD simulations.
+
+Figure 4 4RHV structure
+was rotated
+using CAPROT onto the 2PLV position (red). The rotated 4RHV structure is shown
+in yellow. The direction of visualization is the same as that in Figure 1a.
+
+CAPPACK reads a PDB file and performs the
+packing operation of eq 6. If one enters the command “cappack file1 > file2”,
+the atomic coordinates after the packing operation are stored in file2.
+If option -v is added, the B factors are replaced by the cell numbers,
+as shown in Figure 5. Although the packing operation is performed by APRICOT during MD
+simulations in RSBC, the packing operation only considers the atoms
+in the neighboring eight cells around cell 0. In contrast, CAPPACK
+can perform the packing operation for any atom in any of the 60 cells.
+
+Figure 5 Graphics of the output
+of the packing operation by “cappack -v -tp pdb2plv.ent”,
+where heteroatoms were deleted. The blue thin lines depict cell 0.
+Atom colors correspond to the cell numbers.
+
+The Python interface scripts were also developed to use the CAPLIB
+programs in the graphics software, PyMOL. For example, Figure 6 shows the entire structure
+of a capsid generated by the scripts. In Figure 6, a PDB file was first loaded to PyMOL and
+second, the script file was loaded by writing “run caplib.py”
+in the command window of PyMOL. Finally, by writing the name of the
+script, “capgen(1)”, the CAPGEN module was called to
+generate the entire structure. The manipulation on each protein unit
+is simple because the protein units can be selected by clicking the
+object buttons in the selection panel at the right. The object buttons
+named “OBJ0”, “OBJ1”, “OBJ2”,
+... correspond to the protein units 0, 1, 2, ..., respectively. Figure 7 shows the structure
+made by a manipulation that was composed of rotations. First, the
+standard axis for the manipulation was determined by writing the script
+name of “setaxis(OBJ2, OBJ1)” in the command window
+of PyMOL. Because OBJ2 and OBJ1 (i.e., protein units 2 and 1) are
+related with each other by the rotation at a 5-fold axis (see Figure 1a), this script selects
+the 5-fold axis for the standard axis. Second, by writing “capswch(50,30)”,
+the vector to the center of each protein unit from the origin was
+calculated. If the angle between the vector and the standard axis
+is smaller than 50°, the protein unit was rotated by 30°
+around its rotation axis that penetrates the center of the protein
+unit and is orthogonal to the standard axis. Therefore, only the protein
+units near the standard axis were rotated to make a hole at the standard
+axis.
+
+Figure 6 Entire structure of the
+human hepatitis B virus
+capsid, 4G93. Some protein units are hidden by clicking the PyMOL
+hidden buttons in the selection panel to show the inner structure
+of capsid.
+
+Figure 7 Set of rotations
+were applied to the human hepatitis B virus structure, 4G93, and a
+hole was made at the 5-fold axis.
+
+This study presented the CAPLIB library equipped with
+the mathematical tables needed for the modeling and analysis on the
+complete 60 cells and protein units. By the C programs and Python
+scripts of CAPLIB, it is possible to perform important calculations
+of modeling and analysis on the icosahedrally symmetric viral capsids.
+The source codes of the version β of CAPLIB will be distributed
+under the 2-clause BSD license26 after
+the publication of this article.27 The
+authors believe that the CAPLIB library can be widely used under this
+relatively loose license for the studies on the icosahedrally symmetric
+capsids.
+
+Supporting Information Available
+The Supporting Information is available free of charge on the ACS Publications website at DOI: 10.1021/acsomega.8b00277.Group table; partition
+planes 0–7 on the icosahedron surface; partition planes 8–14
+on the icosahedron surface; rotation axes and angles of the 4RHV file; 458 PDB files
+classified by CAPAXIS (PDF)
+
+
+
+Supplementary Material
+ao8b00277_si_001.pdf
+
+ The authors declare no competing financial interest.
+
+Acknowledgments
+The authors appreciate the use of computer
+resources in the Research Center for Computational Science, Okazaki,
+Japan.
+==== Refs
+References
+Crick F. H. C. ; Watson J. D. 
+Structure of Small Viruses . Nature 
+1956 , 177 , 473 –475 . 10.1038/177473a0 .13309339 
+Casper D. L. D. ; Klug A. 
+Physical Principles in the Construction
+of Regular Viruses . Cold Spring Harbor Symp.
+Quant. Biol. 
+1962 , 27 , 1 –24 . 10.1101/SQB.1962.027.001.005 .14019094 
+Twarock R. 
+Mathematical Virology: a Novel Approach to the Structure
+and Assembly of Viruses . Philos. Trans. R. Soc.,
+A 
+2006 , 364 , 3357 –3373 . 10.1098/rsta.2006.1900 .
+Zlotnick A. 
+To Build a
+Virus Capsid. An Equilibrium Model of the Self Assembly of Polyhedral
+Protein Complexes . J. Mol. Biol. 
+1994 , 241 , 59 –67 . 10.1006/jmbi.1994.1473 .8051707 
+Keef T. ; Micheletti C. ; Twarock R. 
+Master Equation Approach to the Assembly of Viral Capsids . J. Theor. Biol. 
+2006 , 242 , 713 –712 . 10.1016/j.jtbi.2006.04.023 .16782135 
+Kerner R. 
+Self-Assembly of Icosahedral Viral
+Capsids: the Combinatorial Analysis Approach . Math. Modell. Nat. Phenom. 
+2011 , 6 , 136 –158 . 10.1051/mmnp/20116608 .
+Dykeman E. C. ; Stockley P. G. ; Twarock R. 
+Building a
+Viral Capsid in the Presence of Genomic RNA . Phys. Rev. E 
+2013 , 87 , 02271710.1103/PhysRevE.87.022717 .
+Bricogne G. 
+Methods and Programs for Direct-Space Exploitation
+of Geometric Redundancies . Acta Crystallogr.,
+Sect. A: Cryst. Phys., Diffr., Theor. Gen. Crystallogr. 
+1976 , 32 , 832 –847 . 10.1107/S0567739476001691 .
+Zhao G. ; Perilla J. R. ; Yufenyuy E. L. ; Meng X. ; Chen B. ; Ning J. ; Ahn J. ; Gronenborn A. M. ; Schulten K. ; Aiken C. ; Zhang P. 
+Mature HIV-1 Capsid Structure by Cryo-Electron Microscopy and All-Atom
+Molecular Dynamics . Nature 
+2013 , 497 , 643 –646 . 10.1038/nature12162 .23719463 
+Phelps D. K. ; Speelman B. ; Post C. B. 
+Theoretical
+studies of viral capsid proteins . Curr. Opin.
+Struct. Biol. 
+2000 , 10 , 170 –173 . 10.1016/S0959-440X(00)00064-6 .10753813 
+Çağin T. ; Holder M. ; Pettitt B. M. 
+A Method for Modeling
+Icosahedral Virions; Rotational Symmetry Boundary Conditions . J. Comput. Chem. 
+1991 , 12 , 627 –634 . 10.1002/jcc.540120513 .
+Yoneda S. ; Kitazawa M. ; Umeyama H. 
+Molecular
+Dynamics Simulation of a Rhinoviral Capsid under Rotational Symmetry
+Boundary Conditions . J. Comput. Chem. 
+1996 , 17 , 191 –203 . 10.1002/(SICI)1096-987X(19960130)17:2<191::AID-JCC7>3.0.CO;2-R .
+Yoneda S. ; Umeyama H. 
+Free Energy Perturbation
+Calculations on Multiple Mutation Bases . J.
+Chem. Phys. 
+1992 , 97 , 6730 –6736 . 10.1063/1.463650 .
+Yoneda T. ; Yoneda S. ; Takayama N. ; Kitazawa M. ; Umeyama H. 
+A Homology
+Modeling Method of an Icosahedral Viral Capsid: Inclusion of Surrounding
+Protein Structures . J. Mol. Graphics Modell. 
+1999 , 17 , 114 –119 . 10.1016/S1093-3263(99)00024-8 .
+Azuma H. ; Yoneda S. 
+Structure and Dynamics of the GH Loop of the Foot-and-Mouth
+Disease Virus Capsid . J. Mol. Graphics Modell. 
+2009 , 28 , 278 –286 . 10.1016/j.jmgm.2009.08.006 .
+Watanabe G. ; Sato S. ; Iwadate M. ; Umeyama H. ; Hayakawa M. ; Murakami Y. ; Yoneda S. 
+Molecular Dynamics Simulations to
+Determine the Structure and Dynamics of Hepatitis B Virus Capsid Bound
+to a Novel Anti-viral Drug . Chem. Pharm. Bull. 
+2016 , 64 , 1393 –1396 . 10.1248/cpb.c16-00132 .27581644 
+Yoneda S. 
+A Further
+Implementation of the Rotational Symmetry Boundary Conditions for
+Calculations of P43212 Symmetry Crystals . J.
+Mol. Graphics Modell. 
+1997 , 15 , 233 –237 . 10.1016/S1093-3263(97)00081-8 .
+Roy A. ; Post C. B. 
+Micoroscopic Symmetry
+Imposed by Rotational Symmetry Boundary Conditions in Molecular Dynamics
+Simulations . J. Chem. Theory Comput. 
+2011 , 7 , 3346 –3353 . 10.1021/ct2000843 .22096451 
+Hardy F. L.  Elementary Exercises
+in Group Theory ; Charles E. Merill Publishing
+Co. : Columbus, Ohio , 1970 .
+Reddy V. S. ; Natarajan P. ; Okerberg B. ; Li K. ; Damodaran K. V. ; Morton R. T. ; Brooks C. L. III; Johnson J. E. 
+Virus Particle
+Explorer (VIPER), a Website for Virus Capsid Structures and Their
+Computational Analysis . J. Virol. 
+2001 , 75 , 11943 –11947 . 10.1128/JVI.75.24.11943-11947.2001 .11711584 
+Carrillo-Tripp M. ; Shepherd C. M. ; Borelli I. A. ; Venkataraman S. ; Lander G. ; Natarajan P. ; Johnson J. E. ; Brooks C. L. III; Reddy V. S. 
+VIPERdb2: an Enhanced and Web API
+Enabled Relational Database for Structural Virology . Nucleic Acids Res. 
+2009 , 37 , D436 –D442 . 10.1093/nar/gkn840 .18981051 
+Sussman J. L. ; Lin D. ; Jiang J. ; Manning N. O. ; Prilusky J. ; Ritter O. ; Abola E. E. 
+Protein
+Data Bank (PDB): Database of Three-Dimensional Structural Information
+of Biological Macromolecules . Acta Crystallogr.,
+Sect. D: Biol. Crystallogr. 
+1998 , 54 , 1078 –1084 . 10.1107/S0907444998009378 .10089483 
+Worldwide Protein Data Bank Home Page. http://www.wwpdb.org/documentation/file-format (accessed March 17, 2018 ).
+The
+PyMOL Molecular Graphics System, version 2.0; Schrödinger,
+LLC . https://pymol.org/2/ (accessed March
+17, 2018 ).
+The PyMOLWiki Page. https://pymolwiki.org/index.php/Main_Page (accessed March, 2018 ).
+Open Source Initiative
+Home Page. https://opensource.org/licenses/BSD-2-Clause (accessed March 17, 2018 ).
+GitHub Page
+of CAPLIB. https://github.com/picorna/caplib (2018 ).
+

@@ -1,0 +1,452 @@
+
+==== Front
+Adapt BehavAdapt BehavADBspadbAdaptive Behavior1059-71231741-2633SAGE Publications Sage UK: London, England 10.1177/105971231666412010.1177_1059712316664120Original ArticlesAdaptive behaviors in multi-agent source localization using passive sensing Shaukat Mansoor Chitre Mandar Acoustics Research Laboratory, Tropical Marine Sciences Institute, SingaporeMansoor Shaukat, 12A Kent Ridge Road, Tropical Marine Sciences Institute, 119222, Singapore. Email: mansoor.shaukat@u.nus.edu05 9 2016 12 2016 24 6 446 463 © The Author(s) 20162016International Society of Adaptive BehaviorThis article is distributed under the terms of the Creative Commons Attribution-NonCommercial 3.0 License (http://www.creativecommons.org/licenses/by-nc/3.0/) which permits non-commercial use, reproduction and distribution of the work without further permission provided the original work is attributed as specified on the SAGE and Open Access page (https://us.sagepub.com/en-us/nam/open-access-at-sage).In this paper, the role of adaptive group cohesion in a cooperative multi-agent source localization problem is investigated. A distributed source localization algorithm is presented for a homogeneous team of simple agents. An agent uses a single sensor to sense the gradient and two sensors to sense its neighbors. The algorithm is a set of individualistic and social behaviors where the individualistic behavior is as simple as an agent keeping its previous heading and is not self-sufficient in localizing the source. Source localization is achieved as an emergent property through agent’s adaptive interactions with the neighbors and the environment. Given a single agent is incapable of localizing the source, maintaining team connectivity at all times is crucial. Two simple temporal sampling behaviors, intensity-based-adaptation and connectivity-based-adaptation, ensure an efficient localization strategy with minimal agent breakaways. The agent behaviors are simultaneously optimized using a two phase evolutionary optimization process. The optimized behaviors are estimated with analytical models and the resulting collective behavior is validated against the agent’s sensor and actuator noise, strong multi-path interference due to environment variability, initialization distance sensitivity and loss of source signal.
+
+Swarm intelligencemulti-agent systemscollective behaviorcooperative source localizationautonomous robots
+==== Body
+1 Introduction
+Over the last decade, swarm robotics has gained significant research momentum owing to its promise in solving real world problems (Blum & Groß, 2015; Brambilla, Ferrante, Birattari, & Dorigo, 2013). Swarm robotics can be seen as an approach that studies the emergence of a desired collective behavior from the local interactions of agents among themselves and with their environment (Şahin, 2005). The agent behaviors may either be individualistic or social. Individualistic behaviors refer to agent’s rules that only define interactions with its environment and/or reaction to its internal state. The social behaviors refer to the agent’s rules of interaction with its neighbors.
+
+In swarm robotics, foraging has been the main testbed application (Brambilla et al., 2013). It has been used for investigating navigational behaviors such as collective exploration (Ferrante et al., 2012), collective transport (Ferrante, Brambilla, Birattari, & Dorigo, 2013) and collective decision making (Gutiérrez, Campo, Monasterio-Huelin, Magdalena, & Dorigo, 2010). Source localization can be thought of as a subproblem of foraging, in which it benefits from collective exploration and collective decision making behaviors. The recent events of aircraft crashes in the sea (Normile, 2014), algal blooms in water bodies (Michalak et al., 2013) and oil spills undersea (Camilli et al., 2010) have underscored the importance of developing a swarm robotic system which can localize sources of interest in the real world.
+
+Practically, there are two main concerns that need to be addressed for a cooperative source localization problem. First, we need to define the method of gradient sensing to acquire information about the gradient, if not known a priori. Second, we need to define the communication methods to achieve cooperation between agents.
+
+Most swarm robotic studies assume a priori knowledge of the source direction relative to all or some of the agents (Çelikkanat & Şahin, 2010; Gökçe & Şahin, 2010; Mataric, 1992; Spears, Spears, Hamann, & Heil, 2004). Such an assumption is viable in case an agent can instantaneously sense the gradient using multiple sensors (Braitenberg, 1986; Grasso, Consi, Mountain, & Atema, 2000; Ishida, Wada, & Matsukura, 2012). However, the ability to sense the gradient instantaneously using multiple sensors is subject to the smoothness of the scalar field, available intensity variations over the body length of an agent and the noise levels of the sensor and the environment. The size-problem discussed for the case of a bacterium performing chemotaxis by Macnab and Koshland (1972) relates well with a miniature agent sensing a gradient in the real world. In case an agent cannot detect the gradient instantaneously or it is only equipped with one sensor, it resorts to temporal sampling to sense the gradient (Jin, 2013). Another similar technique is an agent undergoing motions based on persistent excitation to localize the source (Dandach, Fidan, Dasgupta, & Anderson, 2009). However, such an implementation requires a reliable position estimate of an agent along with an estimate for distance from the source based on the sensed intensity values. Acquiring a reliable position estimate in a GPS-denied environment, such as undersea, is a hard and expensive problem to solve (Stojanovic & Preisig, 2003). In most real world scenarios, instantaneous intensity values of the source are corrupted with high levels of ambient noise (Dahl, Miller, Cato, & Andrew, 2007). Especially in underwater environments, multipath constructive and destructive interference due to variability of the environment makes gradient sensing a hard problem to solve (Stojanovic & Preisig, 2003). It also makes multiple sensor based instantaneous gradient sensing almost impossible to achieve.
+
+The problem of source localization can be solved cooperatively by having a mix of individualistic and social behaviors (Ioannou, Singh, & Couzin, 2015; Matarić, 1995; Shaukat, Chitre, & Ong, 2013). An individualistic behavior may be self-sufficient in localizing the source, i.e. an agent is capable of localizing the source on its own. For example, a biased random walk of a bacterium or a moth is an example of a self-sufficient behavior (Berg and Brown, 1972; Kennedy, 1983). However, in some cases, the individualistic behavior may not be self-sufficient, e.g. an agent changing its speed as a function of instantaneous intensity as proposed by (Berdahl, Torney, Ioannou, Faria, & Deneubourg, 2013) can only localize the source being in a team. In the latter case, source localization is achieved as an emergent property of agent interactions where social behaviors are fundamental to achieve the desired collective behavior.
+
+Conventional social behavior models require explicit inter-agent communication (Shaukat & Chitre, 2015b). In this paper, we follow the definition of explicit and implicit communication as given by Balch and Arkin (1994). Explicit-communication is defined as a deliberate act of invoking the signal transmission, whereas with implicit communication there is no such deliberate attempt. For example, an agent sending out its position estimate in the form of a data packet to another agent is considered as an act of explicit-communication. Explicit inter-agent communication is especially hard to achieve in environments with considerable delays and limited bandwidth such as undersea (Stojanovic, 2003). Implicit communication can itself be classified into two types. The first one is stigmergy (Grassé, 1959) where the information is acquired through memory of the environment. Pheromone-trail deposition based collective behavior of ants and termites has been a major inspiration in designing stigmergic multi-agent systems (Beckers, Holland, & Deneubourg, 1994; Panait & Luke, 2004; Sugawara, Kazama, & Watanabe, 2004). The other implicit communication approach is based on the interaction of an agent with its neighbors without using environment’s memory, simply referred to as passive sensing (Shaukat & Chitre, 2015b). Actively leaving a pheromone-like trail or modifying the environment so that other agents can use cues from the environment memory may not be desirable or even possible in many real world environments.
+
+The scope of this paper is to investigate the emergent properties of adaptive agent behaviors from which a robust and a scalable collective behavior for a source localization problem can be achieved. We consider a realistic underwater acoustic source localization problem where we require all the agents of a multi-agent system to travel from one point to another in a two dimensional space. The two dimensional assumption is practically valid for autonomous vehicles operating on water surface or underwater at a specific depth. Given the motivation of using temporal sampling for gradient sensing and a passive sensing model for agent cooperation, we propose an algorithm, i.e. a set of agent behaviors that requires only one passive sensor for gradient sensing and two passive sensors for inter-agent cooperation. As for the social behaviors, there are no known strategies except the ones discussed in the following section which can achieve collective behavior using a passive sensing model without exploiting environment memory. This paper improves the performance of the collective behaviors proposed in the previous studies by proposing an optimized adaptive group cohesion strategy. Simultaneous optimization of the agent behaviors as a function of team size, initialization distance and neighborhood size allows us to develop analytical models to estimate the underlying correlations. This sets this study apart from most of the behavior based studies that ignore the behavioral optimization completely or optimize only one parameter at a time with all the other parameters held constant. The performance of the algorithm is statistically tested in a simulated underwater environment in the presence of strong multipath interference due to environment variability, sensor noise and actuator noise. The robustness is further validated for sensitivities in initialization distance and loss of source signal. It is shown that the achieved collective behavior is robust and scalable and achieves source localization without any agent breakaways. The proposed algorithm is also compared against a similar source localization algorithm albeit with a self-sufficient individualistic behavior and a static group cohesion model.
+
+2 Related work
+The robotic implementations of a single sensor based gradient detection are generally inspired from the biased random walk of a bacterium, Escherichia coli, performing chemotaxis (Maes, Mataric, Meyer, Pollack, & Wilson, 1996; Maes, 1996; Russell, Bab-Hadiashar, Shepherd, & Wallace, 2003). The bacterium has multiple chemoreceptors over its body, but insignificant differences between concentration levels over its body length keeps it from instantaneous gradient sensing (Macnab & Koshland, 1972). Hence, it resorts to temporal sampling to sense the gradient (Jin, 2013; Porter, Wadhams, & Armitage, 2011). The bacterium swims in a straight path interrupted by abrupt random turns known as tumbles. Increasing concentrations result in decreased frequency of abrupt turns and decreasing concentrations result in increased frequency, i.e. if a bacterium detects increasing concentrations then it swims relatively straight and takes random turns otherwise. However, some studies assume a constant tumbling frequency where the tumbling angle is a function of the chemical gradient. It is claimed by Shklarsh, Ariel, Schneidman, and Ben-Jacob (2011) that both approaches produce the same effect statistically. A similar constant frequency approach was used by (Shaukat, 2015, p. 37) for localizing an underwater acoustic source and an evolutionary algorithm was used to optimize the tumbling behavior. An agent kept its heading in case it was traveling in the direction of a positive gradient, however, took a normally-distributed random turn with some mean and variance otherwise. Interestingly, the optimization data for cooperative teams showed that a deterministic turn (optimal values of variance being zero) is more beneficial. In such a case, randomness in the walk is only a result of a noisy gradient or sensing noise. Note that all these bacterium-inspired individualistic behaviors are self-sufficient in localizing the source, i.e. the individualistic behavior can localize the source on its own without being aided by any other individualistic or social behavior(s).
+
+As far as the cooperative multi-agent source localization approaches are concerned, they are either scaled versions of the individualistic behavior (Li, Meng, Bai, Li, & Popescu, 2008) or require explicit inter-agent communication for social behaviors (Marjovi, Nunes, Sousa, Faria, & Marques, 2010) to achieve cooperation. This is also true for the single-sensor based temporal sampling implementations which either require centralized (Ogren, Fiorelli, & Leonard, 2004) or decentralized explicit inter-agent communication (Bachmayer & Leonard, 2002; Shaukat et al., 2013). Strategies that use implicit communication for social behaviors are inspired from ants’ pheromone sensing and hence use stigmergy (Deveza, Thiel, Russell, & Mackay-Sim, 1994; Panait & Luke, 2004; Russell, 1999; Sugawara et al., 2004).
+
+Implementation of social behaviors using strictly passive sensing, i.e. implicit communication without using stigmergy, is rare in the robotics literature. Even the strategies that assume passive sensing for one social behavior assume explicit communication for other social behaviors and hence can be categorized as hybrid strategies (Kuniyoshi et al., 1994; Mataric, 1992).
+
+Recently, we proposed a distributed source localization algorithm (Shaukat & Chitre, 2015b) that assumes a static temporal sampling approach for gradient sensing, passive sensing based social behaviors and a self-sufficient individualistic behavior based on a bacterium-inspired random walk. All the agent behaviors were optimized using a genetic algorithm (GA) (Man, Tang, & Kwong, 1999). It was shown that the proposed strategy works at par with the explicit inter-agent communication based counterparts. In a similar study, an adaptive temporal sampling strategy was proposed where sampling time is a function of the sensed intensity values (Shaukat & Chitre, 2015a). The adaptive temporal sampling strategy improved the performance of the earlier localization algorithm. However, both these studies assumed a static group cohesion model.
+
+In this paper, the proposed source localization algorithm is called adaptive cohesion based localization algorithm (ACLA). The concept of adaptive cohesion presented in ACLA is related to the earlier work of Shklarsh et al. (2011). However, Shklarsh et al. (2011) used a bacterium-inspired self-sufficient individualistic behavior where the parameters of the normally-distributed random walk, i.e. a zero mean and a variance of π radians, were set arbitrarily. The temporal sampling approach was also static. Also, the adaptable interaction model acted like a switch where the weight of the heading dictated by the individualistic behavior was either 0 or 1 based on the gradient sensing. An agent used the average of its individualistic heading and the social heading if it was traveling in the direction of increasing concentration, otherwise, it only considered its social heading. Moreover, the presented social behaviors required explicit communication. In ACLA, the individualistic behavior is as simple as an agent keeping its previous heading. The social behaviors, i.e. group cohesion (GC) and collision avoidance (CA), are based on the passive sensing model (Shaukat & Chitre, 2015b). The adaptive cohesion (AC) behavior is a weighted average of the GC and the individualistic behavior where an agent varies its cohesion based on the sensed intensity values. The adaptive temporal sampling approach is based on two behaviors, i.e. intensity based adaptation (IbA) and connectivity based adaptation (CbA). IbA varies the sampling times of an agent as a function of the sensed intensity values, whereas CbA varies the sampling times as a function of the sensed number of neighbors. AC and CA with the adaptive temporal sampling approach constitute ACLA.
+
+3 Problem statement
+We assume a team of homogeneous, miniature and simple robots such as shown in Figure 1(a), called Swarmbots. Each agent is equipped with one sensor to sense the signal of the source and hence conducts temporal sampling to sense the gradient. For the social behaviors, an agent cannot explicitly communicate with other agents. However, it can detect the number of neighbors and the neighbor majority in either its left or right half within some local neighborhood using two passive sensors.
+
+Figure 1. (a) A small team of four Swarmbots at Pandan Reservoir. (b) Passive sensing based interaction zones for CA and GC.
+
+We assume a source localization scenario in which we want to send a team of agents to a target location over a long distance to carry out some desired task. This assumption is especially relevant for applications where we want to access targets of interest in areas hit by nuclear radiation or hazardous chemicals. The team needs to travel in an unconstrained search space and arrive at the source location with minimal number of agent breakaways. In global positioning system (GPS) denied environments where the robots do not have a sense of their own position or of the source location, this becomes a challenging task. One possibility is sensing the gradient of interest to localize the highest concentration areas or contours. Another possibility is to have a single point-source such as a radio frequency (RF) beacon (on land) or an underwater locator beacon (ULB) (in sea) installed at the target of interest, the signal strength of which can help the robots to localize the target. We can also flip the notion. Once the team has completed the given task, we can start the post-mission retrieval using the same method where another beacon can help the agents localize the home position.
+
+In this paper, we consider an underwater source localization scenario where the source is a ULB. The gradient is corrupted with strong constructive and destructive multipath interference due to environment variability and agent’s sensor noise.
+
+We define arrival time as the time taken by the last agent in a team to enter a success zone of radius, rs, centered around the point-source, where each agent that enters the success zone does not diverge from the source afterwards.
+
+4 Adaptive cohesion based localization algorithm
+In this section, we first define the three constituent behaviors of ACLA, i.e. group cohesion, collision avoidance and adaptive cohesion. Each behavior only desires a certain heading for an agent while all the agents are assumed to maintain a constant speed throughout their mission. Inspired by Couzin, Krause, James, Ruxton, and Franks (2002), we use unit heading vectors to define each of the behaviors. For example, the instantaneous unit heading vector of the nth agent is dn(t)=1∠θn(t) where θn(t) is the instantaneous heading of the agent. Similarly, dGCn, dCAn and dACn are the agent’s heading vectors desired by the group cohesion, collision avoidance and adaptive cohesion behaviors respectively. Following the formal definitions, we present ACLA, i.e. the resultant distributed source localization algorithm from the three fundamental behaviors. Since ACLA is based on adaptive temporal sampling, we conclude this section with discussion on the adaptive sampling techniques used in this paper.
+
+4.1 Group cohesion
+An agent can detect whether the majority of its neighbors are in its left or right half, using two sensors, within some local neighborhood of radius, rGC, called attraction radius as shown in Figure 1(b). GC calculates the desired unit heading vector of the nth agent as
+
+
+ (1) dGCn(t+τn)={RϕdACn(t)if more neighbors on leftRϕ−dACn(t)if more neighbors on rightdACn(t)otherwise 
+
+
+where τn is the sampling time, dACn(t) is the unit directional vector of the agent dictated by AC (see definition in Section 4.3), Rϕ,Rϕ− are the counter clockwise and the clockwise rotation matrices for an angle of ϕ= 90°. Effectively, an agent turns left if the number of neighbors to its left are more than the number of neighbors on its right and vice versa. In case of the numbers being equal in both the left and the right half, the agent keeps its heading unchanged.
+
+4.2 Collision avoidance
+CA operates at the highest priority. CA has a relatively much smaller sampling time, τCA set equal to the minimum sampling time, τmin. In case an agent n of body length, l, detects a neighbor within its repulsion zone of radius, rCA (see Figure 1(b)), it starts an evasive action and ignores any other behaviors. An agent turns away from the nearest neighbor with a turning rate that is proportional to how close the nearest neighbor is. The turning rate as a function of the estimated distance, r^n,m(t), between the agent, n, and its nearest neighbor, m, is given as
+
+
+ (2) θ·CAn(t+τCA)={sgn(m)αθ·maxifrmin<r^n,m(t)⩽rCAsgn(m)θ·maxifr^n,m(t)⩽rmin 
+
+
+where sgn(m) is 1 if m is in right half and −1 otherwise, positive turning rates being counter clockwise and vice versa, α=(rCA−r^n,m(t)rCA−rmin) is the gain which varies linearly as a function of r^n,m(t) as shown in Figure 2(a) and rmin=2sτCA+l2 is the minimum distance (see Figure 1(b)) where the turning rate is maximum. Note that rCA needs to be greater than 2sτCA+l2 for an agent to detect all of the potential collisions. The constraint, rmin=2sτCA+l2, has been calculated assuming the worst case scenario of a head-on collision between two agents traveling at speed, s, where the sensor is assumed to be mounted at the center of each agent’s body length, l. Since the formulation for rmin makes sense if both the agents are traveling at the same speed, rCA needs to be sufficiently larger than rmin to compensate for any noise in speed regulation. Then agent, n, assumes heading according to the following direction vector as shown in Figure 2(b)
+
+
+ (3) dCAn(t+τCA)=ΔdCAn(t)+dn(t)∥ΔdCAn(t)+dn(t)∥ 
+
+
+Figure 2. (a) Gain, α, of the turning rate, θ·CAn, in (2) with respect to the estimated inter-agent distance, r^n,m. (b) An agent, n, taking evasive action as given by (3) for an agent m within its CA zone.
+
+where ΔdCAn(t)=1∠τCA·θ·CAn(t), ∥·∥ is the Euclidean distance and dn(t) being the instantaneous unit directional vector of agent n.
+
+4.3 Adaptive cohesion
+AC varies an agent’s group cohesion based on the sensed source-intensity values. The unit direction vector dictated by AC is a weighted average of the GC and the individualistic behavior as shown in Figure 3(a) and is given as
+
+
+ (4) dACn(t+τn)=η(t+τn)dACn(t)+(1−η(t+τn))dGCn(t+τn) 
+
+
+
+ (5) η(t+τn)=min(1,max(αIΔI^n(t+τn)+12,0)) 
+
+
+such that the source bias coefficient, 0⩽η⩽1, αI∈R+ is the adaptive cohesion coefficient and for the estimated intensity, I^n(t), the change in intensity is given as ΔI^n(t+τn)=I^n(t+τn)−I^n(t). Individualistic behavior is simply an agent keeping its previous heading. Once an agent loses contact with all the other agents, it will continue to travel in a straight path. Equation (5) varies the source bias coefficient around the nominal value of 0.5 where values, η>0.5 bias an agent more towards its previously calculated heading and values, η<0.5 bias an agent more towards the majority of the neighbors. The dependence of η on the change in estimated intensity, ΔI^n is shown in Figure 3(b) for varying values of αI. If an agent estimates that it is heading in the direction of decreasing intensity levels (ΔI^n<0), it biases itself more towards its neighbors (η<0.5). Otherwise, if an agent estimates it is heading in the direction of increasing intensity levels (ΔI^n>0), it biases itself more towards its previous heading (η>0.5).
+
+Figure 3. (a) The unit direction vector, dACn, as dictated by AC in (4) and its dependence on the source bias coefficient, η. Green circles depict neighbors inside the GC zone. (b) Source bias coefficient, η as a function of the change in estimated intensity, ΔI^n for varying values of αI in (5).
+
+4.4 ACLA: Resultant behavior
+Let us write the desired direction of the nth agent, commanded by ACLA as
+
+
+ (6) dACLAn(t)={dCAn(t)ifr^n,m(t)⩽rCAdACn(t)otherwise 
+
+
+where ACLA follows the CA behavior in case an agent detects neighbor(s) in its repulsion zone, otherwise ACLA follows the adaptive cohesion behavior.
+
+4.5 Adaptive temporal sampling
+An adaptive temporal sampling approach is a better alternative to a static temporal sampling approach for the source localization problem considered in this paper as shown by Shaukat and Chitre (2015a). The adaptive temporal sampling is composed of two behaviors. Principal behavior is IbA, i.e. the sampling time varies as a function of sensed intensity values. Intuition behind using IbA is based on the relationship between the initialization distance and size of the success zone. The radius of the success zone, rs, is generally very small when compared to r0. Starting hundreds of meters away from the source, an agent thrives on larger sampling time to improve its decision accuracy, i.e. the probability of detecting the correct gradient in the presence of noise. However, as large as a sampling time would be, it will be as difficult to enter inside a success zone with a small radius. The adaptive sampling time, τn′:ti+1−ti for an nth agent, where the ith sample is taken at time ti, and (i+1)th sample is taken at time ti+τn′, is given as follows
+
+
+ (7) τn′=βτf(I^n)+τmin 
+
+
+where f(I^n)=3.6×106e−0.086I^n is the exponential function as shown in Figure 4(a). The adaptive sampling coefficient, βτ∈R+, is optimized via GA. In our earlier work (Shaukat & Chitre, 2015a, p. 2), the sampling time being a negative-sigmoid function of the sensed intensity levels was an arbitrary choice. It is more suitable for a fixed initialization distance scenario where for variable initialization distances, we are required to tune three different parameters. Also, we noticed that if we optimize the sampling times for varying initialization distances, the fall-offs of all the negative sigmoid curves are nearly identical as shown in Figure 4(a) where the blue hexagrams depict the optimized sampling times for the intensity values at these initialization distances. The shape of the negative sigmoid fall-offs is also similar to the shape of the fall-off of the blue hexagrams suggesting an optimal shape which can be approximated by an exponential function, f(I^n), as given in equation (7). This choice enables us to optimize only one parameter, i.e. βτ∈R+, for varying initialization distances instead of three for the negative-sigmoid function.
+
+Figure 4. (a) Plotting the optimized adaptive sampling times shown as τn* proposed in (Shaukat & Chitre, 2015a) for varying initialization distances results in an optimal exponential curve, f(I^n)=3.6×106e−0.086I^n shown as red dashed line. (b) CbA’s regulation of IbA for the case of critical number of agents, Nc=10.
+
+The sampling time calculated by IbA in equation (7) is further regulated by CbA as
+
+
+ (8) τn={τn′(11+exp{−(N^GCn(t)−Nc)})ifN^GCn(t)>0τn′otherwise 
+
+
+where N^GCn(t) is the estimated number of neighbors of agent n within rGC at time t and Nc is the critical number of neighbors. The sigmoid function is CbA which updates the IbA’s adaptive sampling time, τn′.
+
+Effectively, CbA decreases the originally calculated sampling time by IbA in case an agent’s number of neighbors fall around the critical number of agents, Nc as shown in Figure 4(b) for the case of Nc=10. This is to increase the decision-making frequency to improve the connectivity of the team, i.e. to reduce or ideally eliminate the number of agents breaking away from the team. As large the sampling time, the better an agent’s gradient sensing and hence the more an agent travels before making another decision. In the meanwhile an agent may breakaway from the team. If we consider the current heading of an agent, dACn(t), in equation (4) such that it is traveling in the direction of a potential breakaway, increasing the frequency of updating equation (4) as the number of neighbors drop biases the agent towards the team.
+
+4.6 Practical relevance
+From the earlier discussion, it is clear that gradient sensing and neighbors’ majority detection may require two separate sensing mechanisms. For example, a team of agents localizing a chemical source would require one chemical sensor per agent. For cooperation between agents, i.e. sensing the majority of neighbors, an agent may use two acoustic sensors to sense the noise made by other agents.
+
+In this subsection, we look at some examples of using the two sensors for neighbor detection from the perspective of practical implementation. One of the possibilities is using two microphones or hydrophones per agent where an agent can listen for the presence of its neighbors. Generally, the drive or propulsion systems of unmanned ground vehicles (UGVs), unmanned aerial vehicles (UAVs) and autonomous underwater vehicles (AUVs) make significant noise which can be detected within some local neighborhood. We can use the time-of-arrival analysis on the sensors’ data which can help an agent estimate the number of neighbors in its neighborhood as well as detect whether the majority of its neighbors is located in its right or left half. In harsh environments, such as undersea environments where communication bandwidth is severely limited, low frequency sound signals like the thruster noise can travel several hundreds of meters (Calderon, 1964; Dahl et al., 2007; Urick, 1987). A typical AUV has a thruster noise in the range of 120 dB to 160 dB re 1 μPa at 1 m (Griffiths, Enoch, & Millard, 2001; Cai, Sou, Layman, Bingham, & Allen, 2013). Underwater locator beacons can be mounted onto the AUVs which emit an acoustic pulse at a fixed rate in time. For example, a 20 kHz pinger with a source level of 180 dB re 1 μPa at 1 m can be heard over several kilometers undersea. Another option can be two cameras as passive sensors in environments where robots can detect the number of neighbors and the neighbor majority using simple image processing techniques.
+
+Acquiring information of the number of neighbors and neighbor majority completely defines CbA and GC respectively. However, CA requires the range of information from the nearest neighbor. Let us think about any other agent within the local neighborhood as an additional source. Given an agent has some prior knowledge of the source (neighbor in this case) intensity and its propagation model, it can obtain a good estimate of the range in a close proximity. This is especially true for sources which follow the inverse square law, i.e. the intensity is inversely proportional to the distance squared. Since the repulsion radius is generally small, the assumption pertaining to the knowledge of the estimated nearest neighbor distance is practically valid.
+
+5 Experimental setup
+A team of N homogeneous agents is considered. Simulated model of an agent follows the kinematics of Swarmbot where each agent is assumed to be of length, l, has its turning rate, θ· and speed, s. A constant speed operation with non-holonomic constraints has been assumed and both the turning rate and the speed have been further corrupted with additive Gaussian noise for each agent to simulate the effects of turbulence in the medium. The compass reading, θ, has also been corrupted with additive Gaussian noise, εθ. A simplistic motion model is meant to keep the model-specific artifacts, in case of a more realistic dynamical model, from affecting the results of the collective behavior.
+
+The attraction radius, rGC, is expressed as a fraction of the initialization distance. Practically, rGC is limited by the sensing range of an agent. It has been known that the long-range attraction is related to the expanse of a school, i.e. the mean distance of all the fish from the school’s centroid (Lukeman, Li, & Edelstein-Keshet, 2010). The larger the rGC, the larger the expanse of the team can be without compromising the team connectivity. A large team expanse also enables the agents to collect spatially uncorrelated samples, which improves the collective decision making (Kao & Couzin, 2014). As the initialization distance increases, a team with the same expanse would be collecting more spatially correlated samples. This is why larger initialization distances require larger rGC for the emergence of a collective behavior (Shaukat, 2015, p. 47). Given the relationship between the initialization distance and rGC, it is better if rGC is expressed as a fraction of the initialization distance than rGC being expressed independently. This helps to develop a more general inference of results for a range of initialization distances. The repulsion neighborhood radius, rCA, has been set to twice the minimum distance, rmin=2sτCA+l2, required to avoid collisions.
+
+Each of N agents is assumed to be deployed with a random pose in a circular area of radius, ri, centered around the initialization point. The initialization distance, r0, i.e. the distance of the initialization point from the source is varied in a range to simulate different signal to noise ratio (SNR) conditions. The radius of the success zone centered around the source, rs.
+
+All the values for the variables with their description have been listed in Table 1.
+
+Table 1. Symbols, description and explored values of the mission variables in simulation.
+
+Sym.	Description	Value(s)	
+
+N
+	Total number of team members	2 to 20	
+
+l
+	Length of an agent	0.8 m	
+
+r0
+	Initialization distance	
+{600,1000,1400} m	
+
+ri
+	Radius of the initialization zone	12.5l	
+
+rs
+	Radius of the success zone	62.5l	
+
+rGC
+	Attraction radius	
+{0.1r0,0.2r0,…,0.6r0,∞}
+	
+
+rCA
+	Repulsion radius	7.6 m	
+
+τmin
+	Minimum sampling time	1 s	
+
+τCA
+	CA sampling time	
+τmin
+	
+
+rmin
+	Minimum radius of the repulsion zone	3.8 m	
+
+s
+	Speed of an agent	
+~N(1.5,0.15) ms–1	
+
+εθ
+	Compass heading error	
+~N(0,1)°	
+
+θ·
+	Turning rate of an agent	
+~N(35,3.5)° s–1	
+
+σ
+	Noise in received intensity level	
+{1,6} dB	
+5.1 Sound propagation
+The acoustic source is assumed to be a Dukane DK-180 ULB with a frequency of 8.8 ± 1.0 kHz and an effective bandwidth of 100 Hz. The source sound-level, SL, is set to 180 dB re 1 μPa at 1 m. The assumed ambient noise level, NL, is set corresponding to the pressure spectral density level of 52 dB re 1 μPa2Hz−1 pertaining to sea state 3 (Dahl et al., 2007; Urick, 1984) which is equal to a sound level of 84 dB re 1 μPa in the operating frequency band of the ULB.
+
+We adopt a simple incoherent model for sound propagation taking into account the transmission losses due to spherical spreading and absorption in seawater (Thorp, 1967). Spatial profiles of received source-intensity, I, are shown in Figure 5. Intensity levels have been corrupted with additive Gaussian noise of zero mean and equivalent dB-scale standard deviation of σ=1 dB in Figure 5(a) and of σ=6 dB in Figure 5(b). Assuming the noise of a typically calibrated sensor, σ=1 dB of noise in received intensity levels is a valid assumption given a sufficiently long sampling window. However, in dynamic environments where there is a strong constructive and destructive multipath interference, the variation in received intensity levels can be estimated by setting σ within the range of 3 dB to 6 dB. We will consider the more conservative case of σ=6 dB in conjunction with σ=1 dB to validate the robustness of the source localization algorithm against noise. For reference, a realization of noise-corrupted source-intensity as a function of distance from the source is shown in Figure 6 for σ=1 dB and σ=6 dB.
+
+Figure 5. A two dimensional realization of source-intensity spatial profile for: (a) σ=1 dB. (b) σ=6 dB.
+
+Figure 6. A realization of the noise-corrupted spatial intensity levels.
+
+5.2 Evolutionary optimization
+The parameters of the agent behaviors are optimized using a genetic algorithm (GA) (Man et al., 1999). According to the classification given by (Brambilla et al., 2013), agent behaviors can be designed by either behavior based design or automatic design. Behavior based design involves manually developing the individual behaviors of the agents which result in a desired collective behavior. It is generally a trial and error procedure where iterative tuning of the individual behaviors is carried out until the desired collective behavior is achieved. On the other hand, automatic design for multi-robot systems is mainly based on the evolutionary robotics approach. In the evolutionary robotics approach, initially a population of individual behaviors is generated at random. In each iteration, a certain number of experiments or simulations for each individual behavior are conducted. In each iteration, a fitness function is used to evaluate the collective behavior resulting from the individual behavior. Individual behaviors with a good fitness value are modified by genetic operators and then used for the subsequent iterations. Once no improvement is seen in the fitness value of the best individual behavior for a specific number of iterations, the evolutionary process is ended.
+
+In this paper, we have a fixed general structure of the individualistic and social behaviors. However, the optimal values of the coefficients of the adaptive temporal sampling function and adaptive group cohesion are found through GA. The process is identical to that of the evolutionary robotics approach where each behavior in a population would be a different set of values of the sampling time and the turns probability distribution parameters. Our approach differs from a purely evolutionary robotics approach since the search space has been constrained by an already fixed behavioral structure. Hence our approach can be seen as a hybrid of behavior based design and automatic design. However, note that GA itself is not critical in the design process since any optimization strategy that is suitable for a high-dimensional, non-separable and non-linear problem without any guarantees of convexity can be used to find the optimal parameter values.
+
+The GA’s fitness function is the mean arrival time (defined in Section 3) over 1024 simulated source localization missions. The number of simulated missions have been calculated using the Vargha Delaney’s A-measurement test (Vargha & Delaney, 2000) to ensure similar distributions for the entire GA population.
+
+5.3 Robustness analysis
+We optimize the behaviors for an ambient noise level of 1 dB, followed by estimation of the optimized behaviors with an analytical model. The collective behaviors based on these analytical models are then validated against an ambient noise of 1 dB and 6 dB. The validation is mainly based on the statistical analysis of the arrival time distributions via box-plots where each plot represents 5×104 simulated experiments, a band represents the median of a distribution, a box delineating the 25th to the 75th percentile, the whiskers show the lowest datum still within 1.5 inter quartile range (IQR) of the lower quartile, and the highest datum still within 1.5 IQR of the upper quartile. Wherever comparisons between different localization algorithms have been made, significance of comparative medians has been tested using the Mann-Whitney-Wilcoxon test.
+
+In some instances, analysis of a particular simulated experiment is also undertaken to give a clearer understanding of both the collective behavior and the agent behavior. Such analysis is done through examining the team expanse and number of agent breakaways.
+
+6 Optimization results
+The optimization process for ACLA is composed of two phases. First we optimize the algorithm’s two key parameters for infinite attraction radius, i.e. adaptive cohesion coefficient, αI and the adaptive sampling coefficient, βτ. In the second phase, we optimize the critical number of agents, Nc, for limited attraction radii and show that we can achieve performance at par with the infinite attraction radius beyond a certain finite attraction radius. The explored values of the parameters during the optimization process are given in Table 2. For the constant parameters, refer to the settings given in Table 1.
+
+Table 2. Explored values of the parameters during the optimization process.
+
+Param.	Description	Bounds	
+
+αI
+	Adaptive cohesion coefficient	[0,2]	
+
+βτ
+	Adaptive sampling coefficient	[0,2]	
+
+Nc
+	Critical number of neighbors	[0,20]	
+6.1 Optimization for infinite attraction radius
+For the infinite attraction radius and varying initialization distances in the range of 600 m to 1400 m, the results for the optimized αI and βτ are shown in Figure 7(a) and Figure 7(b) respectively. It can be seen that the values of αI* are nearly identical for the considered initialization distances in Figure 7(a). The average behavior of αI* over the initialization distances, α¯I(N)=13∑r0αI*(r0,N), is shown as a red-dashed line in Figure 7(a) which we approximate as
+
+
+ (9) α^I*(N)=aαNbα+cα 
+
+
+Figure 7. Optimization results for infinite attraction radius and varying initialization distances and team sizes (a) Optimized αI where the red dashed-line shows the average response over the considered initialization distances. (b) Optimized βτ where the dashed lines for each initialization distance are the average response over the team sizes in the range of 2 to 20 agents.
+
+as shown in Figure 8(a) and the values of the parameters are given in Table 3.
+
+Figure 8. For infinite attraction radius, estimates for: (a) α¯I* (b) β¯τ*.
+
+Table 3. Parameter and Root Mean Square Error (RMSE) values for respective equations.
+
+Eq.	Parameter values	RMSE	
+(9)	
+aα=1.661, bα=−1.935, cα=0.3588	0.003	
+(10)	
+aβ=2.247×10−5, bβ=1.175, cβ=0.7379	2.66×10–5	
+(11)	
+aN=0.716
+	0.5957	
+The values of βτ* vary significantly in initialization distance. We choose to approximate βτ* by its average response over the team sizes in the range of 2 to 20 agents, β¯τ(r0)=0.1∑Nβτ*(r0,N), shown as dashed lines in Figure 7(b), as
+
+
+ (10) β^τ*(r0)=aβr0bβ+cβ 
+
+
+as shown in Figure 8(b) and the values of the parameters are given in Table 3.
+
+6.2 Optimization for limited attraction radius
+Now, let us optimize the critical number of agents, Nc, for limited attraction radii. Objective is to see if we can achieve performance for a certain limited attraction radius at par with the infinite attraction radius just by controlling the sampling times through CbA. This would mean that we do not need to optimize the other two parameters, i.e. the adaptive cohesion coefficient and the adaptive sampling coefficient, separately for each limited attraction radius.
+
+The optimized critical number of agents as a function of team size is shown in Figure 9(a) along with the optimized mean arrival times in Figure 9(b) for limited attraction radii in the range of 10% to 60% of the initialization distance. It can be seen that for limited attraction radii, more than or equal to 30% of the attraction radius, the arrival performance is almost identical with the infinite attraction radius for team sizes of N=8 and above.
+
+Figure 9. Optimization for limited attraction radius (see legend at the bottom): (a) Optimized critical number of agents, (b) mean arrival times.
+
+As far as the optimization data for the critical number of agents is concerned in Figure 9(a), it increases almost linearly in N for team sizes less than or equal to 16 agents for all the attraction radii. However, as the attraction radii increase, e.g. rGC=0.6r0, the Nc* becomes saturated beyond a certain team size. Also, note that larger the number of Nc, the more conservative the CbA regulation as shown in Figure 10. For attraction radii greater than or equal to rGC=0.3r0 where the performance is almost identical, we can see that the most conservative curve is for rGC=0.3r0 and hence we may assume that as a general estimate for all the attraction radii given the choice does not significantly degrade the performance of other attraction radii.
+
+Figure 10. Optimized CbA regulation for a team size of 10 agents and various limited attraction radii in the range of 0.3r0 to 0.6r0.
+
+The estimate for the optimized critical number of neighbors can be written simply as a linear function in N as follows
+
+
+ (11) N^c*(N)=aNN 
+
+
+and is shown as a solid line in Figure 11(a) and the value of the parameter is given in Table 3. The associated mean arrival times have been shown in Figure 11(b) where we can see that the choice of N^c* has worked well for all the limited attraction radii except rGC=0.1r0 if we compare the results of Figure 11(b) with the results of Figure 9(b).
+
+Figure 11. (a) Estimate for critical number of agents in limited attraction radii where the solid line is the estimate for the data points. (b) Mean arrival times for the estimated model (see legend at the bottom for different attraction radii in the range of 0.1r0 to 0.6r0).
+
+7 Robustness analysis
+In this section, the robustness of the resulting collective behavior from the estimated models of the optimized ACLA is validated against noise levels of σ=1 dB and σ=6 dB. Also, the performance of the collective behavior is validated against initialization distance sensitivity, loss of source signal and neighbor detection noise in presence of σ=1 dB and σ=6 dB. For all the considered scenarios, the arrival time performance of the collective behavior is robust and improves with the increasing team size.
+
+The arrival time performance is either shown by using box-plots following the details given in Section 5.3 or by analyzing the team expanse of a single localization mission. Team expanse, e, is defined as the average distance of all the agents from the team’s centroid, i.e.
+
+
+ (12) e=1N∑iN∥xc(t)−xi(t)∥ 
+
+
+where xc(t)=1N∑iNxi(t) is the team centroid at time t. Keeping in mind the problem statement in Section 3, it is of interest to see if the expanse remains bounded. An agent breakaway is directly related to the team expanse. Since in ACLA, if an agent breaks away from the team, it will travel in a straight line and hence the team expanse will continue to increase without bound.
+
+7.1 Multipath interference
+The box-plots for ACLA’s arrival time performance are shown in Figure 12(a) and Figure 12(b) for noise levels of 1 dB and 6 dB respectively. It can be seen that for both the plots, the variance as well as the median of the arrival time distributions improves as N is increased. Also the difference between the arrival time distribution of infinite attraction radius and rGC=0.6r0 reduces as the team size increases and for N>12, arrival time distributions are almost identical for both the noise levels of 1 dB and 6 dB.
+
+Figure 12. Arrival time performance for varying attraction radii (see legend) and varying levels of ambient noise for the analytical model estimated for the optimized ACLA: (a) σ=1 dB, (b) σ=6 dB.
+
+The number of failed missions in a total number of 5×104 missions is equivalent to the number of events in which one or more agent breakaways occurred. The plots for failure rate are given in Figure 13(a) for different attraction radii. It can be seen that for Nc*, the failure rate has been less than 0.5% for rGC⩾0.6r0 for the entire range of team sizes and for rGC=0.3r0, for N>6 agents. However, for Nc*, it is also seen that the failure rate starts increasing as the number of agents increase. There are two points that need to be noted. First, the optimization process has a single objective function, i.e. the mean arrival time. Second, more conservative CbA regulation, i.e. Nc>Nc*, may result in a lower failure rate but at the same time affect the mean arrival time performance. To substantiate this, we increase the critical number of agents such that Nc=1.2Nc* and show in Figure 13(a) that the failure rate goes to zero for rGC=0.3r0 as N increases beyond 10 agents. However, it is shown in Figure 13(b) that a more conservative strategy has a slightly degraded mean arrival time. The phenomenon highlights the need of a carefully thought out multi-objective optimization setup which penalizes the fitness of an individual in case there are any failures.
+
+Figure 13. (a) Failure rate for varying attraction radii with optimal CbA and a more conservative CbA, i.e. 1.2 times the optimal Nc*. (b) Mean arrival time comparison for rGC=0.3r0 with optimal Nc* against rGC=0.3r0 with 1.2Nc*.
+
+7.2 Initialization distance sensitivity
+As far as the problem statement discussed in this paper is concerned, the initialization distance can be controlled within a tight uncertainty range. However, it is desired that the optimized solution for a specific distance scales well for a wide range of distances. We conduct sensitivity analysis for an optimized solution for r0=1000 m and rGC=0.6r0 for a change of ±400 m in Figure 14(a) and Figure 14(b) for σ=1 dB and σ=6 dB respectively. We can see that the optimized solution scales well with the change in distance for all the team sizes.
+
+Figure 14. Initialization distance sensitivity analysis for optimized solution for r0=1000 m and rGC=0.6r0 and noise levels: (a) σ=1 dB, (b) σ=6 dB.
+
+7.3 Loss of source signal
+It is of interest to see how a cooperative team behaves in case the source signal disappears for some time. The primary concern in such a case is agents breaking away from the team. We conduct the analysis for a single localization mission for σ=1 dB and σ=6 dB. Figure 15 shows that the team expanse for the case of loss of source signal during a 2.8 h interval remains well regulated at approximately 300 m for N=20 agents, r0=1000 m and rGC=0.6r0. We also explicitly checked for the number of agent breakaways during the mission and found no agent breakaways for all the four scenarios considered.
+
+Figure 15. Comparative team expanse for source signal versus loss of source signal for r0=1000 m and rGC=0.6r0.
+
+7.4 Neighbor detection noise
+Since the proposed algorithm depends on the passive neighborhood sensing, we conduct comparative analysis for performance degradation in case of different noise levels. Since we have two sensors, one on the right and one on the left, we corrupt the number of neighbors estimation on both sides by an additive Gaussian noise with zero mean and variance, σNGC={1,2}. The output of the estimated neighbors is then truncated to the nearest integer value.
+
+The arrival time performance for σ=1 dB and σ=6 dB is shown in Figure 16(a) and Figure 16(b) respectively for r0=1000 m and rGC=0.6r0. It can be seen that the relative degradation in performance with respect to a noiseless neighborhood detection decreases as the team size increases.
+
+Figure 16. Neighbor detection noise analysis for optimized solution for r0=1000 m and rGC=0.6r0 and noise levels: (a) σ=1 dB, (b) σ=6 dB.
+
+8 Comparative analysis
+In this section, let us compare the performance of ACLA against our earlier work which builds on a self-sufficient individualistic model inspired by the biased random walk of a bacterium performing chemotaxis and a static group cohesion model (Shaukat, 2015, p. 38), referred to as bio-inspired control algorithm for small teams (Bio-CAST). The optimized Bio-CAST used here for comparison is based on the same adaptive temporal sampling strategy as ACLA. In Figure 17(a), the mean arrival times are shown for a noise level of 1 dB where ACLA is referred to as AC and Bio-CAST as BC in the legend. For both the cases of limited attraction radii, ACLA performs better than Bio-CAST for team sizes greater than 8 agents. However, if we increase the noise to 6 dB for the algorithms optimized for a noise level of 1 dB, we see that Bio-CAST is more robust to the ambient noise than ACLA. We can also see that ACLA is still in the process of improving its performance as N increases within the considered range of 1 to 20 agents while Bio-CAST is able to achieve its maximum performance at about a team size of 16 agents.
+
+Figure 17. (a) Mean arrival time comparison for ACLA (AC in legend) versus Bio-CAST (BC in legend) for varying attraction radii and noise levels: (a) σ=1 dB, (b) σ=6 dB.
+
+The comparative analysis shows that fusing ACLA and Bio-CAST in a more generic optimization setup may result in a more robust and a better performing localization algorithm. The fusion would assume an adaptive biased random walk which is a function of sensed number of neighbors. As the number of neighbors decrease, an agent would assume a more bacterium-like response to the changing intensity levels whereas it may let go off the self-sufficient individualistic behavior completely when with a large number of neighbors. It will also be interesting to investigate how these behaviors evolve once optimized explicitly for a higher ambient noise scenario.
+
+9 Conclusion
+In this paper, a source localization algorithm based on adaptive group cohesion was presented. The proposed algorithm, called ACLA, achieves source localization as an emergent property through agent interactions. An agent does not have a self-sufficient individualistic behavior and hence is incapable of localizing the source on its own.
+
+For optimizing the behaviors of ACLA, a two phase optimization strategy was introduced. In the first phase, IbA and the adaptive cohesion were optimized for infinite attraction radius and in the second phase CbA was optimized to minimize agent breakaways for limited attraction radii. It was shown that by only having an optimized CbA, the performance of finite attraction radii above a certain threshold can be made identical to the performance of an infinite attraction radius.
+
+The optimized behaviors were then approximated with analytical models which were validated against sensor and actuator noise, strong multipath interference due to environment variability, sensitivities in initialization distance and loss of source signal. The statistical analysis of the arrival time distributions shows robustness of the collective behavior for all the considered scenarios. The localization failure rate was also studied which shows that by selecting a slightly more conservative CbA, a more robust collective behavior can be achieved with a zero failure rate.
+
+ACLA was further compared against Bio-CAST, a source localization algorithm with a self-sufficient individualistic behavior. It was shown that for low ambient noise levels, ACLA performs significantly better than Bio-CAST. However, for strong multipath interference, Bio-CAST is more robust than ACLA and performs significantly better. A fusion of the two algorithms which would result in an adaptive turning behavior as a function of team size was also proposed as future work. The fusion approach may lead to a better performing and a more robust source localization algorithm.
+
+Funding: This research received no specific grant from any funding agency in the public, commercial, or not-for-profit sectors.
+
+About the Authors
+Dr. Mansoor Shaukat received his B.Eng degree in Mechatronics Engineering and M.Sc degree in Electrical Engineering from National University of Sciences and Technology (NUST), Pakistan, in 2005 and 2007 respectively and his PhD degree from National University of Singapore (NUS) in 2016. At NUS, Dr. Shaukat was the NUS Graduate School for Integrative Sciences & Engineering (NGS) Scholar and had been associated with Acoustics Research Lab (ARL) from 2012 to 2015. Prior to joining ARL, he was a Lecturer (2007-2012) with the Center for Advanced Studies in Engineering (CASE), an affiliate of University of Engineering Technology (UET) Taxila, Pakistan. He is also the Founding Director of CASE Robotics Group (CRG), an undergraduate research group which is active in national and international competition-robotics. He also founded an annual national robotics competition with the name of RoboSprint in 2011. Apart from academia, he has also acted as a consultant on Automated Systems with Center for Advanced Research in Engineering (CARE) Pvt. Ltd. Pakistan. Dr. Shaukat has served on the technical program committee of IEEE iCREATE and as a reviewer for IEEE Transactions on Neural Networks and Learning Systems and Journal of Oceanic Engineering. Currently, Dr. Shaukat is an Assistant Professor and the Director of Robotics at CASE. His research interests include Swarm Intelligence and Multi-Agent Robotic Systems.
+
+Dr. Mandar Chitre received B.Eng. and M.Eng. degrees in electrical engineering from the National University of Singapore (NUS), Singapore, a M.Sc. degree in bioinformatics from the Nanyang Technological University (NTU), Singapore, and a Ph.D. degree from NUS. From 1997 to 1998, he worked with the ARL, NUS in Singapore. From 1998 to 2002, he headed the technology division of a regional telecommunications solutions company. In 2003, he rejoined ARL, initially as the Deputy Head (Research) and is now the Head of the laboratory. Dr. Chitre also holds a joint appointment with the Department of Electrical & Computer Engineering at NUS as an Assistant Professor. His current research interests are underwater communications, autonomous underwater vehicles and acoustic signal processing. Dr. Chitre has served on the technical program committees of the IEEE OCEANS, WUWNet, DTA and OTC conferences and has served as reviewer for numerous international journals. He was the chairman of the student poster committee for IEEE OCEANS’06 in Singapore, and the chairman for the IEEE Singapore AUV Challenge 2013. He is currently the IEEE Ocean Engineering Society technology committee co-chair of underwater communication, navigation & positioning.
+==== Refs
+References
+
+Bachmayer R. Leonard N. E.   (2002 ). Vehicle networks for gradient descent in a sampled environment . In Decision and Control, 2002, Proceedings of the 41st IEEE Conference on  (Vol. 1 , pp. 112 –117 ). Piscataway, NJ : IEEE .
+
+Balch T. Arkin R. C.   (1994 ). Communication in reactive multiagent robotic systems . Autonomous Robots , 1 , 27 –52 .
+
+Beckers R. Holland O. Deneubourg J.-L.   (1994 ). From local actions to global tasks: Stigmergy and collective robotics . Artificial Life IV , 181 , 181 –189 .
+
+Berdahl A. Torney C. J. Ioannou C. C. Faria J. J. Couzin I. D.   (2013 ). Emergent sensing of complex environments by mobile animal groups . Science , 339 , 574 –576 .23372013 
+
+Berg H. C. Brown D. A.   (1972 ). Chemotaxis in escherichia coli analysed by three-dimensional tracking . Nature , 239 , 500 –504 .4563019 
+
+Blum C. Groß R.   (2015 ). Swarm intelligence in optimization and robotics . In Kacprzyk J. Pedrycz W.   (Eds.), Springer handbook of computational intelligence  (pp. 1291 –1309 ). Berlin, Heidelberg : Springer .
+
+Braitenberg V.   (1986 ). Vehicles: Experiments in synthetic psychology . Cambridge, MA : MIT press .
+
+Brambilla M. Ferrante E. Birattari M. Dorigo M.   (2013 ). Swarm robotics: a review from the swarm engineering perspective . Swarm Intelligence , 7 , 1 –41 .
+
+Cai M. Sou I. M. Layman C. Bingham B. Allen J.   (2010 ). Characterization of the acoustic signature of a small remotely operated vehicle for detection . In OCEANS 2010  (pp. 1 –7 ). Piscataway, NJ : IEEE .
+
+Calderon M.   (1964 ). Probability density analysis of ocean ambient and ship noise . Technical report, DTIC Document .
+
+Camilli R. Reddy C. M. Yoerger D. R. Van Mooy B. A. Jakuba M. V. Kinsey J. C. . . . Maloney J. V.   (2010 ). Tracking hydrocarbon plume transport and biodegradation at deepwater horizon . Science , 330 , 201 –204 .20724584 
+
+Çelikkanat H. Şahin E.   (2010 ). Steering self-organized robot flocks through externally guided individuals . Neural Computing and Applications , 19 , 849 –865 .
+
+Couzin I. D. Krause J. James R. Ruxton G. D. Franks N. R.   (2002 ). Collective memory and spatial sorting in animal groups . Journal of Theoretical Biology , 218 , 1 –11 .12297066 
+
+Dahl P. H. Miller J. H. Cato D. H. Andrew R. K.   (2007 ). Underwater ambient noise . Acoustics Today , 3 , 23 –33 .
+
+Dandach S. H. Fidan B. Dasgupta S. Anderson B. D.   (2009 ). A continuous time linear adaptive source localization algorithm, robust to persistent drift . Systems & Control Letters , 58 , 7 –16 .
+
+Deveza R. Thiel D. Russell A. Mackay-Sim A.   (1994 ). Odor sensing for robot guidance . The International Journal of Robotics Research , 13 , 232 –239 .
+
+Ferrante E. Brambilla M. Birattari M. Dorigo M.   (2013 ). Socially-mediated negotiation for obstacle avoidance in collective transport . In Martinoli A. Mondada F. Correll N. Mermoud G. Egerstedt M. Hsieh M. A. Støy K.   (Eds.), Distributed autonomous robotic systems  (pp. 571 –583 ). Berlin, Heidelberg : Springer .
+
+Ferrante E. Turgut A. E. Huepe C. Stranieri A. Pinciroli C. Dorigo M.   (2012 ). Self-organized flocking with a mobile robot swarm: a novel motion control method . Adaptive Behavior , 20, 460 –477 .
+
+Gökçe F. Şahin E.   (2010 ). The pros and cons of flocking in the long-range migration of mobile robot swarms . Theoretical Computer Science , 411 , 2140 –2154 .
+
+Grassé P.-P.   (1959 ). La reconstruction du nid et les coordinations interindividuelles chezbellicositermes natalensis etcubitermes sp. la théorie de la stigmergie: Essai d’interprétation du comportement des termites constructeurs . Insectes Sociaux , 6 , 41 –80 .
+
+Grasso F. W. Consi T. R. Mountain D. C. Atema J.   (2000 ). Biomimetic robot lobster performs chemo-orientation in turbulence using a pair of spatially separated sensors: Progress and challenges . Robotics and Autonomous Systems , 30 , 115 –131 .
+
+Griffiths G. Enoch P. Millard N. W.   (2001 ). On the radiated noise of the autosub autonomous underwater vehicle . ICES Journal of Marine Science: Journal du Conseil , 58 , 1195 –1200 .
+
+Gutiérrez A. Campo A. Monasterio-Huelin F. Magdalena L. Dorigo M.   (2010 ). Collective decision-making based on social odometry . Neural Computing and Applications , 19 , 807 –823 .
+
+Ioannou C. C. Singh M. Couzin I. D.   (2015 ). Potential leaders trade off goal-oriented and socially oriented behavior in mobile animal groups . The American Naturalist , 186 , 284 –293 .
+
+Ishida H. Wada Y. Matsukura H.   (2012 ). Chemical sensing in robotic applications: A review . Sensors Journal, IEEE , 12 , 3163 –3173 .
+
+Jin T.   (2013 ). Gradient sensing during chemotaxis . Current Opinion in Cell Biology , 25 , 532 –537 .23880435 
+
+Kao A. B. Couzin I. D.   (2014 ). Decision accuracy in complex environments is often maximized by small group sizes . Proceedings of the Royal Society B: Biological Sciences , 281 , 1 –8 .
+
+Kennedy J.   (1983 ). Zigzagging and casting as a programmed response to wind-borne odour: a review . Physiological Entomology , 8 , 109 –120 .
+
+Kuniyoshi Y. Kita N. Rougeaux S. Sakane S. Ishii M. Kakikua M.   (1994 ). Cooperation by observation: the framework and basic task patterns . In Robotics and Automation, 1994. Proceedings., 1994 IEEE International Conference on  (pp. 767 –774 ). Piscataway, NJ : IEEE .
+
+Li F. Meng Q.-H. Bai S. Li J.-G. Popescu D.   (2008 ). Probability-pso algorithm for multi-robot based odor source localization in ventilated indoor environments . Intelligent Robotics and Applications , 5314 , 1206 –1215 .
+
+Lukeman R. Li Y. Edelstein-Keshet L.   (2010 ). Inferring individual rules from collective behavior . Proceedings of the National Academy of Sciences , 107 , 12576 –12580 .
+
+Macnab R. M. Koshland D.   (1972 ). The gradient-sensing mechanism in bacterial chemotaxis . Proceedings of the National Academy of Sciences , 69 , 2509 –2512 .
+
+Maes P.   (1996 ). From animals to animats 4: Proceedings of the fourth international conference on simulation of adaptive behavior  (Vol. 4 ) MIT Press  Retrieved from https://books.google.nl/books?id=V3pksEEKxUkC
+
+Maes P. Mataric M. Meyer J. Pollack J. Wilson S.   (1996 ). Some adaptive movements of animats with single symmetrical sensors  (pp. 55 –64 ). Cambridge, MA: MIT Press .
+
+Man K.-F. Tang K. S. Kwong S.   (1999 ). Genetic algorithms: Concepts and Designs, Avec Disquette  (Vol. 1 ). London : Springer .
+
+Marjovi A. Nunes J. Sousa P. Faria R. Marques L.   (2010 ). An olfactory-based robot swarm navigation method . In Robotics and Automation (ICRA), 2010 IEEE International Conference on  (pp. 4958 –4963 ). Piscataway, NJ : IEEE .
+
+Mataric M. J.   (1992 ). Minimizing complexity in controlling a mobile robot population . In Robotics and Automation, 1992. Proceedings., 1992 IEEE International Conference on  (pp. 830 –835 ). Piscataway, NJ : IEEE .
+
+Matarić M. J.   (1995 ). From local interactions to collective intelligence . In L. Steels (Ed.), The biology and technology of intelligent autonomous agents  (pp. 275 –295 ). Berlin, Heidelberg : Springer .
+
+Michalak A. M. Anderson E. J. Beletsky D. Boland S. Bosch N. S. Bridgeman T. B. . . . . Zagorskid M. A.   (2013 ). Record-setting algal bloom in lake erie caused by agricultural and meteorological trends consistent with expected future conditions . Proceedings of the National Academy of Sciences , 110 , 6448 –6452 .
+
+Normile D.   (2014 ). Lost at sea . Science , 344 , 963 –965 .24876475 
+
+Ogren P. Fiorelli E. Leonard N.   (2004 ). Cooperative control of mobile sensor networks:adaptive gradient climbing in a distributed environment . Automatic Control, IEEE Transactions on , 49 , 1292 –1302 .
+
+Panait L. Luke S.   (2004 ). A pheromone-based utility model for collaborative foraging . Proceedings of the Third International Joint Conference on Autonomous Agents and Multiagent Systems-Volume 1  (pp. 36 –43 ). New York, NY : IEEE Computer Society .
+
+Porter S. L. Wadhams G. H. Armitage J. P.   (2011 ). Signal processing in complex chemotaxis pathways . Nature Reviews Microbiology , 9 , 153 –165 .21283116 
+
+Russell R. A.   (1999 ). Odour detection by mobile robots  (Vol. 22 ). Singapore : World Scientific .
+
+Russell R. A. Bab-Hadiashar A. Shepherd R. L. Wallace G. G.   (2003 ). A comparison of reactive robot chemotaxis algorithms . Robotics and Autonomous Systems , 45 , 83 –97 .
+
+Şahin E.   (2005 ). Swarm robotics: From sources of inspiration to domains of application . In Şahin E. Spears W. M.   (Eds.), Swarm robotics  (pp. 10 –20 ). Berlin Heidelberg : Springer .
+
+Shaukat M.   (2015 ). Multi-agent source localization using passive sensing  (Unpublished PhD thesis). National University of Singapore .
+
+Shaukat M. Chitre M.   (2015a ). Adaptive sampling and collective behavior in a small team of auvs for a source localization problem . In MTS/IEEE OCEANS  (pp. 1 –6 ). Geneva : IEEE .
+
+Shaukat M. Chitre M.   (2015b ). Bio-inspired practicalities: Collective behavior using passive neighborhood sensing . In Autonomous Agents & Multi-Agent Systems (AAMAS)  (pp. 267 –277 ). Istanbul.
+
+Shaukat M. Chitre M. Ong S. H.   (2013 ). A bio-inspired distributed approach for searching underwater acoustic source using a team of auvs . In OCEANS - Bergen, 2013 MTS/IEEE  (pp. 1 –10 ). Bergen : IEEE .
+
+Shklarsh A. Ariel G. Schneidman E. Ben-Jacob E.   (2011 ). Smart swarms of bacteria-inspired agents with performance adaptable interactions . PLoS Comput Biol , 7 , e1002177 .21980274 
+
+Spears W. M. Spears D. F. Hamann J. C. Heil R.   (2004 ). Distributed, physics-based control of swarms of vehicles . Autonomous Robots , 17 , 137 –162 .
+
+Stojanovic M.   (2003 ). Acoustic (underwater) communications . In Encyclopedia of Telecommunications . Retrieved from http://onlinelibrary.wiley.com/doi/10.1002/0471219282.eot110/abstract?userIsAuthenticated=false&deniedAccessCustomisedMessage=
+
+Stojanovic M. Preisig J.   (2009 ). Underwater acoustic communication channels: Propagation models and statistical characterization . Communications Magazine, IEEE , 47 , 84 –89 .
+
+Sugawara K. Kazama T. Watanabe T.   (2004 ). Foraging behavior of interacting robots with virtual pheromone . In Intelligent Robots and Systems, 2004.(IROS 2004). Proceedings. 2004 IEEE/RSJ International Conference on  (Vol. 3 , pp. 3074 –3079 ). Piscataway, NJ : IEEE .
+
+Thorp W. H.   (1967 ). Analytic description of the low-frequency attenuation coefficient . The Journal of the Acoustical Society of America , 42 , 270 –270 .
+
+Urick R. J.   (1984 ). Ambient noise in the sea . Technical report, DTIC Document .
+
+Vargha A. Delaney H. D.   (2000 ). A critique and improvement of the cl common language effect size statistics of mcgraw and wong . Journal of Educational and Behavioral Statistics , 25 , 101 –132 .

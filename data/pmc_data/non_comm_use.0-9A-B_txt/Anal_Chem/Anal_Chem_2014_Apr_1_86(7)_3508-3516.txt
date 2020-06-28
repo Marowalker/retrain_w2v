@@ -1,0 +1,668 @@
+
+==== Front
+Anal ChemAnal. ChemacanchamAnalytical Chemistry0003-27001520-6882American
+Chemical
+Society 10.1021/ac404150dArticleDigital Deconvolution Filter Derived from Linear Discriminant
+Analysis and Application
+for Multiphoton Fluorescence Microscopy Sullivan Shane
+Z. Schmitt Paul D. Muir Ryan D. DeWalt Emma L. Simpson Garth J. *Department of Chemistry, Purdue
+University, 560 Oval
+Drive, West Lafayette, Indiana 47907, United
+States* E-mail: gsimpson@purdue.edu.21 02 2015 21 02 2014 01 04 2014 86 7 3508 3516 20 12 2013 21 02 2014 Copyright © 2014 American Chemical
+Society2014American Chemical
+Society
+
+A digital filter derived from linear
+discriminant analysis (LDA)
+is developed for recovering impulse responses in photon counting from
+a high speed photodetector (rise time of ∼1 ns) and applied
+to remove ringing distortions from impedance mismatch in multiphoton
+fluorescence microscopy. Training of the digital filter was achieved
+by defining temporally coincident and noncoincident transients and
+identifying the projection within filter-space that best separated
+the two classes. Once trained, data analysis by digital filtering
+can be performed quickly. Assessment of the reliability of the approach
+was performed through comparisons of simulated voltage transients,
+in which the ground truth results were known a priori. The LDA filter was also found to recover deconvolved impulses for
+single photon counting from highly distorted ringing waveforms from
+an impedance mismatched photomultiplier tube. The LDA filter was successful
+in removing these ringing distortions from two-photon excited fluorescence
+micrographs and through data simulations was found to extend the dynamic
+range of photon counting by approximately 3 orders of magnitude through
+minimization of detector paralysis.
+
+National Institutes of Health, United Statesdocument-id-old-9ac404150ddocument-id-new-14ac-2013-04150dccc-price
+==== Body
+Photon, ion,
+and particle counting
+can offer substantial signal-to-noise (S/N) improvements in the detection
+of weak signals by removing thermal electronic noise, baseline drift,
+and noise from variation in detector gain. In the simplest application,
+photon counting (n.b., this same analysis also applies to ion and
+particle counting) is performed using a discriminator, in which a
+count is recorded for each transient exceeding the discriminator threshold.
+The upper limit on the dynamic range in photon counting is dictated
+by bunching of photons in time, often described as “paralysis”.
+Bunching can introduce two sources of measurement bias. First, two
+or more time-coincident photons will still only produce a single count
+as measured by a discriminator. Second, the temporal response function
+of the detector and electronics imposes a time delay for the voltage
+to recover below the discriminator threshold before an additional
+count can be recorded.
+
+The first problem of undercounting from
+time-coincident multiple-photon
+events has been explored in several previous studies. In single-threshold
+measurements, it has been shown by several investigators that the
+bias can be removed by analyzing the raw measurements in terms of
+binomial counting statistics, given that the discriminator has only
+two possible outcomes for each laser pulse (no photons are present,
+or one or more photons are present). The binomially distributed measurements
+can then be related back to the Poisson distribution to determine
+the underlying mean of the Poisson, which is proportional to the unbiased
+detected intensity. In recent studies by Kissick et al., an analytical
+expression was derived for the uncertainty in the Poisson mean obtained
+by binomial counting and used to interpret second harmonic generation
+(SHG) measurements generated from a pulsed laser.1 On the basis of these analytical expressions, Muir et al.
+subsequently demonstrated a method of stitching counting and signal
+averaging in SHG microscopy measurements for real-time S/N optimization.2 However, these results are strictly limited to
+pulsed excitation measurements, in which the time delay between laser
+pulses is significantly longer than the instrument response time.
+
+The second source of bias from paralysis is from multiple noncoincident
+photons falling within the finite rise/fall time of the detector and
+electronics (i.e., the impulse response function), such that the voltage
+does not recover below the discriminator threshold prior to the next
+photon detection event. The detection of discrete events with a sensor
+can be mathematically modeled as a convolution of instantaneous impulses
+with the impulse response function, where the temporal locations of
+all the underlying impulses are the parameters of interest.
+
+Several strategies have been adopted to correct for this second
+and routinely more insidious source of bias. A common solution is
+to reduce the signal level or to use a series of detectors that detect
+fractions of the total light intensity to diminish the occurrence
+of paralysis,3,4 though diminishing the observed
+signal necessarily diminishes the S/N of the measurement. Other strategies
+disable signal observation for a period of time after a successful
+count to wait out the temporal response function, though this typically
+leads to under-estimation of the true number of counts and limits
+the speed of acquisition.5 The use of multiple
+detectors, or single multiplexed detectors, can reduce effects of
+paralysis and increases data acquisition times.5−7 However, each
+detector adds its own dark current and allows for modest gains in
+dynamic range (doubling the number of detectors doubles the noise
+from dark counts and yields only a factor of 2 increase in dynamic
+range).
+
+Alternative approaches rely on correcting for dead-time
+and “pulse
+pile-up” using analytical models and fitting of experimental
+signal outputs, which are computationally expensive and typically
+too time-consuming to be performed in real-time for fast (>MHz
+count
+rates) counting applications.4,8−14The simplest strategies based on nonlinear curve-fitting,
+such as are routinely done in spectroscopy and chromatography, require
+initial selection of guess values and multiple iterations to achieve
+convergence and are not guaranteed to avoid false minima. However,
+the greatest limitation of nonlinear curve fitting is arguably the
+time required to perform the analysis. With streaming data rates corresponding
+to a new data point every 12.5 ns at the repetition rate of a conventional
+ultrafast laser, real-time fitting for a single channel of data is
+well beyond the current capabilities of curve-fitting algorithms.
+More recently, digital processing of the time-dependent output was
+shown to lead to increased analysis speed for real-time analysis for
+X-ray photon counting, made possible by the use of simple algorithms
+coupled with relatively long-lived voltage transients (10s to 100s
+of ns).15−18
+
+Deconvolution of the raw input prior to threshold based counting
+has been pursued to a much lesser degree. The measured transient results
+from a convolution of the initial photon absorption event with the
+impulse response function of the detector/instrument. If the detector
+output were a simple impulse, rather than a rising and falling transient,
+there would be no dead-time issues related to overlapping transients.12 For data initially stored in digital form, deconvolution
+can in principle be performed simply by digital filtering with a filter
+function representing the inverse of the impulse response function
+(often calculated in the Fourier domain). However, in practice, this
+simple approach tends to greatly amplify the noise, often overwhelming
+relatively weak signals. The noise-amplification problem can be minimized
+by using a Wiener filter (or a variant thereof), but these standard
+approaches often suffer from difficulties in handling noise in general,
+require prior knowledge of a noise-free impulse response, and are
+specifically optimized for normally distributed noise. As a result,
+the robustness of the existing techniques is arguably limited in scope.
+
+In the present work, an alternative approach for deconvolution
+is proposed and evaluated on the basis of digital filters derived
+from LDA. This approach is based on maximizing the resolution between
+time-coincident and noncoincident events. Simulations of the impulse
+response were performed to assess the scope of use of the algorithm.
+The signal and noise are integrated into the LDA training sets, such
+that the filters are inherently optimized to include the impact of
+the filter on both. Measurements performed using a set of photomultiplier
+tubes for optical detection of continuous wave sources were performed
+to test experimentally. A complex impulse response function was observed
+and successfully deconvolved. Although a specific example is provided
+for photon counting, the proposed LDA-based digital filtering may
+serve as a general approach for deconvolution in other applications
+as well.
+
+Theoretical Foundation
+Digital filters are widely used
+in signal processing in either
+the time or space domain. In the present work, digital filtering was
+performed in the time domain (depicted in Figure 1). Digital filtering involves a transformation of a signal
+(blue trace in Figure 1) through convolution
+with a digital filter (red trace). As the filter is translated across
+the signal, the filtered trace is generated (green trace).
+
+Figure 1 Graphical depiction
+of the process of digital filtering through
+convolution of the filter and the signal. The digital filter (red)
+is translated across the signal trace (blue). The dot product of the
+filter and signal replaces the data point in the signal trace that
+corresponds to the filter origin (indicated by the arrows), generating
+the filtered signal (green).
+
+The digital filter design proposed in this work targets recovery
+of a temporally sharp impulse for an arbitrary detector impulse response
+function using a digital filter constructed on the basis of LDA. LDA
+is a supervised approach for separating high-dimensional data into
+distinct classes. In the present application for digital filtering,
+the length of the filter, L, defines the dimensionality
+of the space. Two classes are defined for separation: (i) one class
+in which the voltage transients are time-coincident with the center
+of the filter and (ii) another in which they are noncoincident, either
+preceding or following by random time-steps. The coincident training
+set is generated from numerous independent measurements of the single-photon
+response function (e.g., obtained from the dark counts), with each
+measurement corresponding to a single point in the L-dimensional space of the filter. The noncoincident set was generated
+by randomly time-shifting either the same or a new coincident data
+set. An example of this process for simulated data is shown in Figure 2. Defining the classes in this manner maximized
+the resolution between transients initiated at the filter origin and
+all other closely neighboring and temporally overlapping transients.
+Formally, it is not the resolution itself that is maximized but rather
+the closely related value of the Fisher linear discriminant J, given by eq 1 for a two-class system. 1  
+
+Figure 2 Temporally coincident
+and noncoincident signals (Top). After linear
+discriminant analysis, a digital filter is constructed, along with
+projections of the temporally coincident and noncoincident signals.
+
+In eq 1, J is a constant
+evaluated for a particular direction  within the L-dimensional
+space of the filter (i.e., a particular selection of elements). The
+parameters μc and μn correspond to the average projected values of the
+coincident and noncoincident classes, respectively, along the direction . The
+variance matrix in the coincident
+class Sc is given by
+eq 2, in which Nc is the number of coincident waveforms used in the
+training set, Vci is the ith time-dependent coincident
+single-photon response, and  is the mean waveform. 2  
+
+The length L of the waveform spans the temporal
+range of the single-photon voltage transient. Using an analogous definition
+for the variance in the noncoincident class Sn, the total within class variance is given
+by eq 3. 3  
+
+The
+particular unit vector  that maximizes the
+Fisher linear discriminant
+for a two-class system is generated from Sw–1: 4  The vector  directly serves
+as the filter function F to be used for digital deconvolution
+of the raw data.
+
+The Fisher discriminant is remarkably similar
+to the definition
+of resolution for two overlapping peaks. Therefore, the vector F corresponds to the direction in the L-dimensional
+space of the filter that provides the greatest experimental resolution
+between the coincident and noncoincident classes.
+
+When the origin
+of the filter (typically the center) is time-coincident
+with the onset of the transient, the scalar output of the filter is
+given by the dot product of the filter with the transient. Analogously,
+application of the filter function in a noncoincident position will
+correspond to a projection of the noncoincident class. Consequently,
+convolution of the time-trace by the digital filter F generated by LDA maximizes the contrast between coincident and noncoincident
+events to optimally recover deconvolved δ-function single pixel
+maxima at the location of the transient onsets.
+
+Following digital
+filtering with the LDA-based filter, photon counting
+of the recovered impulse responses was performed by counting the number
+of pixels above a selected threshold in the postfiltered deconvolved
+time-trace. In practice, high-pass filtering is also subsequently
+performed prior to counting to remove a rolling low-frequency background
+introduced by the filter. The rolling features arise as a consequence
+of the maximization of the resolution between coincident and noncoincident
+events by LDA, rather than a maximization of the absolute voltage
+above baseline.
+
+Methods
+Simulations with known ground-truth
+results were performed to assess
+the performance of LDA-derived digital filtering relative to both
+conventional photon counting and signal averaging. To produce the
+training sets, each photon generated a random peak height to model
+a log-normal distribution in gain in the PMT. A mean μL of 7 mV and standard deviation σL of 4 mV describing the log-normal distribution were
+selected on the basis of measured characteristics for PMTs similar
+to those used in the present study. The temporal impulse response
+was also approximated by a log-normal function. For the coincident
+training set, the initial onset of the pulse was assumed to be at
+time zero in the center of the filter. The noncoincident training
+set was generated by offsetting the initial onset by normally distributed
+random shifts Δτ. Each trial also included addition of
+random 1/f noise, generated by Fourier transformation
+of normally distributed time-trace, multiplication by (1/(f + b))1/2, in which f is the frequency and b = 0.005 is a constant
+describing the time-scale for 1/f fluctuations, followed
+by inverse Fourier transformation to recover a time-trace. Qualitatively
+similar results were observed with normally distributed random noise.
+
+In the simulations of the experimental data acquisition, each time-point
+contained a Poisson-distributed random number of photons, where λ
+was the mean of the Poisson distribution (typically less than 1).
+The time-traces also included 1/f noise calculated
+identically as the simulated data used to generate the training sets.
+
+The probability of two or more photons arriving within a single
+time-step becomes non-negligible as the mean of the Poisson distribution
+approaches unity, which can introduce additional bias not accounted
+for directly by deconvolution alone. The LDA-filtering approach is
+designed to maximize the separation between transients produced at
+separations of more than one time-step of the digitizer and will therefore
+not be able to correct for the recording of a single count from two
+or more simultaneous photons. Fortunately, this source of bias can
+be corrected by connecting the measured counts (distributed according
+to a binomial distribution, with only two possible outcomes) to the
+underlying number of photons described by a Poisson distribution.
+Using algorithms developed previously,1,19 the mean λ
+and standard deviation σλ of the Poisson distribution
+in a given Δt time window are given below,
+where p is the mean probability for successful counting
+and N is the number of measured time-points used
+to assess the mean. 5   6  
+
+For a sufficiently large number of
+measurements, the experimental
+mean of p provides a reasonable estimate for the
+true mean of p, from which the mean and standard
+deviation of the underlying Poisson distribution can be determined
+through eqs 5 and 6.
+
+Two-photon excited ultraviolet fluorescence (TPE-UVF) images of
+pure l-tryptophan crystals (Sigma- Aldrich) were acquired
+using a custom microscope. Briefly, a Fianium Inc., ultrafast fiber
+laser (1060 nm, 150 fs, 80 MHz) output was doubled to generate 530
+nm, which served as the incident light source for TPE-UVF excitation.
+The incident beam was scanned along the fast axis using a resonant
+vibrating mirror (∼4 kHz) and along the slow axis using a galvanometer
+mirror. The scanned beam was directed through an inverted Nikon microscope
+(TE2000) through telecentric lens pairs and dichroic mirrors and focused
+onto the sample using a 10× objective (Nikon). TPE-UVF signal
+generated from the sample was split into its horizontal and vertical
+components using a Glan-Taylor polarizer, both of which were detected
+on two separate photomultiplier tubes (PMTs) in the reflected direction.
+TPE-UVF signal was passed through a filter stack (SP01-532RS-25 and
+FF01-440/SP-25 filters Semrock) to reject the fundamental 530 nm light
+and pass two-photon tryptophan emission (∼350 nm). The voltage
+transients from the photomultiplier tubes were flash digitized using
+oscilloscope cards from AlazarTech (ATS 9462) at 160 MHz, with the
+laser providing the master clock to the digitizer cards. To artificially
+produce a noisy ringing transient, the oscilloscope cards were set
+to an internal impedance of 1 MΩ and the PMT with a nominal
+impedance of 50 Ω was connected to the oscilloscope cards with
+a 20 m long cable and a 400 Ω resistor in parallel at the oscilloscope
+card input. Experimental training sets were acquired from one highly
+signal averaged waveform generated from the impedance mismatched PMT
+signal with added normally distributed noise. For the coincident training
+set, the initial onset of the pulse was assumed to be at time zero
+in the center of the filter with the noncoincident training set generated
+by offsetting the initial onset, as described previously for the simulated
+data.
+
+Results and Discussion
+Simulations were performed to
+evaluate the characteristics of the
+filtering approach. Training sets of 6000 coincident and 6000 noncoincident
+time-traces were used to generate the digital filter shown in Figure 2. Three representative images of each of the training
+set data are also shown in the figure. The histogram shows the distribution
+of values for the dot products of the training set time-traces with
+the coincident digital filter, demonstrating the degree of resolution
+between the two classes.
+
+Application of the filter was performed
+on simulated data representing
+a sensor exhibiting an exponential decay temporal response function
+(Figure 3). The temporal location of each pulse
+is apparent by eye in the simulated raw data, though a threshold counting
+technique would not be able to successfully count the number of pulses
+for incidences of significant pulse pileup. After LDA filtering in
+blue, the temporal location of each pulse is marked by a large positive
+transient and can be threshold counted as represented by the green
+threshold and purple count markers.
+
+Figure 3 Simulated detector data of three measured
+intensities. The temporal
+pulse locations are evident in the raw data (red), though a threshold
+discrimination technique would not successfully count every pulse.
+After LDA filtering (blue), a threshold (green) can successfully count
+every pulse (purple).
+
+In this simulated data set, the temporal locations of each
+pulse
+are known a priori, and the quality of the technique
+can be assessed as a function of threshold position. The ratio of
+true positives vs false positives as the threshold is swept across
+the full range of positive values is shown in Figure 4 as a receiver operating characteristic curve. A data point
+at the top-left of the graph represents an optimal measurement, with
+few false positives or false negatives. The drop-off in the true positive
+rate at higher λ values is consistent with the presence of pulse
+pileup, though the algorithm still performs well at high intensities
+in which voltage transients are initiated in almost half the time-points
+(λ = 0.4).
+
+Figure 4 Receiver operating characteristic curve for LDA filtered
+data.
+The error rate is relatively low for good threshold settings, even
+in situations of high pulse pileup (λ = 0.4).
+
+Experimental Demonstration
+An experimental
+impulse response function was chosen to be more
+challenging than a simple log-normal or exponential decay by inducing
+substantial ringing in the impulse response. The load on a photomultiplier
+tube was terminated with a 400 Ω resister in parallel with an
+internal 1 MΩ resister of the oscilloscope card. By using a
+long transmission cable (20 m), a series of reflections arose from
+each transient (Figure 5a). After generation
+of the LDA filter (Figure 5b) and LDA filtering
+the data (Figure 5c, green trace), a high-pass
+filter was applied to adjust the shifted baseline (Figure 5c, blue trace). The temporal location of the initial
+impulse was the position of the first and largest spike in the raw
+data, which the LDA analysis marked with a strong positive transient.
+
+Figure 5 Deconvolution
+of the experimentally measured waveform with ringing
+to recover an impulse response; (a) representative waveform produced
+upon single photon absorption, (b) filter produced by LDA in order
+to perform the deconvolution, and (c) representative measurements
+prior to filtering, filtering with the LDA-based filter, and filtering
+with both an LDA and high-pass (HP) filter.
+
+The mechanism of action of the digital filter optimized by
+LDA
+to recover an impulse response on just the first voltage transient
+of the ringing waveform may not be immediately obvious. However, we
+conjecture that the digital filter is designed to exploit the nonlinearity
+in the exponentially decaying peak heights from the multiple transients.
+If it is assumed that the peak heights in the transient decay linearly
+with time (a reasonable approximation for the later ringing pulses),
+then baseline can be recovered by appropriately rescaling and inverting
+the later peak. In this way, the higher intensity peak and the rescaled
+lower intensity peak will cancel in the filtered output. Provided
+the amplitude scales linearly with time, this same strategy removes
+all the later-time peaks. However, the nonlinearity in the exponential
+decay results in a greater disparity between the relative peak height
+of the first transient and the second compared to all the subsequent
+adjacent peaks. Consequently, convolution with the digital filter
+retains residual peak height at that position but no others.
+
+The relative count rate (megacounts per second) across multiple
+optical intensities for various counting algorithms is shown in Figure 6, simulated on the basis of the measured ringing
+waveform training set as the impulse response function. LDA filtering
+substantially improved the accuracy of the counts when compared to
+threshold counting the raw data, which overestimated the counts due
+to the ringing present in the response function. In addition to over
+counting, the use of the unfiltered data also introduced errors in
+the photon arrival times from the recurring pulses. Imposing a dead-time
+delay to allow the impulse response function to return to baseline
+(paralysis) recovered the true count rate at low intensities. However,
+many counts were missed at higher intensities as the probability of
+photons originating in the dead-time delays became significant. For
+comparison, application of the same data with the LDA filter extended
+the linear dynamic range of the count rate by approximately 3 orders
+of magnitude compared to the paralysis algorithm.
+
+Figure 6 Comparison of different
+count methods for ringing data. LDA filtering
+recovered a better estimator for the counting rate compared to counting
+the raw data (high-pass filter alone) or counting with a timeout (paralysis)
+for the response function.
+
+TPE-UVF micrographs of tryptophan crystals are shown in Figure 7. The collected TPE-UVF light was split using a
+polarizing beamsplitter into two channels, one of which was terminated
+in 50 Ω as a reference and the other using the same 400 Ω
+termination design resulting in ringing. The 400 Ω channel exhibited
+both fast ringing and a slow drift in baseline due to capacitive charging.
+The drifting baseline substantially complicated the selection of a
+single appropriate counting threshold, resulting in highly distorted
+images. Application of a high-pass digital filter removed complications
+from baseline drift but still retained the multiple pulse ringing
+artifacts. From the raw images as well as the line-traces, it is clear
+that the artifacts produced both qualitative and quantitative errors
+in the measured intensity. The multiple pulses produced blurring from
+spreading counts across multiple pixels. Furthermore, the intensity
+measured in total counts is significantly biased on the basis of comparisons
+with the LDA-filtered image and the orthogonally polarized detection
+channel.
+
+Figure 7 Two-photon excited fluorescence of tryptophan powder acquired by
+photon counting. (A) Micrograph acquired with an impedance-matched
+transmission line. Inset raw data trace. (B) Attempted photon counting
+from the raw impedance mismatched configuration. Inset raw data trace,
+with baseline drift complicating photon counting with a set discriminator
+threshold. (C) Photon counting of the ringing waveform following high-pass
+filtering to remove artifacts from baseline drift (inset data trace
+after high-pass filtering), and (D) photon counting following LDA-based
+deconvolution of the raw time-dependent data (inset data trace after
+high-pass filtering and LDA filtering).
+
+Interestingly, the output of the LDA filter consistently
+produced
+a rolling background drift over distances comparable to the length
+of the filter function. The origin of this baseline drift can be understood
+in hindsight by considering the nature of the LDA algorithm, in which
+the filter is designed solely to maximize the separation between coincident
+and noncoincident classes. The baseline drift is irrelevant to the
+algorithm and, therefore, is not actively corrected by the LDA filter
+itself. Passing the filtered data through a second high-pass filter
+removed the baseline offset to make the data more amenable to photon
+counting based on a simple threshold. Because convolution is associative,
+the LDA and high-pass filter can also be combined into a single digital
+filter by convolving the two filters with each other to further reduce
+computational costs, as was done prior to analysis of the images shown
+in Figure 7.
+
+Not surprisingly, the act
+of deconvolution resulted in a reduction
+in the overall S/N ratio of the raw measurements, clearly indicated
+in the simulations shown in Figure 3. Deconvolution
+retains only the high frequency content within the signal capable
+of recovering an impulse response, which explains the significant
+reduction in the integrated area under each transient peak. In the
+analysis of simulated data, the average S/N (defined here as the peak
+voltage divided by the standard deviation of the background) dropped
+from 65 initially to 22 following deconvolution. In contrast, only
+a small drop in S/N was observed in the experimental measurements
+of the ringing waveform (S/N = 29 for the left-most peak in Figure 5 in the original data to S/N = 27 post deconvolution),
+presumably by nature of the greater relative signal strength at high
+frequencies.
+
+Fortunately, in photon counting applications such
+as those considered
+herein, both the random noise in the baseline and noise from variance
+in the peak heights of the transients are naturally removed through
+the counting process. As a result, no significant loss in S/N in the
+measured counts is expected following deconvolution of photon/ion/electron
+counting measurements, provided the raw S/N of the measurements is
+sufficient to recover deconvolved transients still rising above threshold.
+In fact, significant improvement in the confidence of photon arrival
+times was observed from analysis of the deconvolved simulated data,
+as well as increased linear dynamic range through the removal of counting
+dead-time.
+
+Along this same argument, reliable recovery of an
+impulse response
+is only expected for waveforms retaining sufficient signal content
+at the sampling frequency. If the impulse response removes all signal
+content at the highest accessible frequency, only noise is retained
+following deconvolution. Consequently, balance should be struck between
+the selection of the sampling frequency versus the S/N required for
+reliable photon counting postdeconvolution. Reducing the sampling
+frequency can potentially increase the probability of multiple photons
+initiated in the same sampling period. However, bias associated with
+such occurrences can be removed by using binomial photon counting.
+Because of the close relationship between the definition of the resolution
+and the Fisher discriminant, the value of the scalar J () from combining
+eqs 1 and 4 may potentially
+be used directly to
+assess the sampling frequency over which reliable deconvolution may
+be reasonably expected.
+
+The recovery of a deconvolved time-trace
+by LDA-based digital filtering
+was compared to two alternative strategies: nonlinear curve fitting
+and Richardson-Lucy digital deconvolution. Nonlinear peak-fitting
+of the data using standard approaches from spectroscopy and chromatography
+can suppress the background noise and provide the origins of overlapping
+peaks more accurately than digital deconvolution in most instances.
+However, peak fitting is an iterative procedure requiring initial
+guess values, complicating application for streaming data analysis.
+Furthermore, peak-fitting requires the a priori assumption
+of a known functional form for the peaks. Preliminary estimates based
+on optimized algorithms in MatLab suggest fitting times of 1.7 s per
+photon event for the fitting of a single ringing waveform, corresponding
+to approximately 5 days to process each frame in a video rate acquisition
+with a mean of 0.05 photons per pulse. Alternative digital deconvolution
+approaches were also assessed, on the basis of the iterative Richardson-Lucy
+deconvolution algorithm. As with many deconvolution approaches, the
+Richardson-Lucy algorithm requires a priori determination
+of the noise free impulse function. In general, deconvolution with
+the Richardson-Lucy approach recovered impulse responses with comparable
+or higher S/N than the LDA-based approach but at the expense of considerable
+additional computational time. Preliminary assessments using Matlab
+built-in algorithms required between 10 and 100 μs per data
+point on average to perform the deconvolution, corresponding to a
+little more than 8 s to roughly a minute per frame. While reasonable
+for a single frame of acquired data, the need for at least 8 s to
+perform the data analysis represents a significant gap to bridge relative
+to the 15 fps data acquisition rate. From this analysis, the long
+times required for nonlinear curve fitting and for iterative deconvolution
+using the Richardson-Lucy algorithm are incompatible with real-time
+data analysis at the experimental 160 MHz repetition rate for each
+channel.
+
+Clearly, the improvements afforded by deconvolution
+must also be
+weighed against the computational costs associated with the data processing
+based on the particular application. For real-time data processing
+at the high data throughput rates used in this study, digital filtering
+arguably represents the fastest approach for performing deconvolution
+in terms of computational cost. Direct digital filtering for deconvolution
+can be performed in as little as 2 clock cycles of a field programmable
+gate array (FPGA) (when parallelized).20 FPGA clock speeds in the hundreds of MHz are currently available,
+allowing direct real-time analysis at data throughput rates exceeding
+the 160 MHz acquisition rates of the present study. However, there
+is still an initial expense associated with the design of the appropriate
+digital filter. The LDA approach described herein requires significant
+training to reduce the noise inherent in the filter function. Provided
+the impulse response function does not change substantially over the
+time-course of a measurement as in the photon counting applications
+described herein, this initial investment may be easily justified
+by enabling subsequent high speed data analysis through simple digital
+filtering.
+
+It is significant that one LDA algorithm performed
+reasonably well
+for two very different impulse response functions. No explicit models
+were required for treating the measurement noise or the variance in
+signal intensities. All of these effects were implicitly incorporated
+into the algorithm through the training set used to produce the LDA
+filters.
+
+The authors declare no
+competing financial interest.
+
+Acknowledgments
+The authors gratefully acknowledge
+that support was provided
+by the National Institutes of Health, Award Nos. NIH-R01GM103401 and
+NIH-R01GM103910. The authors also acknowledge Nigel Ferdinand, Muneeb
+Khalid, and Bing Tom of AlazarTech for their help in developing software
+to control the digitizer cards, supplying new firmware features on
+request, and expanding the clocking abilities of their digitizers,
+as well as their general technical support. In addition, G.J.S. would
+like to acknowledge the students of Chemistry 621 at Purdue University
+(in particular Spring semester 2013) for numerous helpful 15 minute
+discussions of the approaches described herein.
+==== Refs
+References
+Kissick D. J. ; Muir R. D. ; Simpson G. J. 
+Anal. Chem. 
+2010 , 82 , 10129 –10134 .21114249 
+Muir R. D. ; Kissick D. J. ; Simpson G. J. 
+Opt. Express 
+2012 , 20 , 10406 –10415 .22535131 
+Sauer M. ; Hofkens J. ; Enderlein J.  Basic
+Principles
+of Fluorescence Spectroscopy . In Handbook
+of Fluorescence Spectroscopy and Imaging: From Single Molecules to
+Ensembles ; Wiley-VCH Verlag GmbH & Co.
+KGaA : Weinheim, Germany , 2011 .
+Walker J. G. 
+Opt. Commun. 
+2002 , 201 , 271 –277 .
+Castelletto S. A. ; Degiovanni I. P. ; Schettini V. ; Migdall A. L. 
+J. Mod. Opt. 
+2007 , 54 , 337 –352 .
+Wahl M. ; Rahn H.-J. ; Gregor I. ; Erdmann R. ; Enderlein J. 
+Rev. Sci. Instrum. 
+2007 , 78 , 033106 .17411177 
+Finn M. A. ; Greenlees G. W. ; Hodapp T. W. ; Lewis D. A. 
+Rev. Sci. Instrum. 
+1988 , 59 , 2457 –2459 .
+Donovan D. P. ; Whiteway J. A. ; Carswell A. I. 
+Appl. Opt. 
+1993 , 32 , 6742 –6753 .20856527 
+Hillesheim L. N. ; Muller J. D. 
+Biophys. J. 
+2003 , 85 , 1948 –1958 .12944307 
+Bédard G. 
+Proc. Phys. Soc. 
+1967 , 90 , 131 .
+Hobel M. ; Ricka J. 
+Rev.
+Sci. Instrum. 
+1994 , 65 , 2326 –2336 .
+Johnson F.
+A. ; Jones R. ; McLean T. P. ; Pike E. R. 
+Phys. Rev. Lett. 
+1966 , 16 , 589 .
+Laundy D. ; Tang C. ; Collins S.   In Synchtron Radiation Instrumentation, AIP Conf. Proc. ; Warwick T. , Arthur J. , Padmore H. A. Stohr J.  , Eds.; American Institute of Physics : College Park, MD , 2004 ; Vol. 705 , pp 977 –980 .
+Coates P. B. 
+J. Phys. E: Sci.
+Instrum. 
+1968 , 1 , 878 .
+Abbene L. ; et al. Med.
+Phys. 
+2010 , 37 , 6147 –6156 .21302771 
+Gerardi G. ; Abbene L. ; La Manna A. ; Fauci F. ; Raso G. 
+Nucl. Instrum. Methods
+Phys. Res., Sect. A 
+2007 , 571 , 378 –380 .
+Riendeau J. ; et al. IEEE
+Trans. Nucl. Sci. 
+2008 , 55 , 40 –47 .
+Abbene L. ; Gerardi G. ; Principato F. 
+Nucl. Instrum. Methods Phys. Res., Sect.
+A 
+2013 , 730 , 124 –128 .
+Muir R. D. ; Kissick D. J. ; Simpson G. J. 
+Opt. Express 
+2012 , 20 , 10406 –10415 .22535131 
+Prashanth B. U. V. 
+Int. J. Comp.
+Appl. 
+2012 , 39 , 16 –19 .

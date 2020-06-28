@@ -1,0 +1,1866 @@
+
+==== Front
+ACS OmegaACS OmegaaoacsodfACS Omega2470-1343American Chemical
+Society 10.1021/acsomega.9b02961ArticleToward a Robust,
+Universal Predictor of Gas Hydrate
+Equilibria by Means of a Deep Learning Regression Landgrebe Michael K. B. *†Nkazi Diakanua †† School
+of Chemical and Metallurgical Engineering, Faculty of Engineering and the Built
+Environment, University of the Witwatersrand, Johannesburg 2000, South Africa* E-mail: landgrebemkb@wkh.co.za.19 12 2019 31 12 2019 4 27 22399 22417 11 09 2019 09 12 2019 Copyright © 2019 American Chemical
+Society2019American Chemical
+SocietyThis is an open access article published under an ACS AuthorChoice License, which permits copying and redistribution of the article or any adaptations for non-commercial purposes.
+
+Due to offshore reservoirs being developed in ever deeper
+and colder
+waters, gas hydrates are increasingly becoming a significant factor
+when considering the profitability of a reservoir due to flow disruptions,
+equipment, and safety hazards arising from the hydrate plug formation.
+Due to low-dosage hydrate inhibitors such as kinetic inhibitors competing
+with traditional thermodynamic inhibitors such as methanol, accurate
+information regarding the hydrate equilibrium conditions is required
+to determine the optimal hydrate control strategy. Existing thermodynamic
+models can prove inflexible regarding parameter adjustment and the
+incorporation of new data. Developing a multivariate regression model
+capable of generalizing hydrate equilibria over a wide range of conditions,
+with results competing with thermodynamic models is worthwhile. A
+multilayer perceptron neural network of three hidden layers has undergone
+supervised training means of a backpropagation to accurately predict
+uninhibited hydrate equilibrium pressure for a range of gas mixtures
+with nine input features, excluding hydrogen sulfide and electrolytes,
+from a dataset of 1209 equilibrium points, 670 of which are multicomponent
+gases, sampled in a rigorous data sampling campaign from existing
+experimental studies. Statistical significance of results has been
+emphasized, with models validated using 10-fold cross-validation and
+holdout validation, facilitating hyperparameter optimization without
+overfitting, while stratified holdout ensures testing a wide range
+of conditions. The developed model has proven to outperform two popular thermodynamic
+models. Various scoring metrics are used, with an average cross-validated R2 of 0.987 ± (0.003). An R2 of 0.993 and mean absolute percentage error of 5.56%
+are yielded for holdout validation. Auxiliary models are included
+to determine the multicomponent prediction capability and dependency
+on individual data sources. Multicomponent data prediction has proven
+successful; results prove that the model accurately generalizes hydrate
+equilibria and is well suited to predicting unseen data. Positive
+results are largely insensitive to exact model parameters, thus indicating
+a robust, replicable methodology.
+
+document-id-old-9ao9b02961document-id-new-14ao9b02961ccc-price
+==== Body
+Introduction
+Gas hydrates are solid, crystalline masses
+which form as a result
+of a guest molecule stabilizing a water lattice. These hydrates form
+when an appropriate guest molecule in the presence of water is present
+at temperature and pressure conditions facilitating hydrate formation.1 The stabilizing guest molecule may be a low-carbon-number
+organic molecule or a small inorganic gas molecule. These structures
+are achieved through hydrogen bonds between the encaging water molecules
+and are stabilized through interactions between the guest molecule
+and encaging water molecules.2,3 Recently, interest over
+the possible use of gas hydrates as a safer alternative to liquefied
+natural gas (LNG) for transport and storage of natural gas has arisen.4 Most prevalent to the petroleum industry, however,
+are the flow assurance issues related to hydrates. A consequence of
+gas hydrate formation is the formation of hydrate plugs through the
+nucleation, growth, and agglomeration of hydrate particles.2,5 Hydrate plugs can result in flow interruptions, additional operational
+costs, equipment damage, and possibly hazardous conditions. Significant
+research has been directed toward gas hydrate flow assurance issues,
+notably predicting the conditions where hydrates are likely stable.6 The conditions at which hydrates are most likely
+to be encountered at are high pressures and low temperatures,7 prevalent when considering offshore wells, transit
+lines for liquid and gas flow, and equipment.8 Hydrates form in both oil and gas wells, requiring the presence
+of water, which tends to accumulate as stagnant zones in pipeline
+elevation changes.8 As many shallow reservoirs
+with favorable temperatures have been produced, offshore production
+is trending toward deeper and colder wells; thus, gas hydrates will
+likely be a significant factor when considering profitability of potential
+reservoirs.5,8 Removal of hydrate plugs can pose serious
+hazards;5 thus, avoiding or slowing hydrate
+growth is practiced, with approaches ranging from pipe insulation
+to fluid-phase chemical injection, and chemical means through use
+of thermodynamic or kinetic inhibitors, which prevent nucleation or
+slow hydrate growth, respectively. Kinetic inhibitors as low-dosage
+hydrate inhibitors (LDHIs) require addition at significantly lower
+concentration than thermodynamic inhibitors, thus possibly facilitating
+lower costs of hydrate control.2,9 As antiagglomerants
+require the presence of liquid hydrocarbons,9 these are not recommended for use with the model developed in this
+investigation. Due to the wide range of hydrate control options, determining
+the optimal combination of preventative means proves challenging.
+With the growing popularity of LDHI additives, it is essential to
+determine whether hydrate prevention rather than control is a cost-effective
+strategy.5 To establish an optimal hydrate
+management strategy, information regarding the temperature and pressure
+region wherein hydrates will be stable for a given gas is vital.
+
+Existing Means of Predicting Gas Hydrate Equilibrium Conditions
+Early hydrate equilibrium predictive models, including the Katz10 gas gravity plot, are often used as a preliminary
+estimate of equilibrium conditions.5 Among
+the models attempting to yield more reliable results are thermodynamic
+models. The van der Waals and Platteeuw11 model has served as a basis for many subsequent models.5,6,12 Such models entail predicting
+hydrate equilibrium conditions through a statistical thermodynamic
+approach based on intrinsic factors and can predict hydrate structure,12 with other advantages discussed in Sloan and
+Koh.5 Ballard and Sloan13 and Giavarini and Hester12 list
+several computerized thermodynamic models. Many of these models use
+as a base the van der Waals and Platteuw11 model or later variations to model the hydrate phase, while an equation
+of state such as the Peng–Robinson equation of state models
+the fluid phase.14 Chapoy et al.15 lists model shortcomings, notably the difficulty
+of adjusting model parameters and determining whether results correspond
+with a local minimum, significant factors when considering the complex
+nature of natural gas hydrate equilibria. Gas hydrate equilibrium
+modeling has also been achieved through machine learning, using easily
+measured variables to generalize behavior over a wide range of data,
+facilitating the development of models more able to accurately predict
+the highly nonlinear, multimodal phenomena of gas hydrate equilibria
+than those based on statistical thermodynamics. A wide range of machine
+learning models have been published. Input features for developed
+models vary, typically including temperature or pressure and some
+means of accounting for fluid composition. Regression model output
+is either the equilibrium temperature or pressure. Note that models
+have been considered with a focus on multicomponent hydrocarbon and
+natural gases. The neural network models of Heydari et al.16 and Hesami et al.17 predict equilibrium temperature from inputs of pressure and specific
+gravity. Zenali et al.18 developed neural
+network and ANFIS models from a dataset of over 700 points, for inputs
+of temperature and gas composition. Ghavipour et al.19 developed a model from 130 data points for inputs of pressure
+and the gas composition up to n-butane, while the
+train-test data split is an interesting aspect, being governed by
+leave-one-out, a form of cross-validation. Models have been developed
+to predict hydrate equilibrium conditions where thermodynamic inhibitors
+and electrolytes are present. Elgibaly and Elkamel20 developed models with up to 16 inputs, including gas composition,
+hydrogen sulfide, and inhibitor and electrolyte concentration, later
+expanded on in Elgibaly and Elkamel,21 accounting
+for inhibitor costs. Employing a train-test-validate split, Chapoy
+et al.15 developed a neural network with
+19 inputs from a dataset of over 3000 equilibrium points, including
+hydrate structure, gas compositions, and inhibitor and electrolyte
+concentration, while excluding methane molar gas-phase compositions
+less than 50%. While many studies cover an extensive range of conditions,
+many include copious amounts of data for pure and binary components.
+The sparseness of reliable publicly available multicomponent data
+renders multicomponent model development challenging. Soroush et al.22 developed a two-hidden-layer neural network,
+from just under 300 equilibrium points obtained from the literature,
+achieving a holdout validation R2 of 0.998,
+and while limited by a small dataset, restricts the methane + ethane
+molar gas-phase composition to a minimum of 66.38%, increasing model
+relevance to natural gas. While neural networks have become popular,
+support vector machine models continue to be developed, such as the
+works of Ghiasi et al.23
+
+While neural
+network models have yielded promising results over
+a range of experimental data, there is a lack of associated error
+for the results of many models, which may be assessed through cross-validation
+practices. Ward24 highlights that equilibrium
+experimental measurements must adequately account for hydrate metastability.
+As data used to develop models have usually been sampled from the
+literature, confidence in some dated sources of data may be raised
+due to outdated methodologies and apparatus. The cross-validated neural
+network developed in this investigation predicts the hydrate equilibrium
+pressure for a given temperature and gas composition. As extensive
+experimental data from various sources are used for model development,
+equilibrium is defined as the point at which complete dissociation
+of formed hydrates occurs, as recommended by Sloan and Koh.5 Overall, a robust, flexible alternative to the
+thermodynamic model is in demand.
+
+Model Limitations and Utility
+The proposed model uses
+a multilayer perceptron neural network
+trained to predict gas hydrate equilibrium pressure for inputs of
+temperature and gas composition, indicated in eq 1. Features only accommodate sI and sII hydrate
+formers, excluding black oils and heavy condensates. The model is
+considered usable for all gases with a minimum methane molar fraction
+of 0.5 and conforms to the features and units listed in Table 1. The proposed model aims to
+perform competitively with existing popular thermodynamic models in
+terms of uninhibited pressure prediction, and development has focused
+on proving significance of results through assessment of multicomponent
+performance and data source dependency. Should the model prove to
+be able to compete with existing thermodynamic models, it would be
+an indication that machine learning models have the potential to see
+significant industrial use. Simultaneously performing an analysis
+on results including both uninhibited and inhibited systems could
+cast doubt over the reliability of results, with larger datasets with
+more features leading to concerns that certain underperforming ranges
+of conditions may go unnoticed. As such, the first step to developing
+a model capable of achieving industrial confidence is predicting uninhibited
+systems with an accuracy competing with industrially accepted thermodynamic
+models. Historically, hydrate prediction models have typically accounted
+for the presence of thermodynamic inhibitors, however, with the increasing
+popularity of LDHIs, proving model performance using uninhibited equilibrium
+data carries significance. Proving uninhibited hydrate equilibrium
+prediction capability would allow the model to be used to assess whether
+operations are likely to fall within the hydrate stability zone, thus
+risking hydrate formation. Furthermore, an accurate uninhibited model
+would allow for pressure predictions in calculations to determine
+the viability of kinetic inhibitors, which typically involve determining
+the driving force for hydrate formation, calculated directly or through
+correlation with the degree of subcooling, the difference in temperature
+between system and equilibrium pressure.25 This degree of subcooling is also used together with induction time
+as a measurement of kinetic inhibitor performance and limitations,26 thus resulting in knowledge of hydrate equilibrium
+conditions being necessary to efficiently select the optimal inhibition
+strategy. Furthermore, the proposed model is limited through a lack
+of electrolytes as a model feature. While this does exclude use of
+the model for application in offshore drilling and well production,
+many offshore production facilities involve natural gas separation
+prior to pipelining or transportation. When considering a gas separated
+from other reservoir fluids, hydrate equilibrium calculations can
+take place without having to consider electrolytes as a feature. As
+such, the model could see use in subsea gas pipelines which have been
+preceded by phase separation, offshore gas processing facilities,
+and river or surface gas pipelines or processing facilities during
+cold seasons where hydrate formation may unexpectedly occur.
+
+Table 1 Features Influencing Hydrate Formation
+Included in Model Development
+temperature (°C)	C1 mol fraction	C2 mol fraction	C3 mol fraction	i-C4 mol
+fraction	n-C4 mol fraction	C5+ mol fraction	CO2 mol fraction	N2 mol fraction	pressure (MPa)	
+The main purpose of this research is to investigate
+the possibility
+of developing a machine learning model capable of yielding superior
+results to existing thermodynamic models. While many machine learning
+models in the field of predicting gas hydrate equilibrium conditions
+have been developed, some of which have been listed, it has been discussed
+that a lack of analysis into multicomponent prediction capability,
+datasets including methane concentrations below molar fractions of
+0.5, and uncertainty over the statistical significance of reported
+results and as to whether results are merely valid for favorable randomizations
+of train-test data necessitate definitive model development and analysis
+with metrics which allow performance when compared to existing thermodynamic
+models to be judged. Through application of both cross- and holdout
+validation facilitating greater model optimization, together with
+assessment of multicomponent performance and existing thermodynamic
+models, this model serves to fill a gap in existing research by providing
+an optimized model fit for predicting unseen data. Positive results
+are largely insensitive to exact model parameters, indicating a robust,
+repeatable methodology has been used. It is expected that research
+conducted for similar application could follow the design choices
+and validation practices or build off some of this work to develop
+similar models.
+
+Finally, given the abundance of data which has
+been published in
+works such as Sloan and Koh5 for thermodynamically
+inhibited systems and successful machine learning models accounting
+for inhibitors such as Chapoy et al.,15 it is likely that a successful uninhibited model could easily be
+converted to one capable of modeling these extra features 1  
+
+Methodology
+In this research, the approach taken to
+model the conditions of
+gas hydrate equilibria is that of a multivariate regression, implemented
+through an artificial neural network. Due to the significant nonlinearity
+of the data, neural networks are well suited to model the conditions
+of gas hydrate equilibria. Leshno et al.27 detail that a multilayer feed-forward network is capable of acting
+as a universal approximator, which is the end goal of this research.
+The neural network models developed in this research have been designed
+as feed-forward, multilayer perceptrons, trained in a supervised manner
+by means of a backpropagation through use of datasets of published
+equilibrium data. Models consist of two to three hidden layers. Model
+development has been performed using Python (v. 3.6.8) and the Keras
+(v. 2.2.4)92 library running on a Tensorflow
+(v. 1.12.0) backend to develop and train the neural network. Other
+libraries utilized include scikit-learn (v. 0.20.2), Pandas (v.0.24.1),
+and Numpy (v. 1.15.4), while Matplotlib (v. 3.0.2) has been used to
+develop various plots and illustrations.
+
+Model Features
+Features selected to generalize gas
+hydrate equilibria are listed in Table 1, where pressure is the output of the model. Rajnauth
+et al.7 detail temperature, pressure, and
+gas composition as factors influencing hydrate formation. GPSA1 and Sloan28 identify
+methane, ethane, propane, iso-butane, n-butane, carbon dioxide, nitrogen, and hydrogen sulfide as hydrate
+formers. Due to the scope of this investigation and a lack of sufficient
+independent experimental studies publishing data for mixtures including
+the component, the presence of hydrogen sulfide has not been included
+in model development. While hydrogen sulfide as a feature has been
+implemented in works such as Chapoy et al.,15 the manner in which cross-validation is performed in this research
+requires a significant number of independent studies covering a broad
+range of conditions. Carroll29 details
+heavy non-hydrate-forming hydrocarbons exhibiting an azeotropic effect
+when mixed with pure methane in hydrate-forming systems that is accounted
+for in the models developed through the inclusion of a lumped sum
+of hydrocarbons present in the gas phase with a carbon number of five
+or greater as a feature. Compositions are accounted for as molar fractions.
+Hydrate equilibrium conditions, temperature (°C) and pressure
+(MPa) have been selected as model feature and output, respectively.
+While GPSA1 lists kinetics and mass transfer
+as factors influencing hydrate formation, it is assumed that sampled
+data sources have adequately accounted for metastability effects when
+measuring equilibria by allowing sufficient time for formed hydrates
+to stabilize and a sufficiently low heating rate during dissociation
+up to equilibria.24,30 Although GPSA1 lists salinity as impacting hydrate formation, the effect
+of inhibitors and electrolytes on hydrate equilibria is beyond the
+scope this study. It is assumed there is sufficient water present
+to facilitate hydrate formation.
+
+The features listed in Table 1 do not influence
+pressure prediction in equal proportions. No redundant features have
+been selected. Gas temperature is regarded as the feature most significantly
+influencing the pressure at which hydrate equilibrium is achieved,
+with a direct proportional relationship well established. While the
+lumped fraction of organic molecules with five or more carbon atoms
+does not occupy structure I or II hydrate cages, the presence of these
+molecules induces an azeotropic effect,29 influencing hydrate equilibrium conditions, albeit likely the lowest
+contribution to predicted pressure of all listed features. As methane,
+ethane, and nitrogen may occupy both structure I and II hydrates,31,32 their respective contribution toward the pressure prediction falls
+short in the presence of larger organic gases. While carbon dioxide
+similarly to methane may occupy cages for both hydrate structures,
+dissociation occurs in a different thermodynamic manner from methane,33 requiring consideration despite carbon dioxide
+generally only being a low-molar-fraction component. Propane and butane
+fractions heavily influence the hydrate structure, thus potentially
+having a large impact on equilibrium conditions and are thus weighted
+accordingly. Further complexity is introduced through molecules such
+as n-butane being unable to occupy even the large
+cages of hydrate structure II without the assistance of a smaller
+molecule such as methane.5 When considering
+the possible coexistence of hydrate structures, it can be seen that
+propane, isobutane, and n-butane
+will most significantly affect hydrate equilibrium conditions, being
+weighted only behind temperature.
+
+Dataset Sampling
+A vast quantity of data spanning a
+wide range of conditions is required to develop the neural network.
+All data sampled have been obtained from experimental studies on gases
+reporting several features listed in eq 1 and Table 1. Hydrate equilibrium data have been collected through a rigorous
+data sampling campaign. To avoid biasing the model, the sampling of
+generated data of any kind has been avoided, and studies using software
+or equations to predict the conditions of hydrate equilibrium have
+been excluded. As a regression model is being developed, sampling
+data outside of equilibrium bias results and reduce the overall accuracy
+of the model. Ruffine et al.34 attribute
+much of the difference in hydrate formation between laboratory-scale
+experiments and natural gas equipment to inadequate time taken to
+form stable hydrates and time over which hydrates occupy a stable
+state. Sampled data have been checked where possible to ensure that
+the reported values do occur at equilibrium, and care is taken to
+ensure no obvious neglect of metastability is reported. A limited
+number of multicomponent hydrate equilibrium measurements have been
+published, largely due to the time taken to perform these experimental
+measurements. Ward24 attributes the need
+to account for metastability effects as a significant time investment
+for measurements. Several data sources used in this study have routinely
+been included in other prediction models in the field, notably that
+by Sloan and Koh,5 which constitutes a
+substantial quantity of data by listing various experimental hydrate
+equilibrium studies and measurements. While there is an overlap between
+data used in this study and several others published in the field,
+other equilibrium data sources published in recent years or overlooked
+in the past have been included. All data sources have been referenced.5,19,24,32,43−91
+
+While natural gas hydrates conform to three distinct hydrate
+structures, Tohidi et al.35 investigated
+the occurrence of structure H hydrates in reservoir fluids including
+natural gas and determined that structure H, while possible when operating
+within the hydrate stability zone, is unlikely to form when considering
+reservoir fluids such as natural gas at equilibrium. Tohidi et al.35 identify structure II hydrates as the dominant
+structure in reservoir fluid hydrate formation. For this model, it
+is assumed that in the case of a hydrate avoidance strategy, the hydrate
+stability zone is avoided. As equilibrium is examined rather than
+conditions within the hydrate stability zone, experimental data are
+overwhelmingly sampled from sources where sI or sII hydrates are present.
+
+Dataset Composition and Grouping
+Sampled data have
+been compiled into datasets for model development; summaries of both
+are provided in Tables 2 and 3. Units of measurement for each feature
+have been converted to those in Table 1. Conversions between metric temperatures have been
+performed on the basis that 0° C = 273.15 K. Normalization is
+performed to fit data within the features of the model by setting
+the sum of molar fraction compositions to unity due to source decimal
+place inconsistencies and the presence of insignificant quantities
+of inert components which do not interfere with hydrate formation.
+The regression was performed adequately without scaling temperature
+or pressure, and these features are left in their original units listed
+in Table 1. Both a
+multicomponent exclusive and complete dataset have been compiled with
+670 and 1209 equilibrium gas measurements, respectively, where the
+complete dataset includes all samples present in the multicomponent
+dataset in addition to pure and binary methane measurements. While
+the final model is based on the complete dataset, separate models
+are developed for comparative purposes with regard to predictions
+of complex gases such as natural gas. A constraint placed on both
+datasets to ensure results are relevant to natural gas is a minimum
+0.5 molar fraction of methane in the gas phase. Compiled datasets
+do not cover an even distribution of the range of conditions investigated,
+largely due to the lack of experimental data for certain ranges. As
+such, datasets are non-Gaussian, requiring consideration when developing
+model training and testing sets. Grouping data by experimental source
+facilitates sampling techniques ensuring better representation of
+the entire dataset for model train-test sets. Grouping is performed
+by assigning a unique code in the dataset to equilibrium measurements
+from the same source and experimental setup. Binary measurements have
+been grouped per source, per binary component, while several pure
+methane sources have been assigned two groups with similar distributions
+over 81 of the 123 pure methane samples to avoid biasing results.
+Sources reporting less than four samples are excluded from the dataset,
+while groups of 50 or more samples are restricted to multicomponent
+dominant sources. The grouping of equilibrium data in each dataset
+allows assessment of model dependency on individual data sources.
+Due to the inclusion of historical data sources which may have employed
+outdated measurement practices for identifying the equilibrium point
+or may not have sufficiently accounted for metastability such that
+measurements are slightly within hydrate stability, heavy reliance
+upon individual sources to cover ranges of data is often unwanted.
+While the data sampling campaign is conducted in an attempt to render
+statistical variations across samples insignificant, due to the limited
+availability of data, assessing dependencies is worthwhile. Considering
+grouping during model development allows these factors to be mitigated
+to some extent and reduces the bias on reported results.
+
+Table 2 Multicomponent Exclusive Dataset Summary
+feature	temperature
+(°C)	C1 mol fraction	C2 mol fraction	C3 mol fraction	i-C4 mol fraction	n-C4 mol fraction	C5+ mol
+fraction	CO2 mol fraction	N2 mol fraction	pressure
+(MPa)	
+sample count	670	670	670	670	670	670	670	670	670	670	
+mean	13.5732	0.8524	0.0651	0.0300	0.0038	0.0065	0.0024	0.0145	0.0253	8.1922	
+σ	6.9344	0.1026	0.0604	0.0304	0.0078	0.0115	0.0057	0.0350	0.0620	8.8865	
+min	0.0000	0.5000	0.0000	0.0000	0.0000	0.0000	0.0000	0.0000	0.0000	0.4966	
+25%	7.4500	0.8025	0.0169	0.0096	0.0000	0.0000	0.0000	0.0000	0.0000	2.6164	
+50%	14.1550	0.8654	0.0543	0.0204	0.0001	0.0004	0.0000	0.0004	0.0004	5.1435	
+75%	19.2502	0.9280	0.0795	0.0357	0.0040	0.0085	0.0018	0.0143	0.0090	10.4623	
+max	30.3735	0.9940	0.2500	0.1698	0.0461	0.0510	0.0340	0.3140	0.4000	68.2300	
+Table 3 Complete Dataset Summary
+feature	temperature
+(°C)	C1 mol fraction	C2 mol fraction	C3 mol fraction	i-C4 mol fraction	n-C4 mol fraction	C5+ mol
+fraction	CO2 mol fraction	N2 mol fraction	pressure
+(MPa)	
+sample count	1209	1209	1209	1209	1209	1209	1209	1209	1209	1209	
+mean	12.5068	0.8758	0.0413	0.0223	0.0066	0.0049	0.0014	0.0225	0.0252	9.2320	
+σ	7.3586	0.1168	0.0620	0.0445	0.0301	0.0109	0.0044	0.0667	0.0725	11.1019	
+min	0.0000	0.5000	0.0000	0.0000	0.0000	0.0000	0.0000	0.0000	0.0000	0.1800	
+25%	6.1500	0.8375	0.0000	0.0000	0.0000	0.0000	0.0000	0.0000	0.0000	2.8300	
+50%	12.1000	0.8950	0.0088	0.0019	0.0000	0.0000	0.0000	0.0000	0.0000	5.3778	
+75%	18.3500	0.9725	0.0647	0.0308	0.0029	0.0055	0.0000	0.0051	0.0068	10.8080	
+max	31.8500	1.0000	0.4360	0.4980	0.5000	0.0582	0.0340	0.5000	0.4975	72.2600	
+Model Validation
+The neural network is trained by reducing
+the error arising from disparity between actual and predicted training
+data pressure. While the model training score may be reported as an
+exceptionally favorable figure, this does not provide an indication
+of a model’s capability to predict unseen data, and may be
+achieved at the cost of overfitting the model, thus reducing generalization
+capability.37 To test the predictive capability
+of the model, data unseen during training must be used. The means
+of performing model validation has been selected to effectively utilize
+a dataset limited in size, facilitating a high degree of model tuning
+to obtain a near-optimal result, while yielding the variance associated
+with results. The validation strategy involves a holdout test set
+being separated from training data, and training data subdivided into
+train-test sets through 10-fold cross-validation. Cross-validation
+provides an indication of how the model performs under a range of
+conditions and outputs the bias and standard deviation associated
+with results over 10-folds. This 10-fold cross-validation provides
+10 results obtained from 10 randomized combinations of train-test
+data, indicating the ability of a model to predict conditions over
+the entire range of data provided, and ensures that high-scoring models
+are not merely accurate for a favorable randomization. The cross-validation
+variance serves to highlight potential outliers or ranges of conditions
+which are poorly fitted or lack a sufficient quantity of data needed
+to make accurate predictions. Following cross-validation, the model
+is trained using all training data, and is validated using the holdout
+set. Holdout validation ensures that tuning the model parameters based
+on cross-validation results can be performed without significant risk
+of information regarding the test set leaking into the neural network,
+which could render results unreliable. Holdout validation facilitates
+testing the cross-validated model using unseen data and ensures that
+model parameter tuning has not led to overfitting.
+
+Due to the
+non-Gaussian nature of the dataset, randomly sampling indices for
+both holdout and cross-validation sets is unlikely to reflect an adequate
+range of equilibrium conditions present in the dataset. While grouping
+facilitates sampling a wide range of conditions, a highly uneven number
+of equilibrium measurements per group is noted, illustrated in Figure 1. Thus, as traditional
+group sampling techniques are unviable, the holdout validation split
+is achieved by means of a randomized, stratified split, whereby dataset
+indices are randomly divided into training and holdout validation
+sets such that the proportion of groups relative to each other is
+held approximately constant. Stratified sampling ensures that a wide
+range of conditions is represented in both the training and holdout
+validation sets, while introducing randomization. Exactly 10% of the
+dataset is used to develop the holdout validation set for all models
+developed. As several models have been developed, cross-validation
+is performed by one of two approaches. For models investigating model
+dependency on individual data sources, approximately 30% of training
+set randomly grouped data to be used for testing, while the remainder
+is used for training such that data from the same group are not used
+for both training and testing for the cross-validation fold. For models
+which do not consider dependency on data sources, cross-validation
+indices are randomly selected such that exactly 30% of indices are
+used for testing and indices from the same group are likely to be
+present in both training and test sets for the cross-validation fold.
+
+Figure 1 Multicomponent
+dataset grouping. Complete dataset grouping.
+
+Model Development
+While model G is the end product
+of this research, to assess model capacity to predict multicomponent
+data, multiple models for each dataset have been developed. Models
+A, C, and F have been developed from the multicomponent exclusive
+dataset, while models B, D, E, G, and J have been developed using
+the complete dataset. To assess the dependency of models on individual
+sources of data for certain ranges, additional models have been developed
+applying grouped cross-validation. Models A, B, C, D, E, and J undergo
+a randomized group split. Models F and G employ a standard nongrouped
+randomized split. Additional models demonstrating the effect of altering
+hyperparameters have also been developed; models D and E compare results
+from separate activation functions. All models developed are summarized
+in Table 4, with neural
+network topology, cross-validation grouping, and the results of cross-validation
+and holdout validation displayed where applicable.
+
+Table 4 Summary of Models and Results
+model	dataset	holdout	group	hidden layers	neuron count	activation	R2 (CV)	σ
+(CV)	R2 (holdout)	
+A	multicomponent exclusive	true	true	2	64	ReLU	0.90622	0.05410	0.95114	
+B	complete	true	true	2	256	ReLU	0.96106	0.01933	0.98686	
+C	multicomponent exclusive	false	true	3	256	ReLU	0.91382	0.04722	 	
+D	complete	false	true	3	256	ReLU	0.95199	0.03075	 	
+E	complete	false	true	2	128	Sigmoid	0.94695	0.04611	 	
+F	multicomponent exclusive	true	false	3	352	ReLU	0.98294	0.00736	0.97389	
+Ga	complete	true	false	3	352	ReLU	0.98703	0.00296	0.99315	
+Hb	multicomponent exclusive	true	false	0	 	 	0.60671	0.02469	0.68302	
+Ib	complete	false	false	0	 	 	0.87105	0.05564	 	
+J	complete	true	true	3	352	ReLU	0.95814	0.02154	0.98918	
+a End product of this research.
+
+b Simple polynomial regression.
+
+For each model, nine inputs are present corresponding
+to Table 1 excluding
+pressure,
+which is the output. Each input node connects to each neuron present
+in the subsequent hidden layer, each node of which connects to all
+nodes of the following layer, be it another hidden layer or the output.
+As a regression is being performed, the model output consists of a
+single node, yielding equilibrium pressure. Initial random weights
+of the network have been initialized according to a normal distribution.
+Models consist of two or three hidden layers. The loss function to
+be minimized during model training has been selected as the mean-square
+error (MSE), provided in eq 7, selected to prioritize minimizing outliers. To ensure replicable
+results, the randomization of cross-validation and holdout validation
+are seeded such that successive iterations of the same model parameters
+and network topology sample the same indices during training and testing.
+Cross-validation and holdout sets are separately seeded. The seeding
+of model randomization allows the effect of different model parameters
+on results to be assessed. Several metrics have been employed to assess
+model performance, as model G is considered the end product of this
+research and model F is additionally compared to existing thermodynamic
+models to gauge multicomponent performance, and these two models undergo
+analysis using a wide range of metrics commonly included in regression
+studies, including the coefficient of determination or R2 score, mean absolute percentage error (MAPE), and root-mean-square
+error (RMSE). While the R2 score is typically
+the standard metric for use with regression problems when combined
+with other metrics such as RMSE, as the number of features in a model
+increases, there is a chance that poor regressions are not detected
+due to an apparently high R2 score. A
+metric such as the R2 score, which penalizes
+pressure predictions on test data both greater or less than the actual
+test value without reducing the error metric due to overshoot and
+undershoot balancing is sought after due to the relative scale allowing
+decisions on model accuracy to be made without comparison with other
+models. The adjusted coefficient of determination (Radjusted2), defined in eq 3, accounts for the data points and features
+employed. Similarly, the widely used MAPE metric has issues with large
+dataset models. Tofallis36 proved that
+MAPE metrics are biased through tending to select underperforming
+models, while symmetric mean absolute percentage error (SMAPE), provided
+in eq 5, exhibits a relatively
+neutral bias 2   3   4   5   6   7  
+
+While other absolute metrics are often
+employed for model comparison
+and accuracy assessment such as mean deviation, as this model has
+been developed to predict pressure in an unscaled fashion, whereby
+pressure may vary from 0.18 to 72.26 MPa, coupled with the non-Gaussian
+nature of the dataset, use of relative metrics has been prioritized
+when performing model selection. Due to differences in random sampling
+for training and testing between models, comparing absolute metrics
+is unlikely to indicate the better model with certainty, as it is
+possible that one model was tested using significantly more high-pressure
+samples than the other, causing a model performing relatively well
+to be passed over. For assessing multicomponent performance and source
+dependency, variance over 10-fold cross-validation and altering the
+random seeding are the primary means of identifying model flaws.
+
+Hyperparameter Optimization
+This investigation performs
+hyperparameter optimization by means of a grid-search procedure, whereby
+model parameters iterated through predefined values in a range to
+select a model achieving a close-to-optimal regression testing result
+over 10 cross-validation folds. A significant risk when attempting
+to optimize model hyperparameters is the possibility of overfitting.
+Cawley and Talbot37 elaborate that overfitting
+is a risk whenever model selection is performed over a limited dataset,
+even if cross-validation is applied. Iterating hyperparameters risks
+providing a regression highly specific to the sample data, thus overfitting
+while lowering generalization ability for unseen data.37 The validation practice employed in this investigation
+serves to mitigate the risk of loss in generalization capacity. By
+performing a grid-search on cross-validated model proceeded by testing
+using an unseen holdout validation set, it is possible to avoid overfitting
+based on holdout testing results. Due to the computational times involved
+in training highly nonlinear, multilayered neural network regression
+models, parameter iterations are predefined, thus obtaining the global
+minimum is unlikely. Additionally, variance in results between successive
+trained models may result in the highest scoring model alternating
+between several different parameter combinations. Nevertheless, an
+iterative approach allows for significant improvement to results,
+likely yielding results close to optimal. Parameters selected to undergo
+grid-search include the number of hidden layers, neurons, training
+epochs, batch size, hidden layer activation, and the optimizer used
+to minimize the training loss function. These parameters are assigned
+a wide range of predefined values to facilitate the grid-search. Results
+exhibiting a high mean R2 with acceptable
+standard deviation undergo holdout validation to ensure the model
+is not overfitted. Models are further tested by varying the random
+seeding to ensure that results are not merely valid for a favorable
+train-test split. The best model is selected based on the criteria
+of adequately low cross-validation variance, and a high-scoring holdout
+validation.
+
+The presence of hidden layers allows nonlinearity
+to be introduced into the model by means of activation functions,27 and at least one hidden layer must be present.
+The activation function governs how neurons transform input. Leshno
+et al.27 detail that any continuous function
+can be modeled by a nonconstant, nonpolynomial activation function.
+Several nonlinear activation functions are selected to be iterated
+as part of the grid-search procedure, including the rectified linear
+unit (ReLU) and sigmoid activation functions. Glorot and Bengio38 discuss the difficulty of implementing the sigmoid
+activation for deep learning application. The ReLU hidden-layer activation
+function successfully introduces nonlinearity into the system and
+allows complex behavior to be learned.39 Several activation functions in a deep learning context considered
+in this investigation are provided and discussed in Nwankpa et al.40 The means by which the model training loss is
+reduced is governed by use of an optimizer, which minimizes a cost
+function during training.41 The optimizer
+should be selected such that the global minima, rather than some local
+minima, is obtained when minimizing loss. The stochastic gradient
+descent (SGD) optimizer, while widely used in machine learning,41,42 results in additional parameters requiring tuning, raising computing
+time. While application of the step-decay method or alternate learning
+rate schedulers, which reduce the number of parameters, could reduce
+computation time,42 an alternative is to
+utilize optimizers which incorporate adaptive learning rates. Several
+such adaptive optimizers are investigated as hyperparameters during
+grid-search, such as adam, a gradient-based optimizer, which is introduced
+and discussed in Kingma and Ba.41 Adam
+allows for fewer hyperparameters to be iterated and thus simplifies
+model selection. In all neural network models with the exception of
+Model E, which employs a softplus activation function, a linear activation
+function is used for the output layer so as to provide a continuous,
+real output.
+
+Topology and Parameter Selection
+Neural network topology
+and parameters are selected following hyperparameter optimization.
+The traditional approach of selecting parameters which lead to a minimized
+validation loss is not possible due to the application of cross-validation.
+Instead, parameters are selected based on the grid-search iteration
+results, whereby the best-performing models over 10-fold cross-validation
+undergo holdout validation, after which the best model is selected.
+As such, the number of hidden layers, neurons, activation functions,
+epochs, batch sizes, optimizers, and regularization practices are
+selected based on model results from a range of iterated parameters,
+rather than being predefined. Several constraints are present in terms
+of topology. Iterated parameters also include number of hidden layers
+and neurons. All hyperparameter optimization searches are restricted
+to at least one hidden layer, and a maximum of four hidden layers.
+Furthermore, the number of neurons within each hidden layer is held
+constant across all layers; for instance, if hidden layer 2 consists
+of 100 neurons, hidden layer 3 will also contain 100 neurons. Similarly,
+hidden layer activation functions are held constant across layers.
+These constraints have been made so as to allow a large number of
+different parameters to be iterated over a wide range of values and
+cases within an acceptable training time frame. The introduction of
+regularization to the neural network has been implemented through
+dropout practices, which serve to improve generalization capability
+through preventing overfitting by disabling random neurons in the
+network during training. Dropout allows the occurrence of dead neurons
+to be minimized, whereby neurons are gradually assigned weights so
+low that they cease to alter input in any significant manner, and
+pairs well with the ReLU activation function for this reason. A constraint
+on the dropout is that each hidden layer employs the same dropout
+as other layers. Dropout is not performed on input or output layers.
+
+Comparison with Existing Industrially Accepted Models
+While many different models, thermodynamic and machine learning alike,
+have been developed to predict gas hydrate equilibrium pressure for
+a variety of input features, as machine learning models require a
+substantial amount of data to adequately generalize behavior, unless
+the exact same dataset has been used across model training and testing
+for separate models, a comparison between the results of this study
+and others is not possible through simply comparing reported test
+accuracies. It is however possible to compare models by assessing
+prediction capabilities through calculating accuracies for each model
+through use of the datasets compiled in this research. As discussed,
+thermodynamic models have garnered significant application in industry,
+and any proposed model must be able to verifiably at least compete
+with some existing popular models. Through obtaining accuracies for
+proven successful models, benchmark metrics may be obtained, which
+serve as an indication as to whether or not the proposed model is
+successful enough to see practical application. Two popular thermodynamic
+models have been tested using the sample datasets with the goal of
+assessing performance for both the complete and multicomponent exclusive
+datasets. CSMHYD is one such thermodynamic model which has been used
+to predict equilibrium pressure for both datasets, courtesy of the
+Colorado School of Mines (1998), is an older thermodynamic model which
+still sees significant use, and can be seen in comparative studies
+conducted by Ballard and Sloan13 as being
+competitive with many more modern thermodynamic models. Comparison
+with a cutting-edge thermodynamic model is also desired, and as such
+Multiflash (v 7.0.40) has additionally been tested using the sample
+datasets, courtesy of KBC Advanced Technologies Limited. This software
+has seen extensive industrial application, and achieving a competitive
+performance against such a model would prove to greatly elevate the
+credibility of models developed in this research. It must be emphasized
+however that the models developed in this investigation are merely
+designed to predict gas hydrate equilibrium pressure for uninhibited,
+sweet natural gases in the absence of significant electrolytes, while
+software such as Multiflash provides a host of features.
+
+To
+use these thermodynamic models, a number of assumptions are required,
+notably that the sample was saturated with water. This is justifiable
+as all data collected have been experimentally determined, typically
+with excess water present. The exact quantity of water is not required,
+and varying the amount from saturation has a minimal effect of results.
+Furthermore, the C5+ fraction is completely assigned to n-pentane.
+This is done as although Multiflash facilitates component lumping,
+the CSMHYD executable does not. The effect of this has been assessed
+for the data being predicted for both models, and in the overwhelming
+majority of cases, results in a deviation in predicted pressure by
+less than 2% when changing the spread of C5+ fractions across various
+heavier hydrocarbons, both lumped and not lumped. This minimal deviation
+is expected as only hydrate structures sI and sII are investigated
+by this model, neither of which can accommodate molecules larger than n-butane as hydrate formers. Based on the C5+ fraction not
+actively forming hydrates, the results of the comparative studies,
+and the slight differences in using lumped fractions versus simply
+assigning the entire C5+ fraction to n-pentane, this factor is considered
+insignificant to assessing the overall predictive capabilities of
+the models, and all equilibrium predictions involving C5+ have been
+assigned to n-pentane.
+
+Studies which assess thermodynamic model
+performance typically
+investigate single-component, binary, ternary, and natural gas performance
+separately so as to identify possible weaknesses for a model;13 however, as the majority of data used to develop
+the neural network models in this investigation have been used for
+model training, only a small portion of the original dataset remains
+for neural network validation, which has not been seen by the model.
+As such, comparison with both multicomponent and complete datasets
+will help reveal possible weak points for the thermodynamic model
+and provide an unbiased means of comparing model performance when
+using a smaller sample set which, due to the non-Gaussian nature of
+the dataset, may not be representative of the remaining data. To compare
+these thermodynamic models with the developed neural network models,
+it is necessary to perform tests using the entirety of both complete
+and multicomponent datasets, in addition to the holdout indices for
+these datasets used to provide final validation metrics for the neural
+network model. As sufficient data have been collected during data
+compilation, it is possible to conclude that the neural network model
+must compete with the best result of these two sample tests. Accuracy
+for these thermodynamic models has been assessed according to the
+same metrics used to judge the end product of this research, measured
+from the differences between experimental and predicted equilibrium
+pressures.
+
+Results
+Due to the numerous criteria used to evaluate
+model performance,
+including multicomponent data prediction and dependency on individual
+data sources, multiple models have been developed and are summarized
+in Tables 4 and 5. Hyperparameter optimization has been performed
+on models employing holdout validation. Note that model selection
+based on holdout validation results has been limited to avoid leaking
+holdout validation data, as opposed to hyperparameter optimization
+whereby model selection is performed from a wide range of conditions.
+Model G is considered the end product of this research, trained and
+tested using the complete dataset and cross-validated using a 10-fold
+nongrouped sampling approach, while undergoing holdout testing by
+means of stratified sampling to ensure overfitting has not occurred
+during hyperparameter optimization. Model G has achieved satisfactory
+results, and all relevant metrics for both training and testing are
+listed in Table 5.
+The model uses a topology summarized in Table 4, with a single neuron linear activated output
+and three hidden layers each consisting of 352 neurons using the ReLU
+activation function and a dropout of 5% so as to avoid dead neurons
+arising from use of the ReLU activation function. The 10-fold cross-validation
+testing yields a mean R2 score of 0.9870
+and a standard deviation of 0.0030. MAPE metrics for testing indicate
+an average performance of 7.019% with a standard deviation of 0.723%
+across the 10 cross-validation folds. For cross-validation, the discrepancy
+between R2 and Radjusted2 is relatively low, as is also the case
+with differences between MAPE and SMAPE metrics. These results indicate
+that variance between cross-validation folds is sufficiently low and
+generalization of behavior has been adequately performed. It is worth
+emphasizing that cross-validation is merely a tool which allows further
+insight into the ability of a model to predict unseen data and to
+prevent overfitting. The final assessment of model performance is
+the accuracy of holdout validation. For model G, holdout validation
+indicates an R2 of 0.9931 and a mean absolute
+percentage error of 5.558%, indicating the model is well suited toward
+predicting unseen data. As the sample size for holdout validation
+is lower than that used for cross-validation testing, adjusted metrics
+prove more significant, with Radjusted2 = 0.9926 and SMAPE = 5.689%. Overall, both cross-validation
+and holdout validation indicate the model is unlikely to be overfitted,
+has successfully generalized gas hydrate equilibria, and achieves
+satisfactory performance. Further hyperparameters not listed in Table 4 include 8000 training
+epochs and a training batch size of 256. The model is proven to outperform
+two popular thermodynamic models, with a comparison provided in Table 6. Positive results
+are largely insensitive to exact model parameters, thus indicating
+a robust, replicable methodology. It must be emphasized that the model
+is only applicable to sweet, uninhibited natural gases which have
+undergone phase separation. Hydrogen sulfide was excluded as a model
+feature in this investigation due to poor grouped cross-validation
+performance.
+
+Figure 2 Cross-validation 10-fold variance across
+multicomponent exclusive
+neural network models. Cross-validation 10-fold variance across complete
+dataset neural network models. Note model G is the end result of this
+research.
+
+Table 5 Optimized Model Average 10-Fold Cross-Validation
+Performance
+model	sample size	R2	R2 adjusted	MAPE (%)	SMAPE (%)	RMSE	
+model F (train)	422	0.997187 ± (0.002007)	0.997125 ± (0.002051)	3.254632 ± (0.931851)	3.250130 ± (0.893337)	0.441012 ± (0.156115)	
+model F (test)	181	0.982944
+± (0.007355)	0.982046 ± (0.007742)	7.701709 ± (1.041027)	7.563736 ± (0.877334)	1.175228 ± (0.270948)	
+model F
+(holdout)	67	0.973893	0.969770	7.535356	7.367613	1.308022	
+model G (train)	762	0.997900 ± (0.001391)	0.9978405 ± (0.00143)	2.698079 ± (0.703972)	2.702965 ± (0.718815)	0.483724 ± (0.151075)	
+model G
+(test)	326	0.987034 ± (0.002958)	0.9866648 ± (0.003042)	7.019491 ± (0.722523)	7.004434 ± (0.803799)	1.220705 ± (0.128513)	
+model G (holdout)	121	0.993147	0.992591	5.557521	5.688998	1.010064	
+Table 6 Comparison of Developed Models with
+Existing Thermodynamic Models
+model	dataset	validation
+samples	R2	R2 adjusted	MAPE (%)	SMAPE
+(%)	RMSE	
+model F	multicomponent (holdout)	67	0.973893	0.969770	7.535356	7.367613	1.308022	
+model
+Ga	complete (holdout)	121	0.993147	0.992591	5.557521	5.688998	1.010064	
+CSMHYD	multicomponent	670	0.947842	0.947131	14.690349	13.846418	2.028001	
+CSMHYD	multicomponent (holdout)	67	0.943707	0.934819	14.899993	13.892934	1.920705	
+CSMHYD	complete	1209	0.960327	0.960029	11.731032	11.246104	2.210369	
+CSMHYD	complete (holdout)	121	0.967904	0.965302	12.060525	11.435506	2.185910	
+multiflash	multicomponent	670	0.953865	0.953236	12.681098	12.098921	1.907313	
+multiflash	multicomponent (holdout)	67	0.948401	0.940254	12.541839	11.715145	1.838883	
+multiflash	complete	1209	0.976174	0.975995	10.127942	9.635545	1.712942	
+multiflash	complete
+(holdout)	121	0.977557	0.975737	10.246058	9.632095	1.827887	
+a End product of this research.
+
+Discussion
+Hyperparameter optimization performed by
+means of a grid-search
+procedure indicates that models comprising at least two hidden layers,
+with a high neuron count, are capable of achieving sufficiently accurate
+and replicable results. To lower computation times and the risk of
+overfitting, no more than four hidden layers are investigated, and
+hidden layer neurons and activations are constant across layers. The
+factor of training time proves significant considering the large number
+of parameters iterated during hyperparameter optimization. Hyperparameter
+optimization revealed that the best models have, in most cases, been
+developed through the use of the adam optimizer, which has been applied
+to all neural networks listed in Table 4. While a significant number of publications in the
+field employ the sigmoid activation function for hidden layer activation,
+during grid-search procedures, it was noted that sigmoid models exhibited
+longer training times or required more epochs to achieve near-optimal
+solutions. This behavior is expected, based on the observations of
+Glorot and Bengio38 and Maas et al.,39 due to deep learning application. Models applying
+ReLU to hidden layer activation are observed to usually achieve favorable
+results in less time than sigmoid models. While ReLU activation can
+result in dead neurons for large networks, only three hidden layers
+are present in the final model with 352 neurons per hidden layer,
+and ReLU activation does not result in significant issues. Results
+between models applying these two hidden-layer activations do not
+differ drastically, as indicated by complete dataset models D and
+E, which utilize ReLU and sigmoid activation, respectively, applying
+ungrouped cross-validation without significant model selection in
+the absence of a holdout. All remaining neural networks listed in Table 4 have thus been developed
+using the ReLU activation function to govern hidden layer activation
+so as to reduce the time taken for model development and grid-searches.
+Altering the output function for model E from linear to softplus presented
+no significant effect on parameter search times; thus, all other models
+have been developed using a linear output function.
+
+Traditional
+L1/L2 regularization was attempted; however, results
+from implementing dropout regularization practices instead proved
+significantly more effective at reducing overfitting. While dropout
+is typically implemented in machine learning studies above 20% neuron
+dropout, the effect of high percentage dropout can be seen in Figure 3 (left panel), whereby
+a 30% dropout applied to a neural network with the same toplogy as
+model G causes a rapid divergence of validation error from training
+error. Excess dropout leads to the testing error rapidly diverging
+from the training error after a few epochs, and is unwanted. A 5%
+dropout has been identified as an optimal solution and has been applied
+to model F and model G. The application of dropout has paired well
+with the ReLU activation function, applied to the hidden layers of
+model F and model G, and serves to prevent extremely low weight neurons. By deactivating 5% of neurons
+randomly, the network can exit a cycle of ever-decreasing neuron weights
+and thus serve to prevent dead neurons.
+
+Figure 3 Effect of excess dropout
+applied to hidden layers of model G. Early
+loss divergence unwanted. Loss reported each epoch. Model G regression
+plot. Validation samples from holdout validation set, not used in
+model training.
+
+Comparison of Results with Existing Thermodynamic Models
+To assess the ability model G relative to successful models, CSMHYD
+and Multiflash have been selected and tested using the entirety of
+both the multicomponent and complete datasets and further tested using
+only the holdout samples used to provide a final evaluation of the
+neural network model performance. Results for each of these cases
+are provided in Table 6. It is possible to place the results presented in Table 6 in perspective through examining
+the works of Ballard and Sloan,13 which
+examines the equilibrium pressure prediction accuracy of several thermodynamic
+models. The study was conducted using a wide range of data and includes
+an analysis for uninhibited systems. The dataset used to assess performance
+in this regard consisted of 1685 data points, 161 of which are gases
+with three or more components, which constitutes multicomponent gases
+in this investigation. The study assessed the MAPE for pressure predictions
+for each model. For the entire dataset, CSMHYD and Multiflash yielded
+approximately a 8.7 and 9.2% errors, respectively. For ternary component
+mixtures, CSMHYD and Multiflash yielded approximately 16.4 and 16.7%
+errors, respectively. Finally, for natural gas mixtures, CSMHYD and
+Multiflash predicted pressure with approximately 12.1 and 9.6% errors,
+respectively. As can be seen from Table 6, results from using the dataset developed
+in this investigation to assess CSMHYD and Multiflash differ from
+the Ballard and Sloan13 study to some extent.
+While values for multicomponent prediction fall between the Ballard
+and Sloan13 ternary and natural gas prediction
+values, results for testing the entire dataset differ most significantly.
+Testing the complete dataset of 1209 samples revealed 11.7 and 10.1%
+MAPE errors for CSMHYD and Multiflash, respectively. The reason for
+this occurrence can be explained through examining the contents of
+the test set; of the 1685 data points Ballard and Sloan13 use to test model performance, 632 are single-component
+samples, yielding vastly more accurate predictions for both thermodynamic
+models than for other gas mixtures, and 747 further samples are binary.
+In this investigation, 670 samples consist of at least three components,
+significantly more than the 161 multicomponent gas points used in
+Ballard and Sloan. As such, the less favorable errors reported in Table 6 can be explained
+through the models being tested using significantly more difficult-to-predict
+samples, with the tendency for Multiflash to provide better natural
+gas predictions than CSMHYD illustrated in Ballard and Sloan13 causing the program to perform better than CSMHYD
+for the datasets developed in this investigation. As such, it can
+be seen that errors for CSMHYD and Multiflash for this investigation
+correlate to an extent with existing literature, thus ruling out the
+possibility that potential inaccurate dataset points present render
+model comparisons void.
+
+Having discussed how the values in Table 6 for the two thermodynamic
+models fall within the expected error margins, comparison may now
+be drawn between the performance of these models and the optimized
+models of this research, model F and model G. As the neural network
+models have been trained using 70% of data made available to cross-validation
+following the 10% holdout validation split, the entirety of the datasets
+cannot be used to assess performance. This would unfairly favor the
+machine learning model above the thermodynamic model. As such, the
+holdout validation set is used to test all models to provide a fair
+comparison. Concerning the thermodynamic models, there is not much
+difference between the results of holdout and entire dataset testing.
+This is largely due to the stratified manner in which holdout indices
+are generated and likely serve to preserve the ratio of multicomponent,
+binary and pure methane samples to an extent across both test cases.
+For both multicomponent and complete dataset testing, it can be seen
+that model F and model G perform significantly more accurately than
+either thermodynamic model. Furthermore, Multiflash can be seen providing
+more accurate predictions than CSMHYD. Model G, the end product of
+this research, is seen achieving a SMAPE 5.69% compared to the SMAPE
+of 9.32% for Multiflash tested using the holdout validation samples
+of the complete dataset, a 3.63% improvement. Multicomponent performance
+proves to yield even larger improvements, with model F yielding a
+SMAPE of 7.37%, a 6.53% improvement over CSMHYD and 4.35% improvement
+over Multiflash when considering holdout testing.
+
+Additional
+models investigated in the Ballard and Sloan13 study can be seen to perform similarly to CSMHYD
+and Multiflash. This occurrence may be explained through most thermodynamic
+models being based on the van der Waals and Platteuw11 model. Based on the MAPE scores listed for pressure predictions
+for the other thermodynamic models listed in Ballard and Sloan,13 it can be seen that model G could likely compete
+with all of the listed models. To prove this, further testing would
+naturally be required, and extrapolating conclusions based on relationships
+between separate studies using different datasets should be avoided.
+Overall, it may be concluded that the end product of this research
+can at the very least compete with existing thermodynamic models and
+likely could significantly serve to improve gas hydrate equilibrium
+pressure calculations. Having compared model performance against that
+of existing thermodynamic models, the research objective has been
+met. While the model is limited to uninhibited, sweet natural gases
+having undergone phase separation, these results serve as an indicator
+that the methodology could certainly be applied to a universal model
+to include these features and could compete with existing models.
+Having assessed the absolute performance of the machine learning models
+for various metrics and against existing popular models, it is now
+necessary to analyze the results of cross-validation and holdout validation
+in detail so as to assess multicomponent performance, model dependency
+on individual sources of data, and prove that results are not merely
+representative of favorable combinations of training and testing data.
+
+Multicomponent Data Prediction
+To assess multicomponent
+data prediction, results of several models developed using the complete
+dataset are compared with models developed from the multicomponent
+dataset. As absolute performance is not as important for comparative
+purposes as it is for assessing the optimized models G and F developed
+in this investigation to potentially see practical application, assessing
+the variance of R2 score coupled with
+MAPE should be sufficient. Note that due to the relatively low number
+of model features and the size of the datasets, adjusted metrics such
+as Radjusted2 do not differ
+vastly from the original metric.
+
+Overall, complete dataset models
+achieve significantly more accurate R2 scores in terms of average cross-validation performance and lower
+variance over 10-folds, in addition to holdout validation performance.
+This observation is consistent for models applying both grouped and
+ungrouped cross-validation. Models A and B have been developed from
+the multicomponent and complete datasets, respectively, applying grouped
+cross-validation. Hyperparameter optimization results in different
+parameters used to develop these models. Model B achieved a mean cross-validated R2 score of 0.9611, 0.061 higher than that of
+model A, with a significantly lower standard deviation of 0.0193,
+as reported in Table 4. A comparison between models F and G, which have been developed
+using the multicomponent exclusive and complete datasets, respectively,
+reveals similar behavior, despite applying ungrouped cross-validation.
+While not as extreme as the disparity in results between models A
+and B, model G performs significantly better than model F in all assessed
+criteria, notably a slightly improved average cross-validation R2, and a 0.68% lower average MAPE, as indicated
+in Table 5. A key observation,
+however, is that results for model F are acceptable, despite the model
+being developed from a multicomponent exclusive dataset. With a cross-validation R2 of 0.9739 ± (0.0074), MAPE of 7.702%
+± (1.041%), holdout validation R2 score of 0.9739, and a mean absolute percentage error of 7.535%
+indicating overfitting is unlikely, it can be seen that even without
+methane binary data present in the dataset, results are significant
+and could be applied to real natural gas hydrate equilibrium predictions.
+
+It may be inferred from the significant disparity between the results
+of model F and model G that the presence of pure and binary methane
+data in the complete dataset likely assists the model in predicting
+multicomponent data for ranges where multicomponent training data
+are sparse. This behavior may be attributed to binary mixtures such
+as methane–propane being capable of exhibiting sII hydrate
+formation, thus providing a basis for predictions for multicomponent
+gases under ranges of conditions where few multicomponent data points
+are present during training. The prediction of sII hydrate equilibrium
+is of significant importance, as evidenced by the findings of Tohidi
+et al.,35 which details that sII hydrates
+are most likely to be the dominant structure when considering natural
+gas hydrates at equilibrium for usually encountered conditions. As
+such, it is likely that not all of the increased model performance
+for complete dataset models is due to the presence of easier-to-predict
+equilibrium points. In addition to assisting equilibrium predictions
+in ranges with sparse multicomponent data, the presence of pure and
+binary methane components may serve to introduce a damping effect
+into model training, whereby the potential inaccuracy resulting from
+erroneous multicomponent equilibrium measurements could be reduced
+through the presence of these widespread, easier-to-predict equilibrium
+measurements. This effect is likely responsible for the minimum R2 score for an individual fold exceeding 0.97
+for model G, in terms of the results illustrated in Figure 2 (right panel) in addition
+to the seed tests present in Figure 4 (bottom left panel). As such, results are favorable
+to multicomponent exclusive model F. Were the increased minimum-fold
+score merely due to easier-to-predict data, the disparity between
+weak folds in seed tests would not be so great. Finally, due to the
+acceptable results of multicomponent models such as model F, it can
+be seen from models B and G that the inclusion of pure and binary
+component data into the training dataset does not hamper the model
+or provide grounds for dismissing model results, but rather serves
+to improve model generalization capability where limited training
+data are available. Thus, model G is likely to accurately predict
+unseen multicomponent equilibria within the range of conditions present
+in the complete dataset.
+
+Figure 4 Cross-validation seed tests displaying 10-fold
+validation results
+for various train-test split randomizations, with the purpose of proving
+that reported results are not merely valid for a favorable seeding,
+and further serving to identify weak folds arising from unfavorable
+combinations of data.
+
+Source Dependency
+Despite the weaker regressions yielded,
+multicomponent exclusive models do not perform impermissibly poorly.
+While model A achieves a mean cross-validated regression coefficient
+barely exceeding 0.9, this is largely due to the limited data available
+in the multicomponent dataset, combined with the limited range of
+data available to model training as a result of performing grouped
+cross-validation. This is confirmed by a holdout validation R2 > 0.95 and a reasonable cross-validation
+standard
+deviation. Model C has been developed without a holdout set in an
+attempt to improve model A by providing more data to cross-validation.
+While hyperparameter optimization cannot be performed a holdout,
+results can still yield useful information. Model C yields minimal
+improvements to model A compared to the disparity between results
+of models A and F. This indicates that an inadequate distribution
+of data has been made available to model training during cross-validation
+and thus indicates a degree of source dependency. From Figure 2, model A can be seen providing
+both highly accurate (R2 > 0.98) and
+poor
+(R2 < 0.9) predictions for most folds,
+while extremely poor predictions of R2 ∼ 0.825 are noted for a small number of folds. Contrarily,
+ungrouped model F displays a relatively low variance in results, the
+lowest fold score exceeding R2 = 0.94.
+Thus, the weaker performance of model A may be attributed to grouped
+cross-validation offering a less balanced distribution of data available
+to model training. Increasing the data available to cross-validation
+such as with model C is insufficient to ensure an adequate distribution
+of training data. Unlike the stratified manner in which holdout validation
+indices are sampled, grouped cross-validation completely excludes
+entire groups from training for a specific cross-validation fold,
+thus causing extra data supplied to each group to have a minimal impact
+on the distribution of training data.
+
+While results of the complete
+dataset group cross-validated model B are a significant improvement
+over model A, analysis of the variance in cross-validation results
+reveals that individual folds may yield unexpectedly poor regressions,
+despite acceptable mean results. Unlike model A, model B exhibits
+a relatively low standard deviation, thus indicating that most cross-validation
+folds present similar R2 scores. Figure 2 (right panel) illustrates
+the relatively low variance of model B, achieving a minimum-fold R2 score of approximately 0.925. However, on
+altering the random seeding used to determine cross-validation train-test
+indices, model B displays unexpectedly poor regressions for certain
+folds. The seed tests in Figure 4 (top left panel) facilitate the identification of
+individual weak folds arising from unfavorable train-test combinations
+of data. A variance in results when altering the cross-validation
+random seeding is expected due to the non-Gaussian nature and limited
+size of the dataset. Furthermore, as hyperparameter optimization is
+conducted using a constant random seeding, it is expected that other
+cross-validation seeds will display varied results, but similar interquartile
+ranges over 10-fold cross-validation. Figure 4 (top left panel) indicates that box plots
+do correlate to a certain degree with the interquartile range for
+model B in Figure 2 (right panel); however, certain train-test combinations lead to
+exceptionally weak folds, with R2 scores
+as low as 0.805 (Figure 5). Unlike model A, where poor predictions
+are noted across the interquartile range, these poor regressions are
+the result of singular weak folds, likely due to the model attempting
+to predict equilibrium pressure in ranges represented by limited sources,
+where binary and pure component data are insufficient to supplement
+a lack of multicomponent data. This outlier only appears in a few
+random seedings, due to near-completely isolated groups, absent from
+the train set. For holdout validation, weak folds are accounted for
+by isolated groups present in both the training and holdout sets.
+While it is possible that several inaccurate data points are present
+in the datasets, due to dataset size and sampling methodology, it
+is unlikely that this would have such a significant effect on weak
+folds. Additionally, as is demonstrated by the consistent performance
+of model G across seed tests in Figure 4 (bottom left panel), no exceedingly weak folds are
+present. Thus, weak folds in Figure 4 (top left panel) for model B are most likely due to
+ranges of data isolated during cross-validation.
+
+Figure 5 10-Fold cross-validation
+train-test indices. Note grouped cross-validation
+implies that data from the same group cannot be present in both training
+and test sets for the same cross-validation fold.
+
+As with comparisons between multicomponent exclusive,
+grouped cross-validated
+models A and C, complete dataset models D and E offer no significant
+improvement over model B, despite the greater amount of data available
+to cross-validation. Model G achieves greatly improved results over
+model B, largely through applying ungrouped cross-validation. This
+factor is observed across multicomponent and complete dataset models.
+The disparity between results of grouped and ungrouped cross-validated
+models for both datasets further infers that a dependency on individual
+data sources for certain ranges of conditions is likely. This dependency
+is assessed through grouped cross-validation, as ranges of conditions
+considered by only one or two sources may be used to form the test
+set for a specific cross-validation fold, thus resulting in the training
+set lacking data in the range of conditions considered. This explains
+the high variance for grouped cross-validated models illustrated in Figure 2 (left panel) and
+unusually weak folds present for these models illustrated in the seed
+tests of Figure 4 (top
+left and right panels). Significant model dependency on individual
+sources is an unwanted factor which could potentially result in poorer
+results than expected from the reported model variance when predicting
+the equilibrium conditions of a gas unseen by the model during training.
+The presence of experimental or measurement error is of great concern
+when considering both datasets. Due to the limited availability of
+multicomponent gas hydrate equilibrium data, and a wide range of conditions
+being required to develop a useful model, it is required to include
+in the data sampling campaign historical sources employing older experimental
+methodologies and measurement apparatus. Nevertheless, the discussed
+damping and supplementary factors introduced through the complete
+dataset in addition to the large number of data points sampled from
+various experimental studies serve to reduce the potential impact
+of inaccurate data points on model generalization capability.
+
+Model Generalization
+A notable observation from the
+results in Table 4 is
+that for grouped cross-validated models, holdout validation results
+prove favorable to the mean 10-fold cross-validation results. This
+is expected, as cross-validation removes data from model training
+for testing, while holdout validation allows the model to be trained
+with all cross-validation data. As a result of the stratified selection
+of holdout indices, a wider range of conditions is represented in
+the holdout validation results than cross-validation. Due to the reduced
+disparity between the holdout validation results of complete dataset
+models B and G when compared to the magnitude of difference when considering
+cross-validation results, it may be inferred that despite significant
+variation of model hyperparameters, both models are capable of generalizing
+gas hydrate equilibria from the complete dataset. The holdout validation R2 difference between models B and G differs
+by only 0.0063, indicating that sufficient independent data groups
+are present in the dataset to facilitate grouped cross-validation.
+This inference is made possible through randomly seeding holdout indices
+such that the validation set is constant across models of the same
+dataset, as illustrated in Figure 6. To belay concerns that the hyperparameters and neural
+network topologies of models B and G differ too significantly to render
+model comparison meaningful, model J has been developed to use the
+same hyperparameters as model G, while employing grouped cross-validation
+as with model B. As expected, model J achieves highly similar results
+to model B, with the slight difference explained by means of the bias-variance
+trade-off. From both models B and G achieving accurate regressions,
+it can be inferred that the results of model B could serve as a lower
+estimate to predictions made using model G when gas hydrate equilibrium
+pressure is predicted across ranges where suspect groups are present.
+A similar inference can be drawn based on the difference in results
+between models A and F. Despite the reliance on individual sources
+of data proving to be worth considering, results indicate that neural
+network models are capable of generalizing the behavior of the multicomponent
+dataset. Results of model F indicate that the neural network models
+are likely to predict multicomponent data accurately, within the expected
+margins of error, indicated by the 10-fold cross-validation variance
+and the lack of extremely weak single folds present in Figure 2 (left panel). To prove that
+the results for model F are not merely representative of a favorable
+random seeding, Figure 4 (top right panel) has been developed, indicating no model exhibits
+significantly worse single folds than those for model F in Figure 2 (left panel). It
+can thus be concluded that the range of data available to model training
+and testing covers a wide range of conditions and renders the model
+reliable across the range of conditions present in the dataset.
+
+Figure 6 Holdout validation
+indices for both datasets. Note the stratified
+manner by which data are sampled, the relative proportion of samples
+per group is held approximately constant across training and test
+sets.
+
+Model Flexibility
+Results indicate that due to the
+size of the datasets, augmenting further data or removing certain
+entries poses little threat to the existing optimal neural network
+topologies or hyperparameters requiring drastic change, as seen by
+models F and G, which achieve good results while applying the same
+neural network topology despite major differences between the two
+datasets. As such, through physical data gradually becoming available
+while the model is practically applied, or by accessing new sources
+of data, data may be easily incorporated into existing datasets and
+the model may thus be improved by using the existing topology and
+hyperparameters. Results are largely insensitive to exact parameters,
+thus indicating a robust, replicable method. This implies that dataset
+changes may not require a computationally intensive hyperparameter
+optimization procedure. Hence, it can be seen that a major advantage
+of the methodology is its flexibility, and the ability to rapidly
+augment new data into the model. This would prove an immense advantage
+for operation where proprietary equilibrium data are available, as
+over time, a highly accurate model specifically tailored toward operation
+over a narrow range of conditions could be developed without significant
+effort. Due to the methodology proven as robust and replicable, it
+is expected that other researchers would prove to be able to utilize
+the design choices and validation practices provided in this research
+to build models for similar thermodynamic applications.
+
+Model Overview
+Ideally, complete dataset models would
+be tested only using multicomponent data; however, it is essential
+to test model performance on pure methane and binary methane mixtures
+even though these are not relevant to natural gas mixtures, as ensuring
+the model has not been overfitted is of paramount importance. A more
+prudent final validation practice, when considering practical application
+of a model developed, would be to test the performance of these models
+on completely independent equilibrium natural gas mixtures, which
+have not been seen during model development and are relevant to conditions
+likely encountered during operation.
+
+In summary, several aspects
+of the model have been assessed: the ability of the model to predict
+equilibrium data over a wide range of conditions, the ability of the
+model to predict multicomponent data, and the dependency of the model
+on individual sources of data used in training and thus the potential
+for experimental or measurement errors to influence the final neural
+network. This investigation has proven through means of an extensive
+10-fold cross-validation procedure, and stratified holdout validation
+approach, whereby validation data are proportionally sampled from
+each independent experimental source of data, that the model does
+indeed accurately predict equilibrium pressure over a wide range of
+conditions. Comparison with existing models further reinforces this.
+Seed tests for various models further prove that model results are
+not merely valid for a favorable cross-validation random seeding.
+While the final model developed is likely to have some susceptibility
+to dataset errors, the wide range of data sampled and damping factors
+associated with the complete dataset serve to minimize the impact
+of these errors on generalization. The results of model B and low
+variance of model G indicate accurate multicomponent predictions.
+The model designed to be applied to real natural gas hydrate prediction
+is model G.
+
+Conclusions
+In this investigation, a neural network
+multilayer perceptron has
+been trained by means of a backpropagation in a supervised manner
+to successfully model gas hydrate equilibrium with an emphasis on
+multicomponent gases, yielding an average cross-validation-adjusted
+coefficient of determination of 0.9867, a standard deviation of 0.0030,
+and a holdout validated Radjusted2 of 0.9926. All data used in the development of the models
+have been obtained through a robust data sampling campaign conducted
+on existing gas hydrate equilibrium measurements present in the literature.
+Through the use of large datasets sampled from a wide range of conditions,
+a highly flexible model has been developed and positive results have
+been achieved, which are largely insensitive to model parameters,
+thus indicating a robust, repeatable methodology. Further improvement
+to generalization capable through dataset alterations without hyperparameter
+changes is possible. The end product of the model is the equilibrium
+pressure of the desired gas mixture at a certain temperature. Sampled
+features include the system temperature and gas-phase composition,
+including methane, ethane, propane, iso-butane, n-butane, carbon dioxide, nitrogen, and a lumped fraction
+of molecules of five or more carbon atoms. Hydrogen sulfide was excluded
+as a feature due to lack of independent data sources. The model is
+limited to sweet, uninhibited gases proceeding phase separation. Model
+validation applies both 10-fold cross-validation and holdout validation,
+facilitating the optimization of model parameters without a significant
+risk of compromising model generalization capability through overfitting,
+and ensures that a wide range of conditions is used to both train
+and test models. A comparison with two popular thermodynamic models
+indicates that the model likely could serve to greatly improve equilibrium
+predictions in the field. An emphasis has been placed on ensuring
+that the developed model can successfully predict multicomponent equilibria,
+and a detailed analysis on the susceptibility of models to experimental
+error through dependency on individual data sources has been performed
+through the grouping of independent data sources. The final model
+developed for this investigation has been found to adequately predict
+multicomponent hydrate equilibrium pressure. While a degree of source
+dependency has been established, the damping effect introduced through
+the inclusion of pure and binary methane gas equilibrium data in the
+complete dataset serves to mitigate potentially poor results which
+fall outside the expected variance in results, and models designed
+to apply grouped validation practices may serve as a lower estimate
+of model performance in ranges of conditions with sparse independent
+experimental data. As such, generalization can be assumed. Further
+emphasis has been placed on ensuring that results are statistically
+significant, with 10-fold validation and seed tests proving that model
+results are universally valid across the dataset, and not merely valid
+for favorable randomizations. Overall, data sampling, model development,
+and comparison have achieved the research objectives, and they indicate
+that machine learning models could supplant traditional models in
+terms of thermodynamic predictions.
+
+Appendix A: Experimental Data Sources
+A significant number of data sources were discovered from the data
+listed in Sloan and Koh.5 For a limited
+number of cases where data are provided in a graphical format and
+gas composition is specified, equilibrium conditions have been obtained
+by manually measuring these points through the midpoint of indicators
+along a curve. The associated error due to these manual measurements
+is expected to be low due to the precision with which manual measurements
+were performed. The damping factor associated with the complete dataset
+further reduces the impact minor inaccuracies due to manual measurements
+may have had on model results. All equilibrium data used in this investigation
+have been obtained from the following sources. All sources of equilibrium
+data used in the development of models in this research have been
+referenced.5,19,24,32,43−91 It must be emphasized that not all data from each source is included
+in the dataset, for instance, several measurements from the popular
+Deaton and Frost52 study have been excluded
+due to a lack of separation of isobutane and n-butane.
+
+Appendix B: Network
+Architecture and Hyperparameters
+This publication has been
+provided with Supporting Information in the form of a tabular listing of all relevant
+model hyperparameters and an overview of the network architecture.
+A graphic representation of the neural network is also provided.
+
+Appendix C: Sample Calculations and Additional
+Metrics
+Randomly selected equilibrium samples and respective
+m9odel G pressure
+predictions are shown in Table A1. MSE loss for model F and model G training from the entire
+training set is shown in Figure A1. Regression plots for thermodynamic models CSMHYD
+and Multiflash tested using the holdout validation set used to validate
+model G are shown in Figure A2.
+
+Table A1 Randomly Selected Equilibrium Samples
+and Respective Model G Pressure Predictionsa
+T (°C)	C1	C2	C3	i-C4	n-C4	C5+	CO2	nitrogen	Pactual (MPa)	Ppredicted (MPa)	
+27.407	0.8724	0.0757	0.0308	0.0051	0.0079	0.0040	0.0000	0.0040	31.522	30.608	
+22.061	0.8536	0.0826	0.0638	0.0000	0.0000	0.0000	0.0000	0.0000	6.619	7.025	
+4.550	0.9725	0.0142	0.0108	0.0025	0.0000	0.0000	0.0000	0.0000	1.571	1.500	
+16.600	0.8799	0.0541	0.0420	0.0000	0.0240	0.0000	0.0000	0.0000	3.686	3.610	
+13.100	0.9597	0.0000	0.0000	0.0403	0.0000	0.0000	0.0000	0.0000	2.580	2.745	
+0.440	0.9821	0.0057	0.0019	0.0003	0.0004	0.0003	0.0011	0.0082	2.842	2.743	
+18.290	0.8654	0.0523	0.0183	0.0038	0.0050	0.0236	0.0312	0.0004	9.279	9.320	
+12.630	1.0000	0.0000	0.0000	0.0000	0.0000	0.0000	0.0000	0.0000	9.619	9.540	
+a Samples taken from holdout set,
+and are not used for model training.
+
+Figure A1 MSE loss for model F and model G training from entire training
+set. Validation loss calculated from holdout validation set prediction
+accuracy following each epoch. Note that training may seem to have
+taken place over more epochs than needed; however, cross-validation
+performance was a primary metric used in determining hyperparameters
+and exhibits different training loss.
+
+Figure A2 Regression plots for thermodynamic models CSMHYD and Multiflash
+tested using the holdout validation set used to validate model G.
+
+Supporting Information Available
+The Supporting Information
+is available free of charge at https://pubs.acs.org/doi/10.1021/acsomega.9b02961.Neural network topology and model parameters (PDF)
+
+
+
+Supplementary Material
+ao9b02961_si_001.pdf
+
+ The
+authors declare no
+competing financial interest.
+
+Acknowledgments
+The authors acknowledge the Department of Chemical Engineering
+at the Colorado School of Mines for providing a copy of the CSMHYD
+executable version on their website. They also acknowledge KBC Advanced
+Technologies Ltd. for granting a free academic license for the fluid
+characterization and hydrate modeling modules of Multiflash v 7.0.40
+for use in this research. The short notice with which this software
+was granted and the assistance provided in organizing the license
+are greatly appreciated.
+
+Nomenclature
+knumber of independent
+model features
+
+LDHIlow-dosage hydrate inhibitor
+
+LNGliquefied natural gas
+
+MPapressure unit—mega pascals
+
+MAPEmean absolute percentage
+error
+
+MSEmean-square
+error
+
+Nnumber of samples
+
+R2coefficient
+of determination
+
+Radjusted2adjusted coefficient
+of determination
+
+ReLUrectified linear unit
+
+RMSEroot-mean-square error
+
+σstandard deviation
+
+sIstructure I gas hydrates
+
+sIIstructure II gas hydrates
+
+sHstructure H gas hydrates
+
+SGDstochastic gradient
+descent
+
+SMAPEsymmetric
+mean absolute percentage
+error
+==== Refs
+References
+Gas Processors Suppliers Association
+[GPSA]  . Engineering Data Book , 12 th ed.; Wolverine Tube Inc. : Tulsa, Oklahoma , 2004 .
+Hawtin R. W. ; Quigley D. ; Rodger P. M. 
+Gas Hydrate
+Nucleation and Cage Formation
+at a Water/Methane Interface . Phys. Chem. Chem.
+Phys. 
+2008 , 10 , 4853 –4864 . 10.1039/b807455k .18688529 
+Rodger P. M. 
+Stability
+of Gas Hydrates . J. Phys. Chem. A. 
+1990 , 94 , 6080 –6089 . 10.1021/j100378a082 .
+Veluswamy H. P. ; Kumar A. ; Seo Y. ; Lee J. D. ; Linga P. 
+A Review of
+Solidified Natural Gas (SNG) Technology for Gas Storage via Clathrate
+Hydrates . Appl. Energy 
+2018 , 216 , 262 –285 . 10.1016/j.apenergy.2018.02.059 .
+Sloan E. D. Jr; Koh C.  Clathrate
+Hydrates of Natural Gases , 12 th ed.; CRC Press : Boca Raton, FL , 2007 .
+Shahnazar S. ; Hasan N. 
+Gas Hydrate Formation
+Condition: Review on Experimental and Modeling
+Approaches . Fluid Phase Equilib. 
+2014 , 379 , 72 –85 . 10.1016/j.fluid.2014.07.012 .
+Rajnauth J. ; Barrufet M. ; Falcone G. 
+Hydrate Formation:
+Considering the
+Effects of Pressure, Temperature, Composition of Water . Energy Sci. Technol. 
+2012 , 4 , 60 –67 .
+Makogon Y. F.  Hydrates of Hydrocarbons ; PennWell Books : Tulsa, Oklahoma , 1997 .
+Perrin A. ; Musa M. M. ; Steed J. W. 
+The Chemistry of Low Dosage Clathrate
+Hydrate Inhibitors . Chem. Soc. Rev. 
+2013 , 42 , 1996 –2015 . 10.1039/c2cs35340g .23303391 
+Katz D. 
+Prediction
+of Conditions for Hydrate Formation in Natural Gases . Trans. AIME 
+1945 , 160 , 140 –149 . 10.2118/945140-G .
+Van
+der Waals J. H. ; Platteeuw J. C. 
+Clathrate Solutions . Adv. Chem. Phys. 
+1959 , 2 , 1 –57 .
+Giavarini C. ; Hester K.  Gas Hydrates: Immense
+Energy Potential and Environmental Challenges ; Springer-Verac : London , 2011 ; pp 52 –54 .
+Ballard A. L. ; Sloan E. D. Jr
+The Next Generation of Hydrate Prediction
+IV a Comparison of Available Hydrate Prediction Programs . Fluid Phase Equilib. 
+2004 , 216 , 257 –270 . 10.1016/j.fluid.2003.11.004 .
+Antunes C. M. M. ; Kakitani C. ; Neto M. A. M. ; Morales R. E. M. ; Sum A. K. 
+An Examination
+of the Prediction of Hydrate Formation Conditions in the Presence
+of Thermodynamic Inhibitors . Braz. J. Chem.
+Eng. 
+2018 , 35 , 265 –274 . 10.1590/0104-6632.20180351s20160489 .
+Chapoy A. ; Mohammadi A. H. ; Richon D. 
+Predicting the Hydrate Stability
+Zones of Natural Gas Using Artificial Neural Networks . Oil Gas Sci. Technol. 
+2007 , 62 , 701 –706 . 10.2516/ogst:2007048 .
+Heydari A. ; Shayesteh L. ; Kamalzadeh L.  Prediction of Hydrate
+Formation Temperature for Natural Gas Using Artificial Neural ; Oil and Gas Business , 2006 ; Vol. 2 .
+Hesami S.
+M. ; Dehghani M. ; Kamali Z. ; Bakyani A. E. 
+Developing a Simple-to-use
+Predictive Model for Prediction of Hydrate Formation Temperature . Int. J. Amb. Energy 
+2017 , 38 , 380 –388 . 10.1080/01430750.2015.1100678 .
+Zenali N. ; Saber M. ; Ameri A. 
+Comparative
+Analysis of Hydrate Formation
+Pressure Applying Cubic Equations of State (EoS), Artificial Neural
+Network (ANN) and Adaptive Neuro-Fuzzy Interface System (ANFIS) . Int. J. Thermodyn. 
+2012 , 15 , 91 –101 .
+Ghavipour M. ; Ghavipour M. ; Chitsazan M. ; Najibi S. H. ; Ghidary S. S. 
+Experimental
+Study of Natural Gas Hydrates and a Novel Use of Neural Network to
+Predict Hydrate Formation Conditions . Chem.
+Eng. Res. Des. 
+2013 , 91 , 264 –273 . 10.1016/j.cherd.2012.08.010 .
+Elgibaly A. A. ; Elkamel A. M. 
+A New Correlation
+for Predicting Hydrate Formation
+Conditions for Various Gas Mixtures and Inhibitors . Fluid Phase Equilib. 
+1998 , 152 , 23 –42 . 10.1016/S0378-3812(98)00368-9 .
+Elgibaly A. A. ; Elkamel A. M. 
+Optimal Hydrate
+Inhibition Policies with the Aid of
+Neural Networks . Energy Fuels 
+1999 , 13 , 105 –113 . 10.1021/ef980129i .
+Soroush E. ; Mesbah M. ; Shokrollahi A. ; Rozyn J. ; Lee M. ; Kashiwao T. ; Bahadori A. 
+Evolving a Robust Modeling Tool for
+Prediction of Natural Gas Hydrate Formation Conditions . J. Unconven. Oil Gas Res. 
+2015 , 12 , 45 –55 . 10.1016/j.juogr.2015.09.002 .
+Ghiasi M. M. ; Yarveicy H. ; Arabloo M. ; Mohammadi A. H. ; Behbahani R. M. 
+Modeling of Stability Conditions of Natural Gas Clathrate
+Hydrates Using Least Squares Support Vector Machine Approach . J. Mol. Liq. 
+2016 , 223 , 1081 –1092 . 10.1016/j.molliq.2016.09.009 .
+Ward Z.  Phase Equilibria
+of Gas Hydrates Containing Hydrogen Sulphide and Carbon Dioxide . PhD Thesis; Colorado School of Mines : Golden, Colorado , 2015 .
+Arjmandi M. ; Tohidi B. ; Danesh A. ; Todd A. C. 
+Is Subcooling the
+Righjt Driving Force for Testing Low-Dosage Hydrate Inhibitors? . Chem. Eng. Sci. 
+2004 , 60 , 1313 –1321 . 10.1016/j.ces.2004.10.005 .
+Xu S. ; Fan S. ; Fang S. ; Lang X. ; Wang Y. ; Chen J. 
+Pectin as
+an Extraordinary Natural Kinetic Hydrate Inhibitor . Sci. Rep. 
+2016 , 6 , 2322010.1038/srep23220 .26996773 
+Leshno M. ; Lin V. Y. ; Pinkus A. ; Schocken S. 
+Multilayer Feedforward
+Networks with a Nonpolynomial Activation Function can Approximate
+any function . Neural Networks 
+1993 , 6 , 861 –867 . 10.1016/S0893-6080(05)80131-5 .
+Sloan E. D. Jr
+Gas Hydrates: Review of Physical/Chemical
+Properties . Energy Fuels 
+1998 , 12 , 191 –196 . 10.1021/ef970164+ .
+Carroll J.  Natural Gas Hydrates:
+A Guide for Engineers , 2 nd ed.; Gulf Professional Publishing : United
+States of America , 2009 ; pp 17 –42 .
+Tohidi B. ; Burgass R. W. ; Danesh A. ; Østergaard K. K. ; Todd A. C. 
+Improving the Accuracy of Gas Hydrate
+Dissociation
+Point Measurements . Ann. N. Y. Acad. Sci. 
+2000 , 912 , 924 –931 . 10.1111/j.1749-6632.2000.tb06846.x .
+Lee J. ; Kim D. ; Lee K. 
+Phase Behavior
+and Structure Transition of the Mixed
+Methane and Nitrogen Hydrates . Korean J. Chem.
+Eng. 
+2006 , 23 , 209 –302 . 10.1007/BF02705718 .
+Subramanian S. ; Kini R. A. ; Dec S. F. ; Sloan E. D. 
+Structural Transition
+Studies in Methane + Ethane Hydrates Using Raman and NMR . Ann. N. Y. Acad. Sci. 
+2000 , 912 , 873 –886 . 10.1111/j.1749-6632.2000.tb06841.x .
+Circone S. ; Stern L. A. ; Kirby S. H. ; Durham W. B. ; Chakoumakos B. C. ; Rawn C. J. ; Rondinone A. J. ; Ishii Y. 
+CO2 Hydrate: Synthesis,
+Composition, Structure, Dissociation Behavior, and a Comparison to
+Structure I CH4 Hydrate . J. Phys.
+Chem. B 
+2003 , 107 , 5529 –5539 . 10.1021/jp027391j .
+Ruffine L. ; Broseta D. ; Desmedt A.  Gas Hydrates 2: Geoscience
+Issues and Potential Industrial Applications , 2 nd ed.; Wiley , 2018 ; p 124 .
+Tohidi B. ; Østergaard K. K. ; Danesh A. ; Todd A. C. ; Burgass R. W. 
+Structure-H
+Gas Hydrates in Petroleum Reservoir Fluids’ . Can. J. Chem. Eng. 
+2001 , 79 , 384 –391 . 10.1002/cjce.5450790311 .
+Tofallis C. 
+A Better Measure
+of Relative Prediction Accuracy for Model Selection and Model Estimation . J. Oper. Res. Soc. 
+2015 , 66 , 1352 –1362 . 10.1057/jors.2014.103 .
+Cawley G. C. ; Talbot N. L. C. 
+On Over-fitting in Model Selection and Subsequent Selection
+Bias in Performance Evaluation . J. Mach. Learn.
+Res. 
+2010 , 11 , 2079 –2107 .
+Glorot X. ; Bengio Y.   In Understanding the
+Difficulty of Training Deep Feedforward Neural Networks ,
+Proceedings of the 13th International Conference on Artificial Intelligence
+and Statistics (AISTATS) 2010, Chia Laguna Resort, Sardinia, Italy, 2010 ; pp 249 –256 .
+Maas A. L. ; Hannun A. Y. ; Ng A.
+Y.   In Rectifier Nonlinearities
+Improve Neural Network Acoustic Models , Proceedings of the
+30th International Conference on Machine Learning, Atlanta, Georgia, 2013 .
+Nwankpa C. ; Ijomah W. ; Gachagan A. ; Marshall S.  Activation
+Functions:
+Comparison of Trends in Practice and Research for Deep Learning . 2018 , arXiv:physics/1811.03378v1. arXiv.org e-Print
+archive. https://arxiv.org/abs/1811.03378.
+Kingma D. ; Ba J.  Adam: A Method for Stochastic
+Optimization . 2015 , arXiv:physics/1412.6980.
+arXiv.org e-Print archive. https://arxiv.org/abs/1412.6980.
+Hsueh B. ; Li W. ; Wu I.  Stochastic Gradient Descent with Hyperbolic-Tangent
+Decay on Classification . 2018 , arXiv:physics/1806.01593.
+arXiv.org e-Print archive. https://arxiv.org/abs/1806.01593.
+Adisasmito S. ; Frank R. J. ; Sloan E. D. 
+Hydrates of Carbon Dioxide and Methane
+Mixtures . J. Chem. Eng. Data 
+1991 , 36 , 68 –71 . 10.1021/je00001a020 .
+Adisasmito S. ; Sloan E. D. 
+Hydrate of Hydrocarbon Gases Containing Carbon Dioxide . J. Chem. Eng. Data 
+1992 , 37 , 343 –349 . 10.1021/je00007a020 .
+AlHarooni K. ; Gubner R. ; Iglauer S. ; Pack D. ; Barifcanim A. 
+Influence
+of Regenerated Monoethylene Glycol on Natural Gas Hydrate Formation . Energy Fuels 
+2017 , 31 , 12914 –12931 . 10.1021/acs.energyfuels.7b01539 .
+Babakhani S. M. ; Bouillot B. ; Douzet J. ; Ho-Van S. ; Herri J. 
+PVTx Measurements
+of Mixed Gas Hydrates in Batch Conditions Under Different Crystallization
+Rates: Influence on Equilibrium . J. Chem. Thermodyn. 
+2018 , 122 , 73 –84 . 10.1016/j.jct.2018.03.006 .
+Bishnoi P. R. ; Dholabhai P. D. 
+Equillibrium
+Conditions for Hydrate Formation for a
+Ternary Gas Mixture of Methane, Ethane, Propane and a Natural Gas
+Mixture in the Presence of Electrolytes and Methanol . Fluid Phase Equilib. 
+1998 , 158–160 , 821 –827 . 10.1016/S0378-3812(99)00103-X .
+Carson D. B. ; Katz D. L.   In Natural Gas Hydrates , Transactions of the American Institute
+of Mining and Metallugrical
+Engineers, Dallas Meeting October, 1941 ; pp 150 –158 .
+Chen L. ; Sun C. ; Chen G. ; Nie Y. ; Sun Z. ; Yantao L. 
+Measurements
+of Hydrate Equilibrium Conditions for CH4, CO2, and CH4 + C2H6 + C3H8
+in Various Systems by Step-heating Method . Chin.
+J. Chem. Eng. 
+2009 , 17 , 635 –641 . 10.1016/S1004-9541(08)60256-6 .
+Chen L. ; Sun C. ; Nie Y. ; Sun Z. ; Yang L. ; Chen G. 
+Hydrate Equilibrium
+Conditions of (CH4 + C2H6 + C3H8) Gas Mixtures in Sodium Dodecyl Sulfate
+Aqueous Solutions . J. Chem. Eng. Data 
+2009 , 54 , 1500 –1503 . 10.1021/je8008057 .
+de
+Roo J. L. ; Peters C. J. ; Lichtenhaler R. N. ; Diepen G. A. M. 
+Occurrence of Methane Hydrate in Saturated and Unsaturated
+Solutions of Sodium Chloride and Water in Dependence of Temperature
+and Pressure . AIChE J. 
+1983 , 29 , 651 –657 . 10.1002/aic.690290420 .
+Deaton W. M. ; Frost E. M.  Gas Hydrates and Their
+Relation to the Operation of Natural-Gas Pipe Lines ; U.S. Bureau of Mines , 1946 .
+Jager M. D. ; Sloan E. D. 
+The Effect of Pressure on Methane
+Hydration in Pure
+Water and Sodium Chloride Solutions . Fluid Phase
+Equilib. 
+2001 , 185 , 89 –99 . 10.1016/S0378-3812(01)00459-9 .
+Jager M. D. ; Sloan E. D.   In Structural Transition
+of Clathrate Hydrates Formed from a Natural Gas , Proceedings
+of the Fourth International Conference on Gas Hydrates, May 19–23, 2002 ; pp 575 –580 .
+Jhaveri J. ; Robinson D. B. 
+Hydrate in the Methane-Nitrogen System . Can. J. Chem. Eng. 
+1965 , 43 , 75 –78 . 10.1002/cjce.5450430207 .
+Karaaslan U. ; Parlaktuna M. 
+Surfactants
+as Hydrate Promoters? . Energy Fuels 
+2000 , 14 , 1103 –1107 . 10.1021/ef000069s .
+Kobayashi R. ; Withrow H. J. ; Williams G. B. ; Katz D. L.   In Gas Hydrate Formation
+with Brine and Ethanol Solutions , Proceedings of the 30th
+Annual Convention, Natural Gas Association of America, 1951 ; pp 27 –31 .
+Le
+Quang D. ; Le Quang D. ; Bouillot B. ; Herri J. ; Glenat P. ; Duchet-Suchaux P. 
+Experimental Procedure and Results
+to Measure the Composition of Gas Hydrate, during crystalization and
+at equilibrium, from N2-CO2-C2H6-C3H8-C4H10 Gas Mixtures . Fluid Phase Equilib. 
+2016 , 413 , 10 –21 . 10.1016/j.fluid.2015.10.022 .
+Lee J. ; Kang S. 
+Phase Equilibria of
+Natural Gas Hydrates in the Presence of Methanol,
+Ethylene Glycol, and NaCl Aqueous Solutions . Ind. Eng. Chem. Res. 
+2011 , 50 , 8750 –8755 . 10.1021/ie2001814 .
+Lim D. ; Ro H. ; Seo Y. ; Seo Y. ; Lee J. Y. ; Kim S. ; Lee J. ; Lee H. 
+Thermodynamic
+Stability and Guest Distribution of CH4/N2/CO2
+Mixed Hydrates for Methane Hydrate Production Using N2/CO2 Injection . J. Chem. Thermodyn. 
+2017 , 106 , 16 –21 . 10.1016/j.jct.2016.11.012 .
+Mahabadian M. A. ; Chapoy A. ; Burgass R. ; Tohidi B. 
+Development of a Multiphase
+Flash in the Presence of Hydrates: Experimental Measurements and Validation
+with the CPA equation of State . Fluid Phase
+Equilib. 
+2016 , 414 , 117 –132 . 10.1016/j.fluid.2016.01.009 .
+McLeod H. O. ; Campbell J. M. 
+Natural gas Hydrates
+at Pressures to 10,000 psia . J. Pet. Technol. 
+1961 , 13 , 590 –594 . 10.2118/1566-G-PA .
+Mei D. ; Liao J. ; Yang J. ; Guo T. 
+Experimental and Modeling
+Studies on the Hydrate Formation of a Methane + Nitrogen Gas Mixture
+in the Presence of Aqueous Electrolyte Solutions . Ind. Eng. Chem. Res. 
+1996 , 35 , 4342 –4347 . 10.1021/ie9601662 .
+Mei D. ; Liao J. ; Yang J. ; Guo T. 
+Hydrate Formation of
+a Synthetic Natural Gas Mixture in Aqueous Solutions Containing Electrolyte,
+Methanol, and (Electrolyte + Methanol) . J. Chem.
+Eng. Data 
+1998 , 43 , 178 –182 . 10.1021/je9701745 .
+Moehebbi V. ; Behbahani R. M. 
+Measurement
+of Mass Transfer Coefficients of Natural
+Gas Mixture during Gas Hydrate Formation . Iran.
+J. Oil Gas Sci. Technol. 
+2014 , 4 , 66 –80 .
+Mogbolu P. O. ; Madu J.   In Prediction of Onset
+of Gas Hydrate Formation in Offshore Operations , Society
+of Petroleum Engineers Nigeria Annual International Conference and
+Exhibition, 5–7 August, Lagos, Nigeria, 2014 .
+Munck J. ; Skjold-Jørgensen S. ; Rasmussen P. 
+Computations
+of the Formation of Gas Hydrates . Chem. Eng.
+Sci. 
+1988 , 43 , 2661 –2672 . 10.1016/0009-2509(88)80010-1 .
+Nakamura T. ; Makino T. ; Sugahara T. ; Ohgaki K. 
+Stability Boundaries
+of Gas Hydrates Helped by Methane—Structure-H Hydrates of Methylcyclohexane
+and cis-1,2-dimethylcyclohexane . Chem. Eng.
+Sci. 
+2003 , 58 , 269 –273 . 10.1016/S0009-2509(02)00518-3 .
+Ng H. ; Robinson D. B. 
+The Role of n-Butane
+in Hydrate Formation . AIChE J. 
+1976 , 22 , 656 –661 . 10.1002/aic.690220404 .
+Nixdorf J. ; Oellrich L. R. 
+Experimental Determination of Hydrate Equillibrium
+Conditions for Pure Gases, Binary and Ternary Mixtures and Natural
+Gases . Fluid Phase Equilib. 
+1997 , 139 , 325 –333 . 10.1016/S0378-3812(97)00141-6 .
+Notz P. K. ; Burke N. E.   In Measurement
+and
+Prediction of Hydrate Formation Conditions for Dry Gas, Gas Condensate,
+and Black Oil Reservoirs , Offshore Technology Conference,
+6–9 May, Houston, Texas, 1991 ; pp 409 –419 .
+Qureshi M. F. ; Atilhan M. ; Altamash T. ; Tariq M. ; Khraisheh M. ; Aparicio S. ; Tohidi B. 
+Gas Hydrate Prevention and Flow Assurance
+by Using Mixtures of Ionic Liquids and Synergent Compounds: Combined
+Kinetics and Thermodynamic Approach . Energy
+Fuels 
+2016 , 30 , 3541 –3548 . 10.1021/acs.energyfuels.5b03001 .
+Saberi A. ; Alamdari A. ; Shariati A. ; Mohammadi A. H. 
+Experimental
+Measurement and Thermodynamic Modeling of Equilibrium Condition for
+Natural Gas Hydrate in MEG Aqueous Solution . Fluid Phase Equilib. 
+2017 , 459 , 110 –118 . 10.1016/j.fluid.2017.11.034 .
+Sadeq D. ; Iglauer S. ; Lebedev M. ; Smith C. 
+Experimental Determination
+of Hydrate Phase Equilibrium for Different Gas Mixtures Containing
+Methane, Carbon Dioxide and Nitrogen with Motor Current Measurements . J. Nat. Gas Sci. Eng. 
+2017 , 38 , 59 –73 . 10.1016/j.jngse.2016.12.025 .
+Semenov M. E. ; Kalacheva L. P. ; Yu E. ; Rozhin I. I. 
+Natural Gas Hydrate
+Decomposition in the Presence of Methanol . Chem.
+Sustainable Dev. 
+2010 , 18 , 147 –151 .
+Seo Y. ; Lee H. 
+Multiple-Phase
+Hydrate Equilibria of the Ternary Carbon Dioxide,
+Methane and Water Mixtures . J. Phys. Chem. B 
+2001 , 105 , 10084 –10090 . 10.1021/jp011095+ .
+Seo Y. ; Kang S. ; Jang W. 
+Structure and Composition Analysis
+of Natural Gas Hydrates: 13C NMR Spectroscopic and Gas Uptake Measurements
+of Mixed Gas Hydrates . J. Phys. Chem. A 
+2009 , 113 , 9641 –9649 . 10.1021/jp904994s .19658414 
+Seo Y. ; Kang S. ; Lee H. ; Lee C. ; Sung W. 
+Hydrate Phase
+Equilibria for Gas Mixtrures Containing Carbon Dioxide: A Proof-of-Concept
+to Carbon Dioxide Recovery from Multicomponent Gas Stream . Korean J. Chem. Eng. 
+2000 , 17 , 659 –667 . 10.1007/BF02699114 .
+Smith C. ; Pack D. ; Barifcani A. 
+Propane, n-butane
+and i-butane stabilization
+effects on methane gas hydrates . J. Chem. Thermodyn. 
+2017 , 115 , 293 –301 . 10.1016/j.jct.2017.08.013 .
+Smith C. ; Barifcani A. ; Pack D. 
+Helium substitution of natural gas
+hydrocarbons in the analysis of their hydrate . J. Nat. Gas Sci.. Eng. 
+2016 , 35 , 1293 –1300 . 10.1016/j.jngse.2016.09.033 .
+Tariq M. ; Atilhan M. ; Kharisheh M. ; Othman E. ; Castier M. ; Garcia G. ; Aparicio S. ; Tohidi B. 
+Experimental and DFT
+Approach on the Determination of Natural Gas Hydrate Equilibrium with
+the Use of Excess N2 and Choline Chloride Ionic Liquid as an Inhibitor . Energy Fuels 
+2016 , 30 , 2821 –2832 . 10.1021/acs.energyfuels.6b00117 .
+Taylor C. ; Kwan J.
+T.  Advances in the Study
+of Gas Hydrates ; Kluwer Academic/Plenum Publishers : NY , 2004 .
+Thakore J. L. ; Holder G. D. 
+Solid-Vapor Azeotropes in Hydrate-Formaing
+Sytems . Ind. Eng. Chem. Res. 
+1987 , 26 , 462 –469 . 10.1021/ie00063a011 .
+Tohidi B. ; Anderson R. ; Clennell M. B. ; Biderkab A. B. 
+Visual Observation
+of Gas-Hydrate Formation and Dissociation in Synthetic Porous Media
+by Means of Glass Micromodels . Geology 
+2001 , 29 , 867 –870 . 10.1130/0091-7613(2001)029<0867:VOOGHF>2.0.CO;2 .
+Tohidi B. ; Danesh A. ; Burgass R. W.   In Hydrates Formed
+in Unprocessed Wellstreams , Proceedings of the 69th SPE Annual
+Technical Conference, September 25–28, 1994 ; pp 157 –167 .
+Tohidi B. ; Danesh A. ; Burgass R. W. ; Todd A. C.   In Effect of Heavy
+Hydrate Formers on the Hydrate Free Zone of Real Reservoir Fluids , European Production Operations Conference and Exhibition, 16-17
+April, Stavanger, Norway, 1996 ; pp 257 –261 .
+Tohidi B. ; Danesh A. ; Todd C. ; Burgass R. W. 
+Hydrate-Free Zone
+for Synthetic and Real Reservoir Fluids in the Presence of Saline
+Water . Chem. Eng. Sci. 
+1997 , 52 , 3257 –3263 . 10.1016/S0009-2509(97)00183-8 .
+Wilcox W. I. ; Carson D. B. ; Katz D. L. 
+Natural Gas Hydrates . Ind. Eng. Chem. 
+1939 , 33 , 662 –665 . 10.1021/ie50377a027 .
+Wu B. ; Robinson D. B. ; Ng H. 
+Three and
+Four-Phase Hydrate Forming
+Conditions in Methane + Isobutane + Water Correction of an Error in
+a Previous Paper . J. Chem. Thermodyn. 
+1976 , 9 , 461 –469 . 10.1016/0021-9614(76)90067-7 .
+Xu S. ; F S. ; Wang Y. ; Lang X. 
+An Investigation
+of Kinetic Hydrate
+Inhibitors on the Natural Gas from the South China Sea . J. Chem. Eng. Data 
+2015 , 60 , 311 –318 . 10.1021/je500600t .
+Yang M. ; Song Y. ; Liu Y. ; Jiang L.   In Effects of Gas Component on Hydrate
+Equilibrium in Porous
+Medium , Proceedings of the Twenty-second International Offshore
+and Polar Engineering Conference, Rhodes, Greece, June 17–22 2012 ; pp 41 –44 .
+Chollet F. K.  GitHub:
+GitHub Repository , 2015 . https://github.com/fchollet/keras.
+

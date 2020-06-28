@@ -1,0 +1,976 @@
+
+==== Front
+ACS OmegaACS OmegaaoacsodfACS Omega2470-1343American Chemical Society 3145978310.1021/acsomega.9b00270ArticleModeling Acid–Base by Minimizing Charge-Balance Ring Troels *†‡Kellum John A. ‡† Department
+of Biomedicine, Aarhus University, Vilh. Meyers Allé 3, 8000 Århus C, Denmark‡ The
+Center for Critical Care Nephrology. Department of Critical Care Medicine, University of Pittsburgh School of Medicine, and University
+of Pittsburgh Medical Center, 15260 Pittsburgh, Pennsylvania, United States* E-mail: tring@gvdnet.dk.09 04 2019 30 04 2019 4 4 6521 6529 30 01 2019 28 03 2019 Copyright © 2019 American Chemical Society2019American Chemical SocietyThis is an open access article published under an ACS AuthorChoice License, which permits copying and redistribution of the article or any adaptations for non-commercial purposes.
+
+In
+this study, we show that equilibrium pH can be obtained for
+any specified fluid with any number of buffers and dissociations.
+This is done by root finding in the equation for charge balance. We
+demonstrate that this equation is monotonic in proton concentration
+for conceivable buffers. We show that the total charge on any buffer
+is a function of only the total buffer concentration and pH, given
+the thermodynamic dissociation constants. Using the Davies’
+equation as a placeholder for single-ion activity coefficients as
+a function of charge and ionic strength, we develop an iterative algorithm,
+whereby the apparent dissociation constants are updated from the thermodynamic
+dissociation constants, and from this, the equilibrium is also identified
+in the nonideal state. We show how this algebra leads to guaranteed
+conservation of both thermodynamic dissociation constants and total
+buffer concentrations because the distribution of buffer species is
+fixed by the updated dissociation constants, actual pH, and total
+buffer concentration. Strong ions are assumed to contribute fixed
+charges. In order to concentrate on the process of modeling the equilibrium
+pH alone, this algorithm is examined against a series of theoretical
+results in which the Davies’ equation was given the same status.
+However, a large sample of clinical pH measurements is also examined.
+To enhance the practical utility, CO2 and albumin are present
+as the default condition. We developed “ABCharge”, a
+package in R, an open source language. The main function returns pH,
+activity coefficients, buffer species distribution, ionic strength,
+and charge balance for both the ideal and nonideal cases, for any
+mixture of any buffers with any number of known thermodynamic dissociation
+constants. Our algorithm can be updated if a more reliable and practical
+assessment of single-ion activities becomes available. Can Stock Photo/miceking
+
+document-id-old-9ao9b00270document-id-new-14ao-2019-00270pccc-price
+==== Body
+Introduction
+Understanding of acid–base
+physiology can be obtained through
+deriving rules that allow prediction of pH from elementary measurements.1,2 The possibility of achieving this is equivalent with the ability
+to calculate pH from the chemical constituents of a given fluid. The
+underpinnings for these calculations are the thermodynamic principles
+for dissociation and mass conservation and the requirement for balance
+between moieties with positive and negative charges. At the bedside,
+understanding acid–base disorders amounts to explaining the
+current status from known determinants,3 thereby, suggesting mechanisms for explaining deviations and examining
+specific hypotheses.
+
+The calculations of equilibrium pH have
+been technically difficult
+but methods to automate identification have been developed as advanced
+numerical solutions became available. Ganesh et al.4 separate two mathematical approaches, an algebraic and
+a dynamic. The algebraic approach may result in polynomial equations
+in which the proper root identifies the equilibrium condition. The
+dynamic method solves together a series of differential equations
+and may address the development over time and not only the equilibrium
+situation.
+
+In this paper, we propose that it is possible to
+find a unique
+expression of the net equilibrium charge in any specified fluid. Because
+the charges are derived either from strong ions with pH-independent
+fixed charge or from buffers, for which the total charge and distribution
+of each charged species is a function of pH and total concentration
+and the dissociation constants, root finding in this expression of
+charge balance is tantamount to identification of both pH and the
+distribution of buffer species. We show in the Supporting Information (“Derivation of charge-balance
+expression”) that charge balance is always monotonic in [H+], which guarantees a single root. Crucially, from the algebraic
+formulation of the model, it is ensured that the fitting procedure
+enforces the conservation of thermodynamic dissociation constants
+and total buffer concentrations.
+
+An important problem is how
+to account for ionic strength and apply
+activity coefficients for nonideal or not very dilute solutions. A
+recent series of publications5−7 attest to the perceived importance
+of this subject. They all used Davies’ equation8 as an approximation to the Debye–Hückel theory,9 and implicitly assumed that, hereby, a useful
+single-ion activity coefficient was at hand. In reality, the Davies’
+equation8 delivers the mean ionic activity
+coefficient for prevalent cations and anions. Therefore, assuming
+that this value can be used as an estimate of single-ion activity
+coefficient is certainly problematic.10
+
+Over the years, it has even been an enigma if single-ion activities
+can at all be defined, measured, or calculated.11−13 As our aim
+here is to explore the utility of charge-balance in the modeling of
+acid–base equilibrium, it is worthwhile to present in brief
+one argument in favor of the reality of single-ion activity as given
+by Valiskó and Boda.10 The impossibility
+(according to Valiskó and Boda10) of operating with a single-ion activity roots in the perceived
+impossibility of adding positive or negative charge without also adding
+the respective counterions. However, as stressed by these authors,10 the requirement of charge-balance is relevant
+in the macroscopic realm, whereas in the microscopic world and over
+short periods of time, charge imbalance is frequent and important—for
+instance, in physiology. On the other hand, Kontogeorgis et al.9 in a recent review on Debye–Hückel
+modeling conclude that the status of single-ion activity coefficients
+is uncertain, while also acknowledging that progress in theoretical
+and practical construction of these takes place14,15 by Poisson–Fermi modeling and otherwise. Recently, it has
+been suggested that single-ion activity coefficients can be obtained
+from the theoretically well-established single-ion conductivity,16 lending some support to the reality of the former
+and probably also, eventually, means for the estimation.
+
+In
+any case, in the papers considered here,5−7 nonideal conditions
+are handled by correcting for ionic strength and charge by the use
+of activity coefficients obtained from the Davies’ equation.8 Our intention here is, therefore, to explore
+how identification of equilibrium in the nonideal state can be obtained
+by a charge-balance approach given that the Davies’ equation8 is understood to deliver single-ion activities.5−7 It is acknowledged that this modeling of the nonideal state is provisional
+and must be improved if and when a more established notion of single-ion
+activity coefficient becomes available. Therefore, the mean activities
+obtained by the Davies’ equation are interpreted as placeholders
+for single-ion activities. Alternatively, we may choose to consider
+the single-ion activities that results from the disputed activity
+coefficients as conventional rather than physical entities.17 The modeling and theoretical comparisons presented
+here will be insensitive to this choice.
+
+The studies selected
+for consideration here were chosen because
+they deliver theoretical calculated pH values, and our intention is
+to present an algorithm for obtaining such estimates in the equilibrium
+state in a robust and conceptually simple way.
+
+Tessman and Ivanov5 described a general
+procedure for finding equilibrium including activity coefficients
+based on Debye–Hückel via Davies equation.8 This involved solving polynomials and fitted
+available measurements well. Similarly, Glaser et al.18 obtained dynamic results for multiequilibria problems by
+writing up all possible chemical reactions in the fluid as differential
+equations. Both equilibrium and off-equilibrium situations were thereby
+characterized. It was shown that the algebraic approach yielded a
+single solution, which was identical to the dynamic approach in the
+equilibrium situation. Schell et al.6 augmented
+this dynamic approach to take ionic strength into account, again using
+the Davies’ equation.8 Also, Baeza-Baeza
+and García-Álvarez-Coque7 used the Davies’ equation8 to
+find activity coefficients and found the equilibrium pH through minimizing
+a composite criterion. This consisted of the squared difference of
+the sum of buffer concentrations from known total values, the squared
+difference of charge balance from zero, and the squared final change
+in ionic strength after an iterative procedure.
+
+A straightforward
+and reliable method to model pH may also lead
+to further improvements in the techniques for measuring the pH. It
+may seem an unproblematic statement that no matter how the pH is modeled
+from chemical variables, the final criterion for evaluating putative
+models will be how well the actual pH measurements are predicted.
+In contrast, the measurement of pH itself is a highly contentious
+subject.19 Central to this problem is just
+the relationship between ion activities and electric potentials which
+impact pH measurement as classically defined.20 Therefore, in the current study, we will mainly examine results
+which have been obtained by theoretical arguments to avoid the possible
+problems in measuring pH. However, we will also use a clinical sample
+of more than 2000 measurements for validation.
+
+Finally, we have
+placed our methods into a package in R,21 “ABCharge”, with which it is possible
+to estimate equilibrium characteristics for arbitrary fluids with
+any number of buffers with any number of dissociations, with and without
+CO2 and albumin. The default option includes, for lack
+of better options at present, single-ion activity coefficients obtained
+from the Davies’ equation,8 but
+this can be omitted, assuming ideal circumstances. The algorithm proposed
+to update the estimate of activity coefficients is sensitive to only
+absolute ionic charge and ionic strength and will therefore require
+augmentation if other details are taken into account to describe the
+activity coefficient. Likewise, the algorithm can be modified to include
+any number of mono- or multivalent bases.
+
+Methods
+We will
+first present the charge-balance model with single-ion
+activity coefficients based on Debye–Hückel/Davies8 for a very simple system and describe the algorithm
+for deriving the system characteristics in equilibrium. In the Supporting Information (see: “Derivation
+of the charge-balance expression”), we present a complete derivation
+of a more extensive and clinically useful model together with a demonstration
+of the fact that for any conceivable buffer mixture, the charge-balance
+expression is monotone in proton concentration. Then, theoretical
+data from the recent literature will be applied, and the results from
+the model will be compared to the results from the original publications.
+Finally, we will analyze a series of clinical data to examine the
+correspondence with actually measured quantities.
+
+Charge-Balance in an Acetate-Buffered
+System
+To explain
+the model, we present a system consisting of acetate in a solution
+of NaOH and HCl. For acetate, we have the thermodynamic dissociation
+coefficient as defined by eq 1, with f1 indicating activity
+coefficient for monovalent ions, so aH+ = f1[H+], and [H+] ≈ H+ for simplicity. Furthermore, Actot = HAc + Ac–. It is assumed that the activity of
+uncharged moieties (e.g., aHAc) is equal to the concentration. 1  
+
+From this, we have 2  
+
+Furthermore, we have from water autodissociation that 3  
+
+From this,
+we obtain 4  
+
+Thereby the charge-balance
+equation is 5  
+
+The ionic strength and activity coefficients
+from Debye–Hückel/Davies8 are calculated as 6  where Z is the charge, and C is the molar concentration
+of all charged ionic species.
+
+The activity coefficient is, then,
+obtained from the Davies’
+equation8 7  Here, A is a temperature-dependent
+constant, and b is a constant.
+
+As described
+in the Supporting Information (“Derivation
+of charge-balance expression”), we model
+albumin using the model of Watson,22 which
+assigns 21 fixed and 16 variable charges to each mol albumin. The
+mobility of these charges in the fluid is difficult to know, and because
+the molar concentration of albumin is likely to be less than 0.001,
+we have decided to ignore albumin in the calculation of ionic strength.
+
+The procedure to find pH and distribution of ionized species on
+the basis of charge balance, then, is as follows:
+
+Initialize
+with f for all actual charges equal to 1.1. Find H+ as the single root
+of the charge expression
+
+2. Knowing H+ and total buffer
+concentration, the partition among the buffer species is fixed at
+current estimates of activity coefficients.
+
+3. Based on the identified concentrations
+of buffer species plus the known concentrations of strong ions, the
+ionic strength is calculated.
+
+4. From the ionic strength, using Davies’
+adaptation of Debye–Hückel, the activity coefficients
+are found.
+
+5. H+ is found again from the
+charge expression at the updated activity coefficients.
+
+6. Steps 1–5 are repeated until
+the difference between the H+ estimates in steps 1 and
+5 vanishes.
+
+
+
+For more complex solutions
+including multivalent buffers, for example,
+carbonic acid, a generalization of Henderson–Hasselbalch as
+employed implicitly in eq 1 is used.23 This is described in the Supporting Information (see: “Derivation
+of the charge-balance expression”).
+
+When extending the
+charge balance to be dependent on ionic strength,
+the thermodynamic dissociation constants for the buffers are expressed
+as based on activities as shown in eq 1 above. From this, corrected concentrations of the
+buffer species are calculated to update the charge-balance expression.
+The only unknown in the charge balance equation then is the H+ concentration. It is crucial, as detailed in the Supporting Information (see: “Derivation
+of the charge-balance expression”), that all considered buffer
+species can be shown to contribute with increasing charge as [H+] increases. Therefore, root finding in the charge-balance
+equation is very efficient. When comparing this root to measured pH
+values based on the IUPAC convention,24 the activity coefficient obtained for a single charge is then multiplied
+by the H+ concentrations.
+
+Practical Implementation
+We used open-source, R,21 for specifying
+the models and fitting and plotting
+the results. All results are documented in the Supporting Information and on ACS figshare as R markdown files.25 The functions are given as an extensively commented
+and freely available package in R, “ABCharge”. Thereby,
+the user will be able to analyze any conceivable fluid by specifying
+total concentrations of any number of individual buffers, each with
+any number of known thermodynamic dissociation constants. A range
+of strong ions are included as default but set to zero concentration,
+if not present. Likewise, pCO2 and albumin
+are handled, if needed. The derivation is presented as Supporting Information (see: “Derivation
+of the charge-balance equation”). The functions will deliver
+pH, ionic strength, distribution of buffer species, and charge balance
+at equilibrium for the ideal case (assuming all activity coefficients
+are equal to 1), and also, the same quantities plus activity coefficients
+at equilibrium for the data corrected for ionic strength.8 The A and b constants in the Davies’ equation for activity
+coefficients (eq 7) are
+entered with the call to the functions. Using the routines in the
+package, it is easy to plot charge over a grid of pH values to confirm
+monotonicity and verify the identified equilibrium. An example is
+presented as help for the Tessman data, [obtained by issuing “example(“Tessman”)”
+in R].
+
+Materials for Testing the Charge Balance Model
+In order
+to find material for validation of a charge-balance based formulation
+of acid–base, both in the ideal state and after imposing activity
+coefficients, we sought publications in which the resulting pH was
+theoretically derived. Thereby, we could in a first step concentrate
+on the principles of the modeling in the competing formulations without
+concern for the validity of the pH measurements.
+
+Here, we focused
+primarily on a recent publication by Schell et al.6 that identifies the equilibrium condition in mixtures of
+dihydrogen phosphate and citric acid with and without correction for
+ionic strength employing Davies’ equation.8 This analysis is presented in detail. Also, some of the
+results from Tessman and Ivanov5 are presented
+and analyzed to further expose the consequences of disagreement in
+assessing the equilibrium conditions. Furthermore, we modeled a set
+of previously examined2 clinically obtained
+pH values on the basis of electrolyte, albumin, phosphate, lactate,
+and pCO2 values. Finally, analyses of
+the papers by Glaser et al.18 and Baeza-Baeza
+and García-Álvarez-Coque7 are presented in brief.
+
+To assess our methods in comparison
+with those from the literature,
+the estimated pH values were compared, but also, if possible, we tried
+to evaluate if charge balance approached zero in equilibrium. Likewise,
+the recovery of thermodynamic dissociation constants in equilibrium
+was appraised. Clearly, agreement in these respects is required for
+the methods to be consistent. This means that at the estimated equilibrium,
+the distribution of buffer concentrations together with strong ions
+must result in a charge balance close to zero. The sum of the buffer
+species (including uncharged items) must be the known starting total
+concentrations, and, with the calculated activity coefficients, recovery
+of thermodynamic dissociation constants must be verified. Although,
+as shown below, our methods guarantee fulfillment of these requirements
+in principle, in actual applications, the finite accuracy in numeric
+calculations may result in minor deviations.
+
+Results
+Analysis of
+the Data from Schell et al.6
+The
+material consisting of 30 mixtures of disodium hydrogen
+phosphate and citric acid is reproduced (see associated content) as
+“S1.dat”. This file also contains the equilibrium pH
+as identified by Schell et al.6 for ideal
+solutions and after accounting for ionic strength using b = 0.1 or 0.2 in eq 7. We will restrict analysis to only b = 0.1, and
+as the authors6 use A in eq 7 with a value of 0.5108. Furthermore,
+we will use from the results in Schell et al.,6 their calculated species concentrations of citrates at equilibrium
+(reproduced as “Citrate.dat” in the Supporting Information) and their calculated distribution
+at equilibrium of phosphate species (reproduced as “Phosphate.dat”
+in the Supporting Information). Our analysis
+is presented as “Schell.rmd” on ACS.figshare and the
+results as “Schell2018.pdf” in the Supporting Information Also, after installing R package “ABCharge”,
+the entire analysis is reproduced by “example(Schell)”.
+
+The charge-balance equation for this system, as derived in the Supporting Information (see: “Derivation
+of the charge-balance expression”), is given as [concentration
+markers ([]) are omitted for brevity] 8  
+
+In eq 8, Ptot is the total concentration of all phosphate species,
+and Ctot is the total concentration of
+all citrates. Ka2 – Ka3 are the thermodynamic dissociation
+constants for phosphoric acid and Kc2 – Kc3 likewise
+for citric acid.
+
+A crucial step in the algorithm above is the
+second step: knowing
+[H+] and total buffer concentration, the partition among
+the buffer species is fixed at current estimates of activity coefficients,
+and this partition maintains the thermodynamic dissociation constants
+at prespecified values. This is explained with a pseudocode below
+because it is essential for demonstrating the strength of the proposed
+method for finding equilibrium characteristics.
+
+For phosphoric
+acid:
+
+Given [H+], Ptot, Ka1 – Ka3, and f1 – f3, we find the individual four components (derivation
+is shown in the Supporting Information “Derivation
+of the charge-balance expression”) 9   10   11   12  
+
+Thereby, it is evident that
+given H+, Ptot, Ka1 – Ka3, and f1 – f3, the concentrations of all
+species are fixed. Furthermore, by summing all four species it is
+clear that Ptot is maintained. Finally,
+we can see that for any value of [H+], Ptot, Ka1 – Ka3, and f1 – f3 by division of eq 10 by eq 9 that , from which 13  
+
+Eq 13 is the
+definition
+of the thermodynamic dissociation constant for the first dissociation
+of phosphoric acid, again assuming the activity coefficient for uncharged
+moieties is 1. Likewise, by division of eq 11 by eq 10, we have  from which 14  Here, eq 14 is the thermodynamic
+dissociation constant for the
+second dissociation of phosphoric acid. Finally, by division of eq 12 by eq 11, we get 
+
+From this, we have 15  which is the definition of the thermodynamic
+dissociation constant for the third dissociation of phosphoric acid.
+
+Therefore, we can see that there is a guarantee that the algorithm
+delivers estimates of concentrations of the buffer species that algebraically
+align with the requirements of preserved dissociation constants. Again,
+in actual applications, due to imperfections in computer representation
+of floating-point numbers, minor deviations are possible.
+
+First,
+the results from Schell et al.6 assuming
+ideal conditions that is with all activity coefficients
+fixed at 1 were compared to the results from the proposed charge-balance
+algorithm. The agreement between the calculated results by our charge-balance
+method and the results from Schell et al.6 is good with a correlation coefficient of 0.99996. The difference
+between the pH reported by Schell et al.6 and our calculated pH values has a median of 0.002 with a range
+of −0.027 to 0.036 (Point 1 in supplementary “Schell2018.pdf”).
+Equally, for the results after imposing correction for ionic strength,
+the correlation coefficient is similar at 0.9996 and the differences
+in pH values by our method and the reported method has a median of
+0.004 and a range of −0.031 to 0.044; (point 2 in the Supporting Information “Schell2018.pdf”).
+
+Differences between results obtained from our method and those
+employed in Schell et al.6 do exist, however,
+if we consider the reported distribution at equilibrium of citric
+acid and phosphoric acid species using the results with correction
+for ionic strength. The distribution of the buffer species allows
+reconstruction of thermodynamic dissociation constants from the results
+of Schell et al.6 because the activity
+coefficients can be calculated from the reported ionic strength using eq 7. As described, the dissociation
+constants for triprotic acids are given in eq 13/eq 15, so with the reported distribution of buffer species and
+the reported ionic strength, based on the results reported by Schell
+et al.6 we have the following results (see:
+point 3 in the Supporting Information “Schell2018.pdf”).
+(A number of the concentrations reported by Schell et al.6 are given as zero, and these are obviously not
+used as basis for estimation).
+
+For citric acid, the results
+are reported in Figure 1 which shows some variability from the known
+thermodynamic constant, and in Table1 for the three known pKa values for citric acid.
+
+Figure 1 Citrate pKa values
+based on reported
+species distribution in Schell et al.6
+
+Table 1 Calculated pKa Values for Citric Acid Based on Data from
+Schell et al.6
+min	median	max	input	
+3.025	3.131	3.172	3.13	
+4.275	4.711	5.572	4.76	
+4.573	5.882	7.346	6.40	
+Similarly, Figure 2 shows the somewhat
+greater deviation for phosphoric acid. The last
+pKa build on only one measurement. The
+results are also shown in Table 2.
+
+Figure 2 Phosphate pKa values based
+on reported
+species distribution in Schell et al.16
+
+Table 2 Calculated pKa Values for Phosphoric Acid Based on Data from
+Schell et al.6
+min	median	max	input	
+2.02	2.158	2.409	2.16	
+6.313	6.913	7.613	7.21	
+8.848	8.848	8.848	12.32	
+In contrast, with the
+results from our estimation, the theoretical
+derivation is confirmed that the thermodynamic dissociation constants
+are closely conserved. The calculated pKa values are shown in Table 3.
+
+Table 3 Calculated pKa Values for Phosphoric Acid and Citric Acid Based on Our Charge
+Balance Algorithm
+median pKa	lowest pKa	highest pKa	input pKa	
+2.159999653	2.159995387	2.160001260	2.16 (phosphoric
+acid)	
+7.210000000	7.209998425	7.210007498	7.21	
+12.32000106	12.32000000	12.32001500	12.32	
+3.129999653	3.129995387	3.130001260	3.13 (citric acid)	
+4.760000000	4.759998425	4.760007498	4.76	
+6.400001061	6.400000000	6.400014997	6.40	
+Apparently, these problems are not the consequence
+of the fact
+that concentrations of the buffer species are rounded to 0.1 mM in
+the results of Schell et al.6 because the
+maximal charge imbalance (see below) is more than 10 times higher
+than the cutoff value. Furthermore, plotting the difference between
+the known thermodynamic dissociation constant and the one estimated
+on the basis of the given data yields a clear regression with the
+ionic strength. This is demonstrated in the Supporting Information (“Schell2018.pdf”) and with example(Schell)
+from R package ABCharge.
+
+The net charge at equilibrium for the
+results reported by Schell
+et al.6 can be calculated from data in
+the Supporting Information (reproduced
+here in Associated content as S1.dat, S2a.dat and S2b.dat) and median
+charge is 0.1 mEq/L with a range from −0.9 to 1.2 mEq/L (see:
+point 4 in “Schell2018.pdf”). In contrast, with our
+method, median net charge is 1 × 10–7 mEq/L
+with a range from 0 to 3.5 × 10–5 mEq/L; (see
+point 4a in the Supporting Information “Schell2018.pdf”).
+
+Analysis of Results from Tessman and Ivanov5
+We restrict attention to the results in Table 1 of Tessman and Ivanov5 of two mixtures of boric acid, phosphoric acid,
+acetic acid, and NaOH. Concentrations were: 0.0267, 0.0267, 0.0267,
+and 0.0667 for the first sample, and 0.02, 0.02, 0.02, and 0.1 for
+the second sample, all in M.
+
+Several details from the modeling
+by Tessman and Ivanov5 were not available,
+for instance, the exact form of the Davies’ equation employed
+or the assigned value of the water autodissociation constant. The
+entire analysis is available from package ABCharge using “example(Tessman)”.
+As reported also in “Tessman.rmd” on ACS figshare and
+as “Tessman2002.pdf” in the Supporting Information, for the first example, the reported pH was 6.812
+at an ionic strength of 0.0798, whereas our charge balance application
+gave pH of 6.771 and ionic strength of 0.07997. However, it is observed
+that our first ionic strength calculated before assignment of activity
+coefficients is 0.079806. This is available from step 3 in the first
+iteration of our algorithm.
+
+The next example demonstrates a
+wider difference as the reported
+pH is 12.005, whereas we find 11.5244 at the ionic strength of 0.1428
+compared to the reported ionic strength of 0.1367. Again, it is observed
+that our initial ionic strength before the application of Davies’
+equation is very similar at 0.13669, and likewise it is observed that
+the first pH in the iterations, that is before going beyond all activity
+coefficients being equal to 1, is 12.00455, that is quite similar
+to the reported value.
+
+Although for the reasons mentioned above,
+we are unable to compare
+these methods directly, we can examine the characteristics of the
+results in Tessman and Ivanov5 in their
+equilibrium, that is pH 12.005 and ionic strength 0.1367. This requires
+finding the activity coefficients via the Davies’ equation,8 and from these and the known total concentrations
+of buffer species, the known thermodynamic dissociation constants,
+and the found pH (12.005), we can find the concentration of individual
+buffer species and hence, the charge balance. As shown in the Supporting Information (“Tessman2002.pdf”)
+and demonstrated in code (“Tessman.rmd” on ACS figshare),
+this charge balance is rounded to −22 mM. This is found using
+the form of Davies’ equation in Schell et al.6 with b = 0.1 but using b = 0.2 and the A of 0.509 in eq 7 as used by Baeza-Baeza and García-Álvarez-Coque7 does not change that significantly (results not
+shown). This will inevitably generate a very huge potential. With
+the uncertainty resulting from the fact that the methods in Tessman
+and Ivanov5 are not wholly specified, this
+must still leave some doubt as to the validity of the estimate in
+the paper.5 In contrast, we should be able
+to closely inspect the results obtained by our charge balance approach
+for validity.
+
+Hence, if the distribution of buffer species identified
+at equilibrium
+is examined, a proper identification of equilibrium is verified if:
+(a) the total concentrations of buffer species are maintained, (b)
+the thermodynamic dissociation constants after taking account of the
+found activity coefficients are all conserved, and (c) the charge
+balance at equilibrium approaches zero. These are, we believe, the
+necessary and sufficient conditions for identifying equilibrium. As
+shown in the Supporting Information (“Tessman2002.pdf”),
+these three points are all confirmed, with buffer concentrations and
+dissociations closely recovered, and with a charge balance of 68 ×
+10–6 mM, which is approximately half a million times
+better compared to the charge imbalance inferred for the results reported
+in the paper.5
+
+Furthermore, as the
+system described by Tessman and Ivanov5 is quite complicated with eight different dissociation
+constants (including water autodissociation), it would be of interest
+to inspect charge-balance as a function of pH to get an impression
+that the expression of charge-balance could contain sufficient information
+for close identification of pH. The curves are generated by finding
+the charge balance as a function of pH and the found activity coefficients,
+first over the entire pH range (Figure 3) and next as a close-up near the identified equilibrium
+(Figure 4).
+
+Figure 3 Charge balance
+plotted over pH grid based on Tessman and Ivanov.5
+
+Figure 4 Close up of charge vs pH from Tessman data.
+
+Analysis of Clinical Data
+from Critically Ill Patients
+Modeling pH was accomplished
+based on a set of 2437 values found
+in Ring2 by way of the thermodynamic dissociations
+corrected for ion strength and taking the measured pH to be −log(aH+).24 This was a
+sample from critically ill but very heterogenous patients, and the
+modeling was based on all of the nine measured moieties, corresponding
+to 13 different charges (see “Derivation of the charge-balance
+model” in the Supporting Information). Problems with measurements of every item including pH were expected,
+and the presence of unmeasured anions and cations were considered
+likely.2 The ionic strength was, as typical
+for clinical samples, high around 0.15, and correspondingly, the single-charge
+activity coefficients about 0.733, that is far from 1.
+
+Hence,
+it was expected that the pH corrected for ionic strength would be
+different from the estimate obtained assuming ideal conditions. As
+shown in Figure 5,
+assuming ideal conditions caused the modeled pH to overestimate the
+measured pH (green curve). In contrast, taking the H+ values
+from the estimation including activity coefficients directly as the
+basis for pH resulted in the modeled pH underestimating the measured
+pH (blue curve). However, correcting this last H+ for the
+found activity coefficient for single charges resulted in the difference
+between modeled and measured pH to be approximately centered on zero.
+
+Figure 5 Modeled
+minus observed pH for clinical data.
+
+Using this corrected pH to regress the modeled on measured
+pH yielded Figure 6. There was a highly
+significant correlation of 0.796 (P < 2.2 ×
+10–16). Compared to the in vitro experimental situations
+described previously, the agreement between measured and modeled pH
+was less convincing. On the other hand, given the circumstances of
+a clinical study as described, and given the uncertain status of the
+employed Davies’ correction, we believe the charge-balance
+model to be potentially useful, also in the clinical context. Again,
+the entire analysis is presented with “example(Pittsburgh)”.
+
+Figure 6 Modeled
+vs measured pH from clinical data.
+
+Results from Glaser et al18
+Glaser
+and coworkers18 first reported
+finding pH in mixtures of malate, malic acids alone, and combinations
+of these using a dynamic approach resulting in a polynomial model,
+for which they show that exactly one root corresponds to the equilibrium
+situation. As shown in our analysis (see “Glaser2014.rmd”
+on ACS figshare for the entire analysis, and the results as “Glaser2014.pdf”
+in the Supporting Information), we can
+confirm these pH values with a correlation greater than 0.99999 in
+one single run, that is taking the three cases together, because all
+we need for estimation is total buffer concentration, the two pKa values for diprotic malic acid, and strong
+ion concentration (assuming complete dissociation of the malate salt).
+As shown (see “Glaser2014.pdf” in the Supporting Information), given the quite high ionic strength
+in these experiments, we can also assess the importance of taking
+ionic strength into account. These analyses also are shown with example(malate).
+
+Next, Glaser et al.18 analyzed the dissociation
+of bromic acid (HBrO3) in mixtures of sulfuric acid and
+bromate salts over a grid of assumed pKa values for bromic acid. Assuming the ideal situation (all activity
+coefficients 1), we can again, with correlation 0.9999, confirm the
+resulting pH values, and we can reproduce the distribution of bromate
+and bromic acid species. Taking ionic strength into account, we can
+again show the shifts in results as shown by the distribution of species
+concentrations over the grid of pKa values.
+Finally (see, “Glaser2014.pdf” in the Supporting Information), using the reported species concentrations
+(Table S4 in Glaser et al.,18 reproduced here as “brom.dat”
+in the Supporting Information), we can
+calculate a charge balance for the uncorrected case with a maximal
+value of 0.3 mM, whereas with our methods, the maximal charge balance
+is 4.8 × 10–16 M. These analyses are also reproduced
+with example(brom).
+
+Results from Baeza-Baeza and García-Álvarez-Coque7
+Baeza-Baeza and García-Álvarez-Coque7 developed a method in Excel to take ionic strength
+into account using a composite criterion for optimization, consisting
+of the sum of the squared deviations of total concentrations of buffers,
+charge balance, and change in ionic strength during iterations. We
+only look at their first example, where potassium hydrogen phthalate
+is mixed with hydrochloric acid. Our results are reproduced in “Baeza-Baeza2012.rmd”
+on ACS figshare and shown in “Baeza-Baeza2012.pdf” in
+the Supporting Information We get a corrected
+pH of 3.1003, which is in good agreement with the reported 3.100.
+However, their charge balance (calculated from column F in Figure 1) is −2.61
+× 10–6 M, whereas we find a balance of 0. We
+recover the total phthalate concentration closely and obtain 2.9500001
+and 5.4100025 for the 2pKa values, whereas
+from the results reported by Baeza-Baeza and García-Álvarez-Coque,7 2.9491 and 5.4096 can be recovered. Again, example(Baeza)
+shows the code and results.
+
+Discussion
+We
+have demonstrated that the charge-balance model effectively
+estimates pH for specified fluids, including clinical samples.2 Most of our results demonstrate excellent concordance
+between the results obtained with the charge-balance method as implemented
+and the original methods described in the literature. However, there
+are a few deviations which require consideration. First, the second
+example from Tessman and Ivanov5 yields
+a distinctly different pH value. We cannot be absolutely sure why
+this difference occurs, but the reported equilibrium value that is
+identified with our charge-balance model evidently has better characteristics
+in terms of charge balance, which we know must be close to zero. Apparently,
+the requirement of charge balance at equilibrium is better enforced
+by the explicit formulation in the charge-balance expression. This
+is also manifest in examining the results from Schell et al.6 and Baeza-Baeza and García-Álvarez-Coque,7 as a second deviation. The algorithm is attractive
+because the requirement for conserved total buffer concentrations,
+minimization of charge balance, and the stability of thermodynamic
+dissociation constants are directly enforced in the formulation of
+the charge balance equation. Hence, we do not need to optimize separately
+for these items as, for example, Baeza-Baeza and García-Álvarez-Coque7 have. As shown in the Supporting Information (see: “Derivation of the charge-balance
+expression”), the step to find the equilibrium [H+] is effective because the charge balance is monotonic in [H+] for all of the cases considered up to trivalent acids and
+bases and their mixtures. We are working to prove that this has to
+be so in general and so far, have managed to prove the monotonicity
+for any multivalent buffer.
+
+It may appear surprising that it
+is possible to confidently identify
+the equilibrium pH from the calculated charge. As demonstrated for
+the single example reported by Tessman and Ivanov5 in Figures 3 and 4, the identification of the equilibrium
+pH from the charge balance is apparently quite feasible, at least
+in these examples.
+
+A sensible objection to the validity of the
+approach could be that
+strong ions and buffer species are reported typically with error margins
+in a millimolar range. Hence, it might appear unreasonable to expect
+the charge balance expression to yield distinctive information on
+the proton concentration at a magnitude several orders lower. However,
+as it appears from the charge-balance expression, for example in eq 8, protons appear mainly
+in the denominator and simulations show that 10% shift in proton concentration
+has a similar effect on the charge as 10% shift in strong ions.2 However, strong ions obviously have a major influence
+on the charge balance. Amazingly, the fact that there could be an
+impact of the strong ions on the pH has been controversial in the
+literature.26,27 In contrast, from a charge-balance
+perspective, charges in a fluid can be divided between those that
+are independent of pH (strong ions) and those that are dependent on
+pH. Because the balance must still be zero, if we change the net charge
+on those moieties that are charged independently of pH, we only have
+the possibility to balance by those that change their charge dependently
+on pH. And this cannot happen unless pH changes.
+
+In comparison
+with the original reports, our methods may be better
+in defining the equilibrium conditions. As mentioned, a reasonable
+criterion for consistent identification of equilibrium could be that
+charge balance is close to zero, total buffer concentrations conserved
+at input values, and thermodynamic dissociation constants maintained.
+As shown, this is true theoretically for the charge balance model
+and also approximately in praxis. In contrast, the results from Schell
+et al.6 Glaser et al.18 Baeza-Baeza, and García-Álvarez-Coque7 may have issues in these respects. We cannot
+be sure about what causes these minor problems in the reported studies.
+In the case of Baeza-Baeza and García-Álvarez-Coque,7 it is possible that the combined criterion, on
+which the optimization occurs, results in opaque trade-offs among
+the three items (squared difference in total buffer concentrations
+vs sum of calculated species, squared differences in charge balance,
+and squared last difference between results for ionic strength). For
+the studies by Schell et al.6 and Glaser
+et al.,18 we have no access to the complete
+code used, and therefore are unable to comment further. It is crucial
+to realize that, for instance, with regard to the results from Schell
+et al.,6 the recovery of the thermodynamic
+dissociation constants shown in Figures 1 and 2 was carried
+out entirely on their own reported results. Hence, their ionic strength
+(from “S1.dat”) gives the activity coefficients using
+their version of the Davies’ equation,8 and the equilibrium concentrations of buffer species (their Table S2a,b, given here as “Citrate.dat”
+and “Phosphate.dat”) together with the definitions of
+the thermodynamic dissociation constants (eq 13/eq 15).
+
+Finally, the validation using clinical samples, extending
+the model
+to cover the CO2 buffer system and albumin, may indicate
+that the model may be useful in clinical research and perhaps even
+in clinical practice. The versatility of the charge balance model
+must be stressed. For instance, patients may have a significantly
+lower pH than that calculated from measured standard quantities and
+instead of just accepting a diagnosis of anion-gap acidosis, an anion
+with specific concentration and Ka could
+be added to the charge balance expression, such as  which could be verified, for instance,
+with NMR spectrometry. We have used this to confirm the diagnosis
+of pyroglutamate intoxication.
+
+However, this implementation
+is certainly not free of conundrums
+or loose ends. The central problem is how to account for nonideal
+circumstances. It is evident from the derivations that the specification
+of thermodynamic dissociation constants builds heavily on single-ion
+activity coefficients. In the introduction, we have alluded to the
+ongoing debate about their status and to the fact that the Davies’
+equation8 specifies a mean and not single-ion
+activity coefficient. However, the papers5−7 from which we
+took the material for testing our modeling use just this specification
+of single-ion activity coefficients and other have done likewise.28 First and foremost, however, we saw no other
+opportunity if we wanted to use the mentioned material to test our
+modeling approach.
+
+Also, even if the specification of the nonideal
+situation as employed
+here is indeed wanting from a theoretical point of view, it may nonetheless
+have some value as indicated by the assessment of a large clinical
+material.
+
+Furthermore, we may regard the current specification
+of single-ion
+activity coefficient as a placeholder for a true value, if this true
+value is mainly determined by ionic strength and charge because then,
+our updating algorithm will also be appropriate for the true value.
+
+We hope eventually that our modeling can be used to test better
+specifications of nonideality so that, for instance, activity coefficients
+for positive and negative ions with the same absolute charge are not
+identical29 as in the current implementation
+of the Davies’ equation.8 Also,
+eventually, we might add a correction for uncharged species by way
+of the Sechenov equation,30 but this does
+not deviate far from 1, and therefore has little effect on the results
+and so was omitted.
+
+Finally, in contrast to the dynamic systems
+used by Glaser et al.18 and Schell et al.,6 our methods are unable to clarify the situation
+outside equilibrium.
+
+Conclusions
+It has been shown that
+the charge balance approach allows a simple
+direct modeling of pH in situations where no correction for ionic
+strength is performed. If activity coefficients are applied by way
+of Debye–Hückel/Davies to the buffer species, an excellent
+reproduction of the equilibrium pH values obtained with previously
+reported tools are obtained. Crucially, the mathematical elegance
+of the charge-balance approach results in improved characteristics
+of the results in terms of conservation of thermodynamic constants
+and charge difference. Finally, the implementation is provided as
+an R package and all methods are totally transparent and can be scrutinized,
+modified, and extended as desired.
+
+Supporting Information Available
+The Supporting Information is
+available free of charge on the ACS Publications website at DOI: 10.1021/acsomega.9b00270.Comprehensive
+explanation for the derivation of the
+model and proofs of the characteristics and results from the analyses
+of Schell et al 2018, Tessman and Ivanov 2002, Pittsburgh ICU data,
+Glaser et al, and Baeza-Baeza et al. (PDF)
+
+
+
+Supplementary Material
+ao9b00270_si_001.pdf
+
+ Author Contributions
+T.R. and J.A.K.
+conceived jointly the charge-balance model; T.R. programmed the formal
+applications and made the analysis of published data; T.R. and J.A.K.
+wrote the paper jointly.
+
+The authors declare no
+competing financial interest.
+
+Acknowledgments
+We gratefully acknowledge the diligent work of three
+anonymous reviewers. Their critique and suggestions have significantly
+improved the manuscript.
+==== Refs
+References
+Herman D. P. ; Booth K. K. ; Parker O. J. ; Breneman G. L. 
+The pH of any mixture
+of monoprotic acids and bases . J. Chem. Educ. 
+1990 , 67 , 501 –502 . 10.1021/ed067p501 .
+Ring T. ; Kellum J. A. 
+Strong Relationships in Acid-Base Chemistry—Modeling
+Protons Based on Predictable Concentrations of Strong Ions, Total
+Weak Acid Concentrations, and pCO2 . PLoS One 
+2016 , 11 , e016287210.1371/journal.pone.0162872 .27631369 
+Ring T. ; Nielsen S. 
+Whole body acid-base
+modeling revisited . Am. J. Physiol. 
+2017 , 312 , F647 –F653 . 10.1152/ajprenal.00560.2016 .
+Ganesh K. ; Soumen R. ; Ravichandran Y. ; Janarthanan 
+Dynamic approach
+to predict pH profiles
+of biologically relevant buffers . Biochem. Biophys. Rep. 
+2017 , 9 , 121 –127 . 10.1016/j.bbrep.2016.11.017 .28955996 
+Tessman A. B. ; Ivanov A. V. 
+Computer calculations of acid-base
+equilibria in aqueous
+solutions using the acid-base calculator program . J. Anal. Chem. 
+2002 , 57 , 2 –7 . 10.1023/A:1013672004064 .
+Schell J. ; Zars E. ; Chicone C. ; Glaser R. 
+Simultaneous Determination
+of All Species Concentrations in Multiequilibria for Aqueous Solutions
+of Dihydrogen Phosphate Considering Debye-Hückel Theory . J. Chem. Eng. Data 
+2018 , 63 , 2151 –2161 . 10.1021/acs.jced.8b00146 .
+Baeza-Baeza J. J. ; García-Álvarez-Coque M. C. 
+Systematic Approach for Calculating
+the Concentrations of Chemical Species in Multiequilibrium Problems:
+Inclusion of the Ionic Strength Effects . J.
+Chem. Educ. 
+2012 , 89 , 900 –904 . 10.1021/ed200594u .
+Davies C. W. 
+The extent
+of dissociation of salts in water. Part VIII. An equation for the
+mean ionic activity coefficient of an electrolyte in water, and a
+revision of the dissociation constants of some sulphates . J. Chem. Soc. 
+1938 , 2093 –2098 . 10.1039/jr9380002093 .
+Kontogeorgis G. M. ; Maribo-Mogensen B. ; Thomsen K. 
+The Debye-Hückel theory and
+its importance in modeling electrolyte solutions . Fluid Phase Equilib. 
+2018 , 462 , 130 –152 . 10.1016/j.fluid.2018.01.004 .
+Valiskó M. ; Boda D. 
+Unraveling the Behavior
+of the Individual Ionic Activity Coefficients
+on the Basis of the Balance of Ion-Ion and Ion-Water Interactions . J. Phys. Chem. B 
+2015 , 119 , 1546 –1557 . 10.1021/jp509445k .25549274 
+Wilczek-Vera G. ; Rodil E. ; Vera J. H. 
+A complete discussion of the rationale
+supporting the experimental determination of individual ionic activities . Fluid Phase Equilib. 
+2006 , 244 , 33 –45 . 10.1016/j.fluid.2006.03.011 .
+Fraenkel D. 
+Single-ion
+activity: experiment versus theory . J. Phys.
+Chem. B 
+2012 , 116 , 3603 –3612 . 10.1021/jp2123407 .22329721 
+Rockwood A. L. 
+Meaning
+and measurability of single-ion activities, the thermodynamic foundations
+of pH, and the Gibbs free energy for the transfer of ions between
+dissimilar materials . ChemPhysChem 
+2015 , 16 , 1978 –1991 . 10.1002/cphc.201500044 .25919971 
+Liu J.-L. ; Eisenberg B. 
+Poisson-Fermi modeling of ion activities
+in aqueous
+single and mixed electrolyte solutions at variable temperature . J. Chem. Phys. 
+2018 , 148 , 054501 10.1063/1.5021508 .29421887 
+Liu J.-L. ; Li C.-L. 
+A generalized Debye-Hückel
+theory of electrolyte solutions . AIP Adv. 
+2019 , 9 , 015214 10.1063/1.5081863 .
+Fraenkel D. 
+An improved
+theory of the electric conductance of ionic solutions based on the
+concept of the ion-atmosphere’s smaller-ion shell . Phys. Chem. Chem. Phys. 
+2018 , 20 , 29896 –29909 . 10.1039/c8cp06000b .30474091 
+Malatesta F. 
+Activity coefficients
+of ions in sodium halide solutions: critical remarks . Fluid Phase Equilib. 
+2010 , 295 , 244 –248 . 10.1016/j.fluid.2010.05.021 .
+Glaser R. E. ; Delarosa M. A. ; Salau A. O. ; Chicone C. 
+Dynamical Approach
+to Multiequilibria Problems for Mixtures of Acids and Their Conjugated
+Bases . J. Chem. Educ. 
+2014 , 91 , 1009 –1016 . 10.1021/ed400808c .
+de
+Levie R. 
+A pH centenary . Electrochim. Acta 
+2014 , 135 , 604 –639 . 10.1016/j.electacta.2014.04.006 .
+Ferse A. ; Ferse B. 
+Individual ion activity
+and liquid junction potential-Two interrelated,
+interconnected electrochemical terms . Electrochim.
+Acta 
+2016 , 192 , 497 –511 . 10.1016/j.electacta.2016.01.167 .
+R Core Team  . R: A Language and Environment for Statistical
+Computing ; R Foundation for Statistical Computing : Vienna, Austria . URL https://www.R-project.org/, 2018 .
+Watson P.
+D. 
+Modeling
+the effects of proteins on pH in plasma . J.
+Appl. Physiol. 
+1999 , 86 , 1421 –1427 . 10.1152/jappl.1999.86.4.1421 .10194231 
+Kildeberg P. 
+Acid-base
+status of biological fluids: amount of acid, kind of acid, anion-cation
+difference, and buffer value . Scand. J. Clin.
+Lab. Invest. 
+1983 , 43 , 103 –109 . 10.3109/00365518309168230 .6612219 
+Buck R. P. ; Rondinini S. ; Covington A. K. ; et al. Measurement of pH. Definition,
+standards, and procedures (IUPAC Recommendations 2002) . Pure Appl. Chem. 
+2002 , 74 , 2169 –2200 . 10.1351/pac200274112169 .
+Allaire J. J. ; Xie Y. ; McPherson J. ; Luraschi J. ; Kevin U. ; Atkins A. ; Wickham H. ; Cheng J. ; Chang W.  rmarkdown: Dynamic Documents for R. R package ,
+version 1.10. https://CRAN.R-project.org/package=rmarkdown, 2018 .
+Vaughan-Jones R. D. ; Boron W. F. 
+Integration of acid-base
+and electrolyte disorders . N. Engl. J. Med. 
+2015 , 372 , 389 10.1056/NEJMc1414731 .
+Siggaard-Andersen O. ; Fogh-Andersen N. 
+Base excess or buffer base (strong ion difference)
+as measure of a non-respiratory acid-base disturbance . Acta Anaesthesiol. Scand. 
+1995 , 39 , 123 –128 . 10.1111/j.1399-6576.1995.tb04346.x .
+Menéndez M. I. ; Borge J. 
+Ion association versus
+ion interaction models in examining electrolyte
+solutions: application to calcium hydroxide solubility equilibrium . J. Chem. Educ. 
+2014 , 91 , 91 –95 . 10.1021/ed4004589 .
+Wilczek-Vera G. ; Vera J. H. 
+How much do we know
+about the activity of individual
+ions? . J. Chem. Thermodyn. 
+2016 , 99 , 65 –69 . 10.1016/j.jct.2016.03.042 .
+Rozhkov S. P. 
+An analysis
+of the applicability of the sechenov equation to the system lysozyme-aqueous
+solution of NaCl . Russ. J. Phys. Chem. A 
+2010 , 84 , 1532 –1535 . 10.1134/s0036024410090153 .
+
