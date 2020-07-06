@@ -20,13 +20,13 @@ pre_config = {
 def get_sent_dict():
     pmc_dict = defaultdict()
     idx = 0
-    dirs = os.listdir(input_path)
-    for d in dirs:
-        print("Processing folder: " + d)
-        for folder in os.listdir(os.path.join(input_path, d)):
-            for filename in os.listdir(os.path.join(os.path.join(input_path, d), folder)):
+    for root, d_names, f_names in os.walk(input_path):
+        # print("Processing folder: " + d)
+        for folder in d_names:
+            print("Processing folder: " + folder)
+            for filename in f_names:
                 # print(idx)
-                file = open(os.path.join(os.path.join(os.path.join(input_path, d), folder), filename),
+                file = open(os.path.join(root, filename),
                             encoding='latin1')
                 lines = file.readlines()
                 if parts[0] not in lines or parts[1] not in lines:
