@@ -21,27 +21,24 @@ def get_sent_dict():
     pmc_dict = defaultdict()
     idx = 0
     for root, d_names, f_names in os.walk(input_path):
-        # print("Processing folder: " + d)
-        for folder in d_names:
-            print("Processing folder: " + folder)
-            for filename in f_names:
-                # print(idx)
-                file = open(os.path.join(root, filename),
-                            encoding='latin1')
-                lines = file.readlines()
-                if parts[0] not in lines or parts[1] not in lines:
-                    file.close()
-                else:
-                    body = [l.strip() for l in lines[lines.index(parts[0]) + 1: lines.index(parts[1]) - 1]]
-                    pmc_sents = []
-                    for line in body:
-                        sent = re.sub(r'Fig\..*\. ', '', line)
-                        match = re.match(r'.*\.$', sent)
-                        if match:
-                            # print(match.group())
-                            pmc_sents.append(match.group())
-                    pmc_dict[idx] = ' '.join(pmc_sents)
-                    idx += 1
+        for filename in f_names:
+            print("Processing file:" + filename)
+            file = open(os.path.join(root, filename),
+                        encoding='latin1')
+            lines = file.readlines()
+            if parts[0] not in lines or parts[1] not in lines:
+                file.close()
+            else:
+                body = [l.strip() for l in lines[lines.index(parts[0]) + 1: lines.index(parts[1]) - 1]]
+                pmc_sents = []
+                for line in body:
+                    sent = re.sub(r'Fig\..*\. ', '', line)
+                    match = re.match(r'.*\.$', sent)
+                    if match:
+                        # print(match.group())
+                        pmc_sents.append(match.group())
+                pmc_dict[idx] = ' '.join(pmc_sents)
+                idx += 1
     return pmc_dict
 
 
@@ -54,3 +51,6 @@ def get_sents():
             token_list = [t.content for t in sentence.tokens]
             all_sents.append(token_list)
     return all_sents
+
+
+get_sent_dict()
