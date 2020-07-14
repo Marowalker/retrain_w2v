@@ -48,7 +48,7 @@ def get_sent_dict():
 def get_sents():
     sents = get_sent_dict()
     all_sents = []
-    print("Processing sentence dict...\n")
+    print("Creating Document objects...\n")
     documents = pre_process.process(sents, pre_config, constants.SENTENCE_TYPE_ABSTRACT)
     for doc in documents:
         for sentence in doc.sentences:

@@ -50,12 +50,14 @@ def process(documents, config, sent_type=constants.SENTENCE_TYPE_GENERAL):
     tokenizer = config.get(opt.TOKENIZER_KEY, opt.SimpleTokenizer())
 
     for i in documents:
+        print("Processing document: " + str(i) + "\n")
         doc_obj = models.Document(id=i, content=documents[i])
         doc_obj.sentences = []
         raw_sentences = segmenter.segment(doc_obj.content)
 
         current_pos = 0
         for s in raw_sentences:
+            print("Processing raw sentence: " + s)
             start_offset = documents[i].find(s, current_pos)
             end_offset = start_offset + len(s)
 
@@ -71,5 +73,7 @@ def process(documents, config, sent_type=constants.SENTENCE_TYPE_GENERAL):
     for o in optional:
         for doc_obj in doc_objects:
             o.process(doc_obj)
+
+    print("Process complete.\n")
 
     return doc_objects
